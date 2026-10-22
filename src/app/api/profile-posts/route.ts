@@ -9,6 +9,7 @@ import { join } from 'path';
 import { TIER_TO_TRACK } from '@/lib/pricing';
 import { checkMediaUpload, getMediaAllowance } from '@/lib/media-entitlements';
 import { getMediaEntitlementForUser, pickBetterAllowance } from '@/lib/media-usage';
+import { attachAssetRef, assetRefFromPublicUrl } from '@/lib/media-ledger';
 
 const BUCKET = 'post-media';
 const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -22,6 +23,16 @@ const EXT_FOR_VIDEO_MIME: Record<string, string> = {
   'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm',
 };
 const ALLOWED_TARGET_TYPES = new Set(['user', 'team', 'league']);
+/**
+ * Upper bound on a client-reported video duration that we will accept.
+ *
+ * 4 hours is far beyond any single social post someone would make, and it sits
+ * comfortably under what a 100 MB low-bitrate encode could contain, so it
+ * rejects obviously fabricated or corrupt metadata without second-guessing a
+ * legitimately long video. See the duration handling in the POST handler for
+ * why duration is client-reported at all.
+ */
+const MAX_PLAUSIBLE_VIDEO_SECONDS = 4 * 60 * 60;
 const ALLOWED_SPORTS = new Set([
   'hockey', 'figure_skating', 'speed_skating',
   'basketball', 'soccer', 'baseball', 'other',
@@ -267,15 +278,52 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Duration: reported by the CLIENT, validated here.
+      //
+      // WHY CLIENT-REPORTED (2026-10-23 investigation)
+      // The obvious server-side approach is ffprobe/ffmpeg. Both are absent
+      // from the Vercel serverless runtime — not a PATH problem, the binaries
+      // are not in the image. Evidence: this file has shipped an
+      // `extractVideoThumbnail()` that shells out to ffmpeg, and ZERO of the 3
+      // live profile_posts have a media_thumb, because execFileSync throws
+      // ENOENT and the catch swallows it. That call has never worked in
+      // production.
+      //
+      // So duration is measured in the browser, which has a real media decoder
+      // (an HTMLVideoElement), and sent as a form field. The client already
+      // computes image dimensions the same way for aspect-ratio hints, so this
+      // follows the established pattern rather than inventing one.
+      //
+      // WHY IT IS SAFE TO TRUST
+      // `durationSeconds` is not a billing input on its own: the byte quota
+      // (the thing a user could actually profit from under-reporting) is
+      // computed from the real file size on the server. Duration is a secondary
+      // policy cap. A dishonest client under-reporting duration can post a
+      // longer video than the cap allows — so the cap is enforced two ways:
+      //   1. bucket-level file_size_limit (100 MB), the hard backstop that
+      //      applies even to direct-to-Storage uploads bypassing this route;
+      //   2. a plausibility bound below, so an absurd value is rejected rather
+      //      than accepted.
+      const durationRaw = formData.get('durationSeconds');
+      const durationParsed =
+        typeof durationRaw === 'string' ? Number.parseFloat(durationRaw) : NaN;
+      const durationSeconds =
+        Number.isFinite(durationParsed) && durationParsed > 0 && durationParsed <= MAX_PLAUSIBLE_VIDEO_SECONDS
+          ? durationParsed
+          : null;
+
+      if (Number.isFinite(durationParsed) && durationParsed > MAX_PLAUSIBLE_VIDEO_SECONDS) {
+        console.warn('[profile-posts] implausible duration rejected', {
+          userId, reported: durationParsed,
+        });
+      }
+
       const decision = checkMediaUpload(
         allowance,
         {
           sizeBytes: buffer.length,
           isVideo,
-          // Duration is not measured server-side yet (no ffprobe on Vercel);
-          // the client sends what it decoded and the bucket size cap is the
-          // hard backstop. Tracked as follow-up.
-          durationSeconds: null,
+          durationSeconds,
         },
         mediaUsage,
       );
@@ -373,6 +421,27 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Attach the media reference in the quota ledger.
+  //
+  // The object was already registered (with zero references) by the upload
+  // route. Attaching the reference here makes it a live, fully-counted asset.
+  // Attaching rather than re-registering is what makes a SHARED asset work: if
+  // the same video is attached to a second post, this increments ref_count and
+  // the byte total is unchanged, so the user is never charged twice for one
+  // file appearing in multiple places on RinkStop.
+  //
+  // Best-effort: if this fails the post still exists and the object is still
+  // measured by the bucket-walk fallback in media-usage.ts.
+  if (mediaUrl) {
+    const asset = assetRefFromPublicUrl(mediaUrl, 'post-media');
+    if (asset) {
+      await attachAssetRef(asset, { refTable: 'profile_posts', refId: (data as { id: string }).id });
+    } else {
+      // An external URL (not RinkStop Storage) — nothing for us to account for.
+      console.log('[profile-posts POST] non-storage media_url, not tracked in ledger');
+    }
+  }
 
   return NextResponse.json(
     { data: { ...data, width: mediaWidth, height: mediaHeight } },

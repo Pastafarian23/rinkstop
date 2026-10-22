@@ -7,9 +7,45 @@
 // An allowance that isn't measured isn't enforced. Before this, RinkStop had no
 // way to know how much an account had stored, so no quota could be checked.
 //
+// HOW USAGE IS MEASURED — THE LEDGER, NOT THE BUCKET
+//
+// This module previously walked the Supabase Storage bucket prefix and summed
+// `metadata.contentLength`. That was correct arithmetic but wrong policy: a
+// bucket walk counts every byte ever uploaded, because nothing ever removed an
+// object. DELETE /api/profile-posts/[id] only sets `profile_posts.deleted_at`,
+// so a deleted post's video kept consuming the owner's allowance forever. The
+// owner could delete a post and never recover the quota.
+//
+// The naive fix — delete the Storage object on post delete — breaks the
+// opposite way: if the same object is referenced by another post, a profile
+// cover, or a listing photo, deleting it breaks live content.
+//
+// So accounting is now driven by the `media_assets` / `media_asset_refs`
+// ledger (migration 2026-10-23_media_asset_ledger.sql), which records which
+// objects belong to an account and who still references each one:
+//
+//   • ref_count > 0                  → live, counts fully
+//   • ref_count = 0, in grace window → soft-deleted but recoverable; still
+//                                     counted during the grace period
+//   • ref_count = 0, grace expired   → not counted, eligible for reaping
+//
+// The bucket walk below is retained as FALLBACK ONLY, for the window between
+// deploying this code and completing the ledger backfill, and as a safety net
+// if the ledger is ever empty for a user. It is never summed together with the
+// ledger — double-counting the same bytes would overstate usage and block
+// uploads the user is entitled to.
+//
+// SHARED ASSETS ARE COUNTED ONCE
+// The same video can appear in a social post, a team page, and a player
+// highlight. Because the ledger keys on (bucket, object_path) — one row per
+// stored object regardless of how many rows reference it — a shared asset is
+// counted exactly once. Adding a second reference to an existing asset changes
+// ref_count, never the byte total. This is what prevents charging separately for
+// the same video appearing in multiple parts of RinkStop.
+//
 // SCOPE — WHAT COUNTS TOWARD THE ALLOWANCE
 // Four buckets are counted. Three of them are keyed by the owning Clerk user
-// id directly, so attribution is a prefix walk:
+// id directly:
 //
 //   • post-media/`<userId>`/…           social posts (photos + video)
 //   • profile_covers/`<userId>`/…       profile cover images
@@ -197,6 +233,42 @@ export function pickBetterAllowance(
 }
 
 /**
+ * Measure usage from the ledger.
+ *
+ * Reads `media_counted_assets`, which is the single definition of "counts
+ * against the allowance" (live references only, plus anything still inside its
+ * post-deletion grace window). One row per stored object, so a shared asset
+ * appears once no matter how many posts/rows reference it.
+ *
+ * Returns null when the ledger has no rows for this owner, which tells the
+ * caller to fall back to a bucket walk rather than reporting zero usage and
+ * letting the user exceed their allowance without noticing.
+ */
+async function measureFromLedger(userId: string): Promise<MediaUsageSnapshot | null> {
+  const { data, error } = await supabaseAdmin
+    .from('media_counted_assets')
+    .select('bytes')
+    .eq('owner_user_id', userId);
+
+  if (error) return null;
+
+  let totalBytes = 0;
+  let assetCount = 0;
+  for (const row of data || []) {
+    totalBytes += Number(row?.bytes ?? 0) || 0;
+    assetCount += 1;
+  }
+
+  // Zero rows is indistinguishable from "ledger not backfilled for this user"
+  // at the storage level, so treat an empty result as "no data" and let the
+  // caller fall back. This is the safe direction: the fallback measures the
+  // same objects, so the worst case is a redundant walk.
+  if (assetCount === 0) return null;
+
+  return { totalBytes, assetCount };
+}
+
+/**
  * Resolve a user's tier, then measure their usage against THAT tier's
  * allowance.
  *
@@ -214,23 +286,32 @@ export async function getMediaEntitlementForUser(
     return { usage: { totalBytes: 0, assetCount: 0 }, allowance, negotiated: true };
   }
 
-  let totalBytes = 0;
-  let assetCount = 0;
+  // Primary path: the ledger. Falls back to a bucket walk when the ledger has
+  // nothing for this user (pre-backfill, or a user created after the backfill
+  // whose first upload has not been indexed yet).
+  let usage = await measureFromLedger(userId);
 
-  for (const bucket of USER_KEYED_BUCKETS) {
-    const part = await measureBucket(bucket, `${userId}/`);
-    totalBytes += part.totalBytes;
-    assetCount += part.assetCount;
+  if (!usage) {
+    let totalBytes = 0;
+    let assetCount = 0;
+
+    for (const bucket of USER_KEYED_BUCKETS) {
+      const part = await measureBucket(bucket, `${userId}/`);
+      totalBytes += part.totalBytes;
+      assetCount += part.assetCount;
+    }
+
+    const playerPrefixes = await resolvePlayerPrefixes(userId);
+    for (const playerId of playerPrefixes) {
+      const part = await measureBucket(PLAYER_KEYED_BUCKET, `${playerId}/`);
+      totalBytes += part.totalBytes;
+      assetCount += part.assetCount;
+    }
+
+    usage = { totalBytes, assetCount };
   }
 
-  const playerPrefixes = await resolvePlayerPrefixes(userId);
-  for (const playerId of playerPrefixes) {
-    const part = await measureBucket(PLAYER_KEYED_BUCKET, `${playerId}/`);
-    totalBytes += part.totalBytes;
-    assetCount += part.assetCount;
-  }
-
-  return { usage: { totalBytes, assetCount }, allowance, negotiated: false };
+  return { usage, allowance, negotiated: false };
 }
 
 /**

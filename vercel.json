@@ -44,6 +44,10 @@
     {
       "path": "/api/cron/conversion-snapshot",
       "schedule": "5 5 * * *"
+    },
+    {
+      "path": "/api/cron/media-reaper",
+      "schedule": "17 4 * * *"
     }
   ]
 }

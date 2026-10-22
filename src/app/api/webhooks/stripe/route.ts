@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logReceived, markProcessed, markFailed } from '@/lib/stripe-webhook-log';
 import { canonicalTier, TIER_TO_TRACK } from '@/lib/pricing';
+import { canonicalSubscriptionStatus } from '@/lib/subscription-status';
 
 function getStripe() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -32,16 +33,27 @@ function getSupabase() {
  * An org purchase MUST NOT overwrite a paid personal Passport — they are
  * independent entitlements on the same person.
  */
+/**
+ * Update the tier + subscription identifiers for a Clerk user.
+ *
+ * Track routing: a personal Passport purchase and an organization purchase are
+ * independent entitlements on the same person. An org purchase MUST NOT
+ * overwrite a paid personal Passport — they land in different columns.
+ *
+ * STATUS NORMALIZATION HAPPENS HERE, via canonicalSubscriptionStatus(), at the
+ * single write point, so no call site can bypass it.
+ */
 async function updateUserTier(
   clerkUserId: string,
   tier: string | null,
   subscriptionId: string | null,
   customerId: string | null,
-  status: string,
+  rawStatus: string,
   expiresAtIso: string | null,
   trackHint?: 'personal' | 'organization',
 ) {
   const supabase = getSupabase() as any;
+  const status = canonicalSubscriptionStatus(rawStatus);
   const canonical = canonicalTier(tier);
   const isOrg =
     trackHint === 'organization' ||
@@ -51,6 +63,10 @@ async function updateUserTier(
   if (isOrg) {
     // The org ladder's free rung is 'org_free', not 'free'.
     update.org_tier = canonical === 'free' ? 'org_free' : canonical;
+    // org_subscription_status has no CHECK constraint yet (see migration
+    // 2026-10-23_org_tier_consolidation.sql) but is normalized identically so
+    // the two tracks stay comparable. See OPEN-ITEMS.md for the follow-up to
+    // add the constraint.
     update.org_subscription_status = status;
   } else {
     update.tier = canonical;
@@ -241,6 +257,12 @@ export async function POST(req: NextRequest) {
           const supabase = getSupabase() as any;
           const guestCanonical = canonicalTier(metadata.tier);
           const guestIsOrg = TIER_TO_TRACK[guestCanonical] === 'organization';
+          // Normalize exactly as updateUserTier does. This path bypasses
+          // updateUserTier (it writes before the user has a Clerk identity), so
+          // it needs its own normalization — otherwise a guest purchase that
+          // settles as anything other than 'active' violates the CHECK and the
+          // upsert silently fails, leaving a paying customer with no profile.
+          const guestStatus = canonicalSubscriptionStatus(subscription.status);
           const { error: upsertErr } = await supabase
             .from('profiles')
             .upsert(
@@ -249,11 +271,10 @@ export async function POST(req: NextRequest) {
                 user_id: null,
                 stripe_session_id: session.id,
                 ...(guestIsOrg
-                  ? { org_tier: guestCanonical }
-                  : { tier: guestCanonical }),
+                  ? { org_tier: guestCanonical, org_subscription_status: guestStatus }
+                  : { tier: guestCanonical, subscription_status: guestStatus }),
                 stripe_subscription_id: subscriptionId,
                 stripe_customer_id: customerId,
-                subscription_status: subscription.status === 'active' ? 'active' : subscription.status,
                 tier_expires_at: expiresAt,
                 updated_at: new Date().toISOString(),
               },

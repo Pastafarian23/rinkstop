@@ -5,7 +5,7 @@ import Stripe from 'stripe';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
-import { TierName, TIER_TO_TRACK, MAX_CLAIMS_PER_TIER, canonicalTier } from '@/lib/pricing';
+import { TierName, TIER_TO_TRACK, canonicalTier } from '@/lib/pricing';
 import { tierRank } from '@/lib/tier';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { emitIdentityVerifyRecommended } from '@/lib/notifications/emit';

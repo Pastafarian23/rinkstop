@@ -25,7 +25,7 @@ import {
   getTrackForTier,
   TEAM_LIMIT_PER_TIER,
   PLAYER_CAPACITY_PER_TIER,
-  MAX_CLAIMS_PER_TIER,
+  LISTING_CLAIMS_PER_TIER,
   PRICING_DISPLAY_ORDER,
   type TierName,
 } from '@/lib/pricing';
@@ -206,7 +206,7 @@ describe('organization quotas — enforced, not just advertised', () => {
   });
 
   it('caps claims per tier', () => {
-    expect(MAX_CLAIMS_PER_TIER.org_plus).toBeGreaterThan(0);
-    expect(MAX_CLAIMS_PER_TIER.org_pro).toBe(25);
+    expect(LISTING_CLAIMS_PER_TIER.org_plus).toBeGreaterThan(0);
+    expect(LISTING_CLAIMS_PER_TIER.org_pro).toBe(25);
   });
 });

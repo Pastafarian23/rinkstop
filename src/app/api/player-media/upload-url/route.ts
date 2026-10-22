@@ -22,6 +22,11 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
+import {
+  checkMediaUpload,
+  getMediaAllowance,
+} from '@/lib/media-entitlements';
+import { getMediaEntitlementForUser, pickBetterAllowance } from '@/lib/media-usage';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import {
   checkRateLimit,
@@ -37,6 +42,19 @@ function tierOk(tier: string | null | undefined, orgTier?: string | null): boole
     tierAtLeastSameTrack(tier, 'identity_plus') ||
     tierAtLeastSameTrack(orgTier, 'org_plus')
   );
+}
+
+/**
+ * Whether a player-media upload target path looks like a video.
+ *
+ * Used only to pick which allowance branch to apply (video caps are stricter
+ * than photo caps). The authoritative MIME check happens at upload time via
+ * the bucket's allowed_mime_types allowlist, so a wrong guess here can only
+ * pick the wrong sub-limit — it cannot let an unsupported file through.
+ */
+function isVideoUploadPath(path: string | null | undefined): boolean {
+  if (!path) return false;
+  return /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(path);
 }
 
 function badRequest(error: string, extra: Record<string, unknown> = {}) {
@@ -147,6 +165,69 @@ export async function POST(request: NextRequest) {
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);
+  }
+
+  // UNIFIED MEDIA ALLOWANCE CHECK
+  //
+  // This route previously enforced only a TIER gate ("is this user allowed to
+  // use player media at all?"), never a QUOTA check ("how much have they
+  // already stored?"). That meant the published allowance was not enforced on
+  // the one media feature that stores the largest objects — player highlights
+  // and videos, up to 100 MB each.
+  //
+  // The bypass was not hypothetical: storage.objects has an INSERT policy for
+  // `player-media` scoped to `role: public` that validates player OWNERSHIP but
+  // not SIZE. So a user could also skip this route entirely and PUT straight to
+  // Storage with the anon key, which no application-level check can prevent.
+  // This check therefore raises the cost of ignoring the app; the authoritative
+  // backstop remains the bucket's file_size_limit (100 MB per object).
+  //
+  // Usage is measured against the better of the personal and organization
+  // allowances — the same rule every other media surface uses. A user with an
+  // org plan gets the org allowance, never the sum.
+  const tier = (profile?.tier as string) ?? 'free';
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
+  const { usage: mediaUsage, allowance: mediaAllowance, negotiated } =
+    await getMediaEntitlementForUser(
+      userId,
+      tier,
+      pickBetterAllowance(getMediaAllowance(tier), getMediaAllowance(orgTier)),
+    );
+
+  if (negotiated) {
+    const res = NextResponse.json(
+      { error: 'This account is on negotiated capacity. Contact support@rinkstop.com to add media.' },
+      { status: 403 }
+    );
+    return applyRateLimitHeaders(res, rl);
+  }
+
+  // The client sends the declared byte size. We cannot know the real size before
+  // the upload happens, so this is an admission check rather than a final one —
+  // it stops the common case (uploading past the cap one file at a time) while
+  // the bucket limit stops any single oversized object.
+  // The client declares the byte size up front so the quota can be checked
+  // BEFORE a signed URL is issued. Absent or unparseable means "unknown", in
+  // which case we skip the admission check rather than reject — the bucket's
+  // file_size_limit still caps any single object, and the post-upload ledger
+  // write makes the usage accurate for the next request.
+  const declaredBytes = Number(body?.bytes ?? 0);
+  if (Number.isFinite(declaredBytes) && declaredBytes > 0) {
+    const decision = checkMediaUpload(
+      mediaAllowance,
+      { sizeBytes: declaredBytes, isVideo: isVideoUploadPath(path), durationSeconds: null },
+      mediaUsage,
+    );
+    if (!decision.allowed) {
+      console.warn('[player-media upload-url] media allowance blocked', JSON.stringify({
+        userId, tier, orgTier, code: decision.code, used: mediaUsage,
+      }));
+      const res = NextResponse.json(
+        { error: decision.message, code: decision.code },
+        { status: decision.code === 'video_not_allowed' ? 403 : 413 }
+      );
+      return applyRateLimitHeaders(res, rl);
+    }
   }
 
   // Issue a signed upload URL (60s expiry — enough time to PUT the file)

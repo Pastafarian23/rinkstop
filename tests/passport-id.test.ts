@@ -85,15 +85,74 @@ describe('isValidPassportIdFormat', () => {
     expect(isValidPassportIdFormat('RS1-K7X9P2M4N6Q')).toBe(false);
   });
 
-  it('rejects forbidden characters', () => {
-    expect(isValidPassportIdFormat('RS1-0000000000000000')).toBe(false);
-    expect(isValidPassportIdFormat('RS1-OOOOOOOOOOOOOOOO')).toBe(false);
-    expect(isValidPassportIdFormat('RS1-1IIIIIIIIIIIIIII')).toBe(false);
-  });
-
   it('rejects non-string types', () => {
     expect(isValidPassportIdFormat(123 as unknown as string)).toBe(false);
     expect(isValidPassportIdFormat({} as unknown as string)).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // The confusing-character cases
+  //
+  // This block previously asserted that IDs containing 0, O, 1, I must be
+  // REJECTED. That expectation was wrong, and it was wrong in a way that
+  // mattered: it contradicted both the implementation and production data.
+  //
+  // The implementation deliberately uses two different alphabets:
+  //
+  //   GENERATION  ALPHABET_REFINED — excludes 0, O, 1, I so newly minted IDs
+  //               are unambiguous when read off a printed card.
+  //   VALIDATION  /^[A-Z0-9]{12,32}$/i — deliberately BROADER, accepting the
+  //               full A-Z and 0-9 set.
+  //
+  // The reason for the broader validation alphabet is legacy and seeded rows.
+  // Verified against production on 2026-10-23: the passports table contains
+  // exactly one row, `RS1-DEMOPLAYER01`, which contains a literal 0 and 1. If
+  // validation excluded those characters, that passport could never be looked
+  // up by ID. Generation chooses the readable alphabet; validation must not
+  // second-guess it, because a seeded or migrated row did not go through the
+  // generator.
+  //
+  // Existence is enforced by the passports primary key, not by this regex. The
+  // regex is a sanity check on shape, not a content policy.
+  // -------------------------------------------------------------------------
+
+  it('ACCEPTS the real production passport ID (contains 0 and 1)', () => {
+    // The only passport_id in production as of 2026-10-23. This test is the
+    // regression guard: if the validation alphabet is ever tightened back to
+    // the generation alphabet, this fails immediately instead of silently
+    // breaking every seeded or legacy passport.
+    expect(isValidPassportIdFormat('RS1-DEMOPLAYER01')).toBe(true);
+  });
+
+  it('accepts any well-shaped suffix over the full A-Z0-9 alphabet', () => {
+    // The generation alphabet is a subset of the validation alphabet. Anything
+    // the generator can produce must validate.
+    expect(isValidPassportIdFormat('RS1-0000000000000000')).toBe(true);
+    expect(isValidPassportIdFormat('RS1-OOOOOOOOOOOOOOOO')).toBe(true);
+    expect(isValidPassportIdFormat('RS1-1IIIIIIIIIIIIIII')).toBe(true);
+    expect(isValidPassportIdFormat('RS1-IIIIIIIIIIIIIIII')).toBe(true);
+  });
+
+  it('still rejects genuinely malformed input', () => {
+    // Validation is a shape check. Relaxing the alphabet must not turn the
+    // validator into a no-op.
+    expect(isValidPassportIdFormat('RS1-')).toBe(false);
+    expect(isValidPassportIdFormat('RS1-SHORT')).toBe(false);
+    expect(isValidPassportIdFormat('RS1-HAS-A-DASH-XX')).toBe(false);
+    expect(isValidPassportIdFormat('RS1-HAS UNDERSCORE_1')).toBe(false);
+    expect(isValidPassportIdFormat('RS1-HAS-SPACE 1')).toBe(false);
+    expect(isValidPassportIdFormat('RS1-HAS!BANG')).toBe(false);
+    // Length bound: 12-32 chars after the prefix. 33 chars must be rejected.
+    expect(isValidPassportIdFormat(`RS1-${'A'.repeat(33)}`)).toBe(false);
+    expect(isValidPassportIdFormat(`RS1-${'A'.repeat(12)}`)).toBe(true);
+    expect(isValidPassportIdFormat(`RS1-${'A'.repeat(32)}`)).toBe(true);
+  });
+
+  it('every generated ID validates', () => {
+    // Guards the two alphabets staying compatible in both directions.
+    for (let i = 0; i < 200; i++) {
+      expect(isValidPassportIdFormat(generatePassportId())).toBe(true);
+    }
   });
 });
 
