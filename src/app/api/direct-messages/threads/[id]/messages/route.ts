@@ -26,10 +26,10 @@ export const runtime = 'nodejs';
 
 // Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
 // send direct messages. Hockey Passport ($24.99/yr) is the floor.
-function canDM(tier: string | null | undefined): boolean {
+function canDM(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (
     tierAtLeastSameTrack(tier, 'verified_identity') ||
-    tierAtLeastSameTrack(tier, 'business_listing')
+    tierAtLeastSameTrack(orgTier, 'org_plus')
   );
 }
 
@@ -78,10 +78,10 @@ export async function POST(
   // Tier gate
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!canDM((profile?.tier as string) ?? 'free')) {
+  if (!canDM((profile?.tier as string) ?? 'free', (profile?.org_tier as string) ?? 'org_free')) {
     const res = NextResponse.json(
       { error: 'Direct messaging requires a paid tier (Hockey Passport or higher).', code: 'tier_required' },
       { status: 403 }

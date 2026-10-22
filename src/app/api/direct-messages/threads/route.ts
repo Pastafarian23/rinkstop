@@ -37,10 +37,10 @@ export const runtime = 'nodejs';
 // 'advanced' features (group DMs, attachments) are v2 and will gate at
 // Hockey Passport Plus+ / Business Plus+ separately. For now, basic 1:1 DMs are
 // available to every tier that has spent money.
-function canDM(tier: string | null | undefined): boolean {
+function canDM(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (
     tierAtLeastSameTrack(tier, 'verified_identity') ||
-    tierAtLeastSameTrack(tier, 'business_listing')
+    tierAtLeastSameTrack(orgTier, 'org_plus')
   );
 }
 
@@ -177,10 +177,10 @@ export async function POST(request: NextRequest) {
   // Tier gate on the SENDER
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!canDM((profile?.tier as string) ?? 'free')) {
+  if (!canDM((profile?.tier as string) ?? 'free', (profile?.org_tier as string) ?? 'org_free')) {
     const res = NextResponse.json(
       { error: 'Direct messaging requires a paid tier (Hockey Passport or higher).', code: 'tier_required' },
       { status: 403 }

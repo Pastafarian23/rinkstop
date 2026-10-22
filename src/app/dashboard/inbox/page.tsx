@@ -49,6 +49,7 @@ interface MessageThread {
 async function loadListingInquiries(userId: string) {
   let inquiries: ListingInquiry[] = [];
   let tier = 'free';
+  let orgTier = 'org_free';
   let queryError: string | null = null;
 
   try {
@@ -72,17 +73,20 @@ async function loadListingInquiries(userId: string) {
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('tier')
+      .select('tier, org_tier')
       .eq('user_id', userId)
       .maybeSingle();
     tier = profile?.tier || 'free';
+    orgTier = profile?.org_tier || 'org_free';
   } catch {
     tier = 'free';
+    orgTier = 'org_free';
   }
 
   return {
     inquiries,
     tier,
+    orgTier,
     unreadCount: inquiries.filter((i) => !i.read_at).length,
     queryError,
   };
@@ -327,7 +331,7 @@ export default async function InboxPage() {
           )}
 
           {/* Show upgrade nudge to anyone below Business Plus. tierAtLeast handles legacy aliases. */}
-          {!tierAtLeast(listing.tier, 'business_plus') && (
+          {!tierAtLeast(listing.orgTier, 'org_pro') && (
             <div style={{ background: 'linear-gradient(135deg, rgba(200,16,46,0.12), rgba(255,184,28,0.08))', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 12, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <div>
                 <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', margin: '0 0 0.25rem' }}>

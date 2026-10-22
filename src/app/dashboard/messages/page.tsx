@@ -11,10 +11,10 @@ export const dynamic = 'force-dynamic';
 // send direct messages. Hockey Passport ($24.99/yr) is the personal-track
 // floor; Business Listing ($99/yr) is the business-track floor. Free users
 // see the inbox + receive messages but cannot compose.
-function canDM(tier: string | null | undefined): boolean {
+function canDM(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (
     tierAtLeastSameTrack(tier, 'verified_identity') ||
-    tierAtLeastSameTrack(tier, 'business_listing')
+    tierAtLeastSameTrack(orgTier, 'org_plus')
   );
 }
 
@@ -28,10 +28,11 @@ export default async function MessagesPage() {
   // Fetch profile tier for the tier-gate affordance in the UI.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
   const userTier = (profile?.tier as string) || 'free';
+  const userOrgTier = (profile?.org_tier as string) || 'org_free';
 
   // Initial server-render: load threads + first 5 of each. The client component
   // refreshes on action.
@@ -80,5 +81,5 @@ export default async function MessagesPage() {
     };
   });
 
-  return <MessagesClient userId={userId} initialThreads={initialThreads} canDM={canDM(userTier)} userTier={userTier} />;
+  return <MessagesClient userId={userId} initialThreads={initialThreads} canDM={canDM(userTier, userOrgTier)} userTier={userTier} />;
 }

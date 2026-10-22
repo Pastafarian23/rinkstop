@@ -2,7 +2,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUserId, getUserTier } from '@/lib/connections';
+import { requireUserId, getUserTier, getUserOrgTier } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email';
@@ -167,8 +167,9 @@ export async function POST(
   // Connection requests are gated at /api/connections, but we re-check here
   // so users who somehow got into the thread without proper tier are blocked.
   const tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
   // Personal: Hockey Passport Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
-  const canSendMessage = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
+  const canSendMessage = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canSendMessage) {
     return NextResponse.json(
       { error: 'Hockey Passport Plus or Business Plus membership required to send messages.', currentTier: tier },

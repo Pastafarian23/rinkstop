@@ -43,10 +43,10 @@ const ALLOWED_CATEGORIES = new Set([
   'other',
 ]);
 
-function tierOk(tier: string | null | undefined): boolean {
+function tierOk(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (
     tierAtLeastSameTrack(tier, 'identity_plus') ||
-    tierAtLeastSameTrack(tier, 'business_listing')
+    tierAtLeastSameTrack(orgTier, 'org_plus')
   );
 }
 
@@ -114,10 +114,10 @@ export async function POST(request: NextRequest) {
   // Tier + account-type + parental-link gates
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!tierOk((profile?.tier as string) ?? 'free')) {
+  if (!tierOk((profile?.tier as string) ?? 'free', (profile?.org_tier as string) ?? 'org_free')) {
     const res = NextResponse.json(
       { error: 'Adding achievements requires Hockey Passport Plus or higher.' },
       { status: 403 }

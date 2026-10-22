@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   // mark the wizard complete (they cannot see it).
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles')
-    .select('tier, family_setup_completed_at')
+    .select('tier, org_tier, family_setup_completed_at')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -80,9 +80,10 @@ export async function POST(request: NextRequest) {
   }
 
   const tier = (profile?.tier as string) ?? 'free';
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
   const tierOk =
     tierAtLeastSameTrack(tier, 'identity_plus') ||
-    tierAtLeastSameTrack(tier, 'business_listing');
+    tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!tierOk) {
     const res = NextResponse.json(
       { error: 'Family Setup Wizard requires Hockey Passport Plus or higher.' },

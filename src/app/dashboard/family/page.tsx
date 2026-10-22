@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
-import { getUserTier } from '@/lib/connections';
+import { getUserTier, getUserOrgTier } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import FamilySearch from '@/components/family/FamilySearch';
@@ -25,13 +25,14 @@ export default async function FamilyPage() {
   if (!userId) redirect('/login');
 
   const tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
 
   // Family Hub is part of the Hockey Passport Plus plan (and legacy pro/roster_plus).
   // The business track has its own equivalents (business_pro+ = paid business tier with multi-listing).
   // tierAtLeast handles both new and legacy tier names.
   const canAccessFamily =
     tierAtLeastSameTrack(tier, 'identity_plus') ||
-    tierAtLeastSameTrack(tier, 'business_listing');
+    tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canAccessFamily) {
     redirect('/pricing');
   }

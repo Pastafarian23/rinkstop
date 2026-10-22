@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
-import { getUserTier } from '@/lib/connections';
+import { getUserTier, getUserOrgTier } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 
 export const dynamic = 'force-dynamic';
@@ -120,9 +120,10 @@ export default async function PlayerAnalyticsPage({
 
   // Tier gate: Hockey Passport Plus+ OR Business Listing+
   const tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
   if (
     !tierAtLeastSameTrack(tier, 'identity_plus') &&
-    !tierAtLeastSameTrack(tier, 'business_listing')
+    !tierAtLeastSameTrack(orgTier, 'org_plus')
   ) {
     redirect('/pricing');
   }

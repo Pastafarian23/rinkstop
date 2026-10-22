@@ -18,7 +18,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getUserTier } from '@/lib/connections';
+import { getUserTier, getUserOrgTier } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { OWNER_EMAILS } from '@/lib/admin-auth';
 import IdentityClient from './IdentityClient';
@@ -44,6 +44,7 @@ export default async function IdentityPage({
   const primaryEmail = userEmail;
   let effectiveUserId = userId;
   let tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
   if (OWNER_EMAILS.has(primaryEmail)) {
     const { data: byEmail } = await supabaseAdmin
       .from('profiles')
@@ -70,7 +71,7 @@ export default async function IdentityPage({
   // /api/identity/verify/start for paid users (kept for parity with bundled
   // verification in subscription tiers).
   const canVerify = true;
-  const verifyEndpoint = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(tier, 'business_listing')
+  const verifyEndpoint = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(orgTier, 'org_plus')
     ? '/api/identity/verify/start'
     : '/api/verification/start-free';
 

@@ -2,7 +2,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUserId, getUserTier, normalizePair, getConnectionBetween } from '@/lib/connections';
+import { requireUserId, getUserTier, getUserOrgTier, normalizePair, getConnectionBetween } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
@@ -137,8 +137,9 @@ export async function POST(request: NextRequest) {
   // Tier check: Hockey Passport Plus (personal) or Business Plus (business) required to start DMs.
   // Per privilege matrix, DMs are gated to ensure quality conversations.
   const tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
   // Personal: Hockey Passport Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
-  const canDM = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
+  const canDM = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canDM) {
     return NextResponse.json(
       { error: 'Hockey Passport Plus or Business Plus membership required to start conversations.', currentTier: tier },
