@@ -144,7 +144,44 @@ async function processMediaFile(file: File): Promise<PendingMedia> {
   if (isVideo && file.size > maxVideo) throw new Error('Video too large. Max 100 MB.');
   if (!isVideo && file.size > maxImage) throw new Error('Image too large. Max 10 MB.');
   const previewUrl = URL.createObjectURL(file);
+  if (isVideo) {
+    // Capture the first real frame so the preview shows the video's poster
+    // instead of a black 0:00 player. A <video> with no currentTime and no
+    // poster renders as an empty black box on mobile until the user hits
+    // play, which reads as "the preview is broken".
+    await seekVideoPreview(previewUrl).catch(() => { /* preview-only */ });
+  }
   return { file, previewUrl, isVideo };
+}
+
+/**
+ * Load enough of a video to decode its first frame, then park the playhead
+ * at ~0.1s so the poster frame is visible. Resolves even if seeking fails —
+ * a broken poster must never block the upload itself.
+ */
+function seekVideoPreview(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      video.removeAttribute('src');
+      video.load();
+      resolve();
+    };
+    const timer = setTimeout(finish, 4000);
+    video.preload = 'auto';
+    video.muted = true;
+    video.playsInline = true;
+    video.onloadeddata = () => {
+      try { video.currentTime = Math.min(0.1, (video.duration || 1) / 2); } catch { finish(); return; }
+      video.onseeked = finish;
+    };
+    video.onerror = finish;
+    video.src = url;
+  });
 }
 
 // ─── Main component ────────────────────────────────────────────────────────────
@@ -795,8 +832,21 @@ export default function PostComposer() {
                 {mediaStage === 'ready' && media && (
                   <div className={styles.imagePreview}>
                     {media.isVideo ? (
-                      <video src={media.previewUrl} controls playsInline className={styles.imagePreviewImg}
-                        style={{ aspectRatio: '16/9', width: '100%' }} />
+                      <video
+                        src={media.previewUrl}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        // Start the preview already parked on a frame so the
+                        // player shows the video's poster, not a black box.
+                        ref={(el) => {
+                          if (el && el.currentTime === 0) {
+                            try { el.currentTime = 0.1; } catch { /* not seekable yet */ }
+                          }
+                        }}
+                        className={styles.imagePreviewImg}
+                        style={{ aspectRatio: '16/9', width: '100%' }}
+                      />
                     ) : (
                       <img src={media.previewUrl} alt="Preview" className={styles.imagePreviewImg} />
                     )}

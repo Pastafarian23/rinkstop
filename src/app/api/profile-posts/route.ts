@@ -237,7 +237,21 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const uploaded = await uploadFile(buffer, mimeType, userId, isVideo);
+      // Wrap so a storage-layer failure returns the real reason instead of
+      // a bare 500 the client renders as "Failed (500)". Arnel hit exactly
+      // this on 2026-10-22: the post-media bucket rejected video/mp4 and the
+      // UI showed only "Failed (500)" with no way to diagnose it.
+      let uploaded;
+      try {
+        uploaded = await uploadFile(buffer, mimeType, userId, isVideo);
+      } catch (uploadErr) {
+        const msg = uploadErr instanceof Error ? uploadErr.message : 'Upload failed';
+        console.error('[profile-posts POST] media upload failed:', msg, { mimeType, bytes: buffer.length });
+        return NextResponse.json(
+          { error: `Media upload failed: ${msg}` },
+          { status: 500 },
+        );
+      }
       mediaUrl = uploaded.url;
       mediaThumb = uploaded.thumb_base64;
       mediaWidth = uploaded.width;
