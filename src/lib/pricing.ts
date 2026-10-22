@@ -311,7 +311,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     // evaluated at module load, so calling formatTierPrice() here would hit
     // the temporal dead zone on TIERS itself and crash the pricing page.
     // Keep in sync with `priceUsd` above.
-    footnote: 'Starting at $1,999/year — pricing scales with league or federation size.',
+    footnote: 'Custom pricing — scoped to league or federation size, with onboarding and a dedicated success manager.',
   },
 };
 

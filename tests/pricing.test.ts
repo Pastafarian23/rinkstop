@@ -135,7 +135,10 @@ describe('pricing — module loads without a temporal-dead-zone crash', () => {
     // constructed -> TDZ ReferenceError -> the entire /pricing page 500s.
     // Importing the module in this test file would throw at import time,
     // failing the whole suite loudly.
-    expect(TIERS.org_enterprise.footnote).toContain('$1,999');
+    expect(TIERS.org_enterprise.footnote).toBeTruthy();
+    // Organization Enterprise is custom-priced, so the footnote must not
+    // quote a dollar figure that no longer exists in Stripe.
+    expect(TIERS.org_enterprise.footnote).not.toMatch(/\$[\d,]+/);
     expect(TIERS.org_pro.footnote).toBeTruthy();
   });
 });

@@ -7,7 +7,7 @@
 // sha256-hashed, plaintext returned once). But /api/v1/org/* never called any
 // verification — the route header comments documented `x-api-key` auth while
 // the handlers only checked `is_published`. So the feature was advertised on
-// a $999 plan and enforced nowhere.
+// a paid org plan and enforced nowhere.
 //
 // This module is the single place that turns a presented key into an
 // authorization decision. Every /api/v1 route must call it.
