@@ -3,7 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
-import { getUserTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
+import { getUserTier, getUserOrgTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
@@ -145,21 +145,27 @@ export async function POST(request: NextRequest) {
     const isParentManagedClaim = typeof reason === 'string' && reason.startsWith('parent_managed:');
     if (!isParentManagedClaim) {
       const tier = await getUserTier(userId);
-      const maxClaims = getMaxClaimsForTier(tier);
+      const orgTier = await getUserOrgTier(userId);
+      // Claims are capped by the BEST entitlement across both tracks — a
+      // person with a personal Passport AND an org plan uses the larger cap.
+      const maxClaims = Math.max(
+        getMaxClaimsForTier(tier),
+        getMaxClaimsForTier(orgTier),
+      );
       if (maxClaims !== Infinity && maxClaims > 0) {
         const currentCount = await getUserApprovedClaimCount(userId);
         if (currentCount >= maxClaims) {
-          // Pick the next tier up within the same track. For simplicity we
-          // use business_plus as the universal upgrade target for any tier
-          // that's hit the cap — it covers up to 25 claims which is the
-          // most common "I need more claims" path. Federation (custom) is
-          // shown in the copy but the button goes to pricing to compare.
+          // Recommend the next rung of the ORGANIZATION ladder. org_pro
+          // covers up to 25 claims, which is the most common "I need more
+          // claims" path. Enterprise (custom) is mentioned in the copy but
+          // the button goes to pricing to compare.
+          const recommendedTier = 'org_pro';
           return NextResponse.json(
             {
-              error: `You've reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Business Plus for up to 25 claims, or contact sales for Federation custom volume.`,
+              error: `You've reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Organization Pro for up to 25 claims, or contact sales for Enterprise custom volume.`,
               reason: 'at_cap',
-              checkoutUrl: buildCheckoutUrl('business_plus'),
-              tier: 'business_plus',
+              checkoutUrl: buildCheckoutUrl(recommendedTier),
+              tier: recommendedTier,
             },
             { status: 403 }
           );

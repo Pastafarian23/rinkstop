@@ -168,6 +168,11 @@ export async function GET(request: NextRequest) {
       return {
         ...d,
         claimed_by_tier: claim?.tier || null,
+        // 2026-10-22: the organization track lives in a separate column
+        // (profiles.org_tier). Expose it so the directory can judge
+        // verification/featured state from the effective entitlement
+        // (best of personal and org) rather than the personal column only.
+        claimed_by_org_tier: claim?.org_tier || null,
         claimed_by_user_id: claim?.user_id || null,
       };
     });

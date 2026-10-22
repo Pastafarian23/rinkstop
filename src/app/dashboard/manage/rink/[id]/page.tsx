@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isStampsEnabled } from '@/lib/passport';
 import { isIdentityVerified } from '@/lib/identity-verified';
+import { getUserOrgTier } from '@/lib/connections';
 import EntityEditForm from '../../EntityEditForm';
 import { RinkQrCard } from './rink-qr-card';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
@@ -76,10 +77,10 @@ export default async function ManageRinkPage({ params }: PageProps) {
   // pointing unverified owners to the free verification path.
   const ownerVerified = await isIdentityVerified(userId).catch(() => false);
 
-  // Phase 2: if the user is on an identity track (not organization), show an
-  // upgrade prompt pointing them to the organization pricing track. Org plan
-  // users (club_starter+) already have rink management.
-  const needsOrgPlan = !['club_starter', 'club_pro', 'club_elite', 'league', 'federation'].includes(userTier);
+  // Phase 2 (2026-10-22): rink management lives on the ORGANIZATION track.
+  // org_free may claim and manage one rink; paid rungs unlock the rest.
+  const orgTier = await getUserOrgTier(userId);
+  const needsOrgPlan = orgTier === 'org_free';
 
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

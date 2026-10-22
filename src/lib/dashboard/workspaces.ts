@@ -1,10 +1,16 @@
 /**
  * Workspace registry — single source of truth for the /dashboard hub.
  *
- * Three user-facing workspaces per Arnel's 2026-07-02 directive:
+ * User-facing workspaces per Arnel's 2026-07-02 directive:
  * - Personal (player/parent/scout/fan + every verified identity)
  * - Organization (coach/team_admin/referee/league_admin)
  * - Business (rink_operator/business)
+ *
+ * The Business workspace is a separate UI SURFACE (listings/leads/reviews for
+ * rink operators and commercial businesses), but it is no longer a separate
+ * TIER TRACK — business listings fold into the organization ladder
+ * (business_listing → org_plus, business_plus → org_pro). So the Business
+ * workspace's tier gate is an ORGANIZATION-tier gate.
  *
  * Admin lives on /admin/* and is NOT mounted under /dashboard.
  *
@@ -18,6 +24,8 @@
  * - minTier: minimum tier required to USE the workspace (gates
  *   management features inside, but the workspace card is always
  *   visible per Arnel's rule "never hide locked features")
+ * - tierTrack: which tier column the minTier is read from —
+ *   'personal' (profiles.tier) or 'organization' (profiles.org_tier)
  * - subpages: the existing /dashboard/* subpages that belong here
  *   with their min-tier and gated flag
  */
@@ -35,6 +43,12 @@ export interface WorkspaceSubpage {
   minTier: TierName | null;
   /** Subtitle shown under the label */
   description?: string;
+  /**
+   * Which tier column minTier is compared against. Inherits the parent
+   * workspace's track when omitted (Personal subpages = personal track,
+   * Organization/Business subpages = organization track).
+   */
+  tierTrack?: 'personal' | 'organization';
 }
 
 export interface WorkspaceDef {
@@ -46,6 +60,8 @@ export interface WorkspaceDef {
   requiredAccountTypes: string[];
   /** Minimum tier required to USE management features (null = no gate) */
   minTier: TierName | null;
+  /** Which tier column minTier is compared against. */
+  tierTrack: 'personal' | 'organization';
   /** Default CTA target — where the "Open" button goes */
   primaryHref: string;
   /** Subpages that belong to this workspace */
@@ -60,6 +76,7 @@ export const WORKSPACES: WorkspaceDef[] = [
     icon: '👤',
     requiredAccountTypes: [], // every user has Personal
     minTier: null,
+    tierTrack: 'personal',
     primaryHref: '/dashboard/profile',
     subpages: [
       { href: '/dashboard/inbox',         label: 'Inbox',              emoji: '✉️', minTier: null,                       description: 'Your messages and connection requests' },
@@ -82,15 +99,16 @@ export const WORKSPACES: WorkspaceDef[] = [
     description: 'Teams, players, coaches, officials, registrations, finance.',
     icon: '🏒',
     requiredAccountTypes: ['coach', 'team_admin', 'referee', 'league_admin'],
-    minTier: 'club_starter',
+    minTier: 'org_free',
+    tierTrack: 'organization',
     primaryHref: '/dashboard/team',
     subpages: [
-      { href: '/dashboard/team',          label: 'My Teams',           emoji: '🏒', minTier: 'club_starter',              description: 'Teams you manage' },
-      { href: '/dashboard/team/new',      label: 'Create Team',        emoji: '➕', minTier: 'club_starter',              description: 'Start a new team workspace' },
-      { href: '/dashboard/coach-feed',    label: 'Coach Feed',         emoji: '📰', minTier: 'club_starter',              description: 'Posts and updates from coaches' },
-      { href: '/dashboard/plans',         label: 'Practice Plans',     emoji: '📝', minTier: 'club_pro',                  description: 'Drills, practice plans, sharing' },
-      { href: '/dashboard/schedule',      label: 'Schedule',           emoji: '📅', minTier: 'club_starter',              description: 'Team schedule and game calendar' },
-      { href: '/dashboard/referee/games', label: 'Referee Games',      emoji: '🟥', minTier: 'club_starter',              description: 'Games you officiate' },
+      { href: '/dashboard/team',          label: 'My Teams',           emoji: '🏒', minTier: 'org_free',                 description: 'Teams you manage' },
+      { href: '/dashboard/team/new',      label: 'Create Team',        emoji: '➕', minTier: 'org_free',                 description: 'Start a new team workspace' },
+      { href: '/dashboard/coach-feed',    label: 'Coach Feed',         emoji: '📰', minTier: 'org_free',                 description: 'Posts and updates from coaches' },
+      { href: '/dashboard/plans',         label: 'Practice Plans',     emoji: '📝', minTier: 'org_plus',                 description: 'Drills, practice plans, sharing' },
+      { href: '/dashboard/schedule',      label: 'Schedule',           emoji: '📅', minTier: 'org_free',                 description: 'Team schedule and game calendar' },
+      { href: '/dashboard/referee/games', label: 'Referee Games',      emoji: '🟥', minTier: 'org_free',                 description: 'Games you officiate' },
     ],
   },
   {
@@ -99,12 +117,13 @@ export const WORKSPACES: WorkspaceDef[] = [
     description: 'Listings, leads, reviews, bookings for your rink or business.',
     icon: '🏟️',
     requiredAccountTypes: ['rink_operator', 'business'],
-    minTier: 'business_listing',
+    minTier: 'org_plus',
+    tierTrack: 'organization',
     primaryHref: '/dashboard/listings',
     subpages: [
-      { href: '/dashboard/listings',      label: 'My Listings',        emoji: '📋', minTier: 'business_listing',           description: 'Your rink or business listings' },
-      { href: '/dashboard/leads',         label: 'Leads',              emoji: '🎯', minTier: 'business_listing',           description: 'Customer inquiries and lead capture' },
-      { href: '/dashboard/reviews',       label: 'Reviews',            emoji: '⭐', minTier: 'business_listing',           description: 'Customer reviews and responses' },
+      { href: '/dashboard/listings',      label: 'My Listings',        emoji: '📋', minTier: 'org_plus',                 description: 'Your rink or business listings' },
+      { href: '/dashboard/leads',         label: 'Leads',              emoji: '🎯', minTier: 'org_plus',                 description: 'Customer inquiries and lead capture' },
+      { href: '/dashboard/reviews',       label: 'Reviews',            emoji: '⭐', minTier: 'org_plus',                 description: 'Customer reviews and responses' },
     ],
   },
 ];
@@ -119,6 +138,9 @@ export const WORKSPACES: WorkspaceDef[] = [
  *
  * The card is always VISIBLE per Arnel's "never hide locked features" rule.
  * The 🔒 + opacity + upgrade CTA handle the locked state.
+ *
+ * `userTier` is the PERSONAL tier; `userOrgTier` is the organization tier.
+ * Each workspace's gate is compared against the track it declares.
  */
 export interface WorkspaceAccess {
   workspace: WorkspaceDef;
@@ -131,14 +153,19 @@ export function getWorkspaceAccess(
   accountTypes: string[],
   userTier: TierName | string | null,
   tierAtLeastFn: (actual: string, min: string) => boolean,
+  userOrgTier: TierName | string | null = null,
 ): WorkspaceAccess[] {
   return WORKSPACES.map((ws) => {
     const unlocked =
       ws.requiredAccountTypes.length === 0 ||
       ws.requiredAccountTypes.some((t) => accountTypes.includes(t));
+    const effectiveTier =
+      ws.tierTrack === 'organization'
+        ? (userOrgTier || 'org_free')
+        : (userTier || 'free');
     const fullyAvailable = unlocked && (
       ws.minTier === null ||
-      tierAtLeastFn(userTier || 'free', ws.minTier)
+      tierAtLeastFn(effectiveTier, ws.minTier)
     );
     return {
       workspace: ws,
@@ -156,13 +183,11 @@ export function tierDisplayName(tier: TierName | string | null | undefined): str
     free: 'Free',
     verified_identity: 'Hockey Passport',
     identity_plus: 'Hockey Passport Plus',
-    club_starter: 'Club Starter',
-    club_pro: 'Club Pro',
-    club_elite: 'Club Elite',
-    league: 'League',
-    federation: 'Federation',
-    business_listing: 'Business Listing',
-    business_plus: 'Business Plus',
+    org_free: 'Organization Free',
+    org_plus: 'Organization Plus',
+    org_pro: 'Organization Pro',
+    org_elite: 'Organization Elite',
+    org_enterprise: 'Organization Enterprise',
   };
   return map[tier] || tier;
 }

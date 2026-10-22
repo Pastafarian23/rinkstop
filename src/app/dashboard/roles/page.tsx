@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
-import { getUserTier } from '@/lib/connections';
+import { getUserTier, getUserOrgTier } from '@/lib/connections';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import LinkedRecordsManager from '@/components/LinkedRecordsManager';
 
@@ -43,6 +43,9 @@ export default async function RolesPage() {
   if (!session.userId) redirect('/login');
 
   const tier = userId ? await getUserTier(userId) : 'free';
+  // Organization track entitlement — a user may hold an org plan while their
+  // personal tier is still 'free'. The adders gate on either track.
+  const orgTier = userId ? await getUserOrgTier(userId) : 'org_free';
 
   // Fetch the user's managed profiles (server-side, then hydrate).
   // Same shape as /api/profiles/managed (which we use client-side to
@@ -167,7 +170,11 @@ export default async function RolesPage() {
             Player records you own, teams you run, leagues you admin. These show as Connected Profiles on your public page.
           </p>
         </header>
-        <LinkedRecordsManager initialManaged={initialManaged} tier={tier} />
+        <LinkedRecordsManager
+          initialManaged={initialManaged}
+          tier={tier}
+          orgTier={orgTier}
+        />
       </section>
 
       <footer style={{ paddingTop: '0.5rem' }}>

@@ -363,9 +363,9 @@ export function parseClaimIntentForClaims(
   const entity = (sp.entity ?? '').toLowerCase();
   // Match the same entity set as src/app/sign-up/ClaimIntentCard.tsx
   const ENTITY_TO_TIER: Record<string, TierName> = {
-    rink: 'business_listing',
-    team: 'club_starter',
-    league: 'club_starter',
+    rink: 'org_plus',
+    team: 'org_plus',
+    league: 'org_plus',
     player: 'verified_identity',
   };
   if (!ENTITY_TO_TIER[entity]) return null;

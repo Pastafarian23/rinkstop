@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import ClaimThisListing, { type ClaimEntityType } from './ClaimThisListing';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getUserTier, getUserApprovedClaimCount, getMaxClaimsForTier } from '@/lib/connections';
+import { getUserTier, getUserOrgTier, getUserApprovedClaimCount, getMaxClaimsForTier } from '@/lib/connections';
 
 /**
  * Server wrapper for the "Claim this listing" CTA.
@@ -144,6 +144,7 @@ export default async function ClaimThisListingMount({
   }
 
   const tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
 
   // === Step 2b: free tier — check if they've used their 1 free claim ===
   if (tier === 'free') {
@@ -190,14 +191,15 @@ export default async function ClaimThisListingMount({
     );
   }
 
-  const max = getMaxClaimsForTier(tier);
+  // Cap uses the BEST entitlement across both tracks (personal + org).
+  const max = Math.max(getMaxClaimsForTier(tier), getMaxClaimsForTier(orgTier));
   if (approvedCount >= max) {
     return (
       <ClaimThisListing
         entityType={entityType}
         entityId={entityId}
         entityName={displayName}
-state={{ kind: 'at_cap', tier, maxClaims: max === Infinity ? -1 : max, recommendedTier: tier === 'identity_plus' ? 'identity_plus' : tier === 'federation' ? 'federation' : 'business_plus' }}
+state={{ kind: 'at_cap', tier, maxClaims: max === Infinity ? -1 : max, recommendedTier: max === Infinity ? undefined : 'org_pro' }}
       />
     );
   }

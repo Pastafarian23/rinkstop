@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { meetsTierGate } from '@/lib/tier-gate';
 
 interface DailyPoint {
   date: string;
@@ -22,16 +23,23 @@ interface DailyPoint {
 interface AnalyticsCardProps {
   listingId: string;
   userTier: string;
+  /** Organization-track tier. Promotions/analytics are Organization Pro features. */
+  userOrgTier?: string;
 }
 
-export default function AnalyticsCard({ listingId, userTier }: AnalyticsCardProps) {
+export default function AnalyticsCard({ listingId, userTier, userOrgTier = 'org_free' }: AnalyticsCardProps) {
   const [summary, setSummary] = useState<any | null>(null);
   const [daily, setDaily] = useState<DailyPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const tierRank: Record<string, number> = { free: 0, business_listing: 1, business_plus: 2 };
-  const hasPlus = (tierRank[userTier] ?? 0) >= 2;
+  // 2026-10-22: the old check was a LOCAL rank table
+  // `{ free: 0, business_listing: 1, business_plus: 2 }` applied to
+  // `profiles.tier` only. After the consolidation those names canonicalize
+  // to organization-track tiers that live in `profiles.org_tier`, so the
+  // lookup always returned 0 and the card was permanently locked. Use the
+  // canonical gate helper against BOTH columns.
+  const hasPlus = meetsTierGate(userTier, userOrgTier, null, 'org_pro');
 
   useEffect(() => {
     if (!hasPlus) { setLoading(false); return; }

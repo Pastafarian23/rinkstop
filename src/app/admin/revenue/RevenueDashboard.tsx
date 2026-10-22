@@ -25,24 +25,20 @@ interface Props {
 const TIER_COLORS: Record<string, string> = {
   verified_identity: 'text-amber-300',
   identity_plus: 'text-amber-400',
-  club_starter: 'text-amber-400',
-  club_pro: 'text-amber-300',
-  club_elite: 'text-amber-200',
-  league: 'text-rose-300',
-  business_listing: 'text-teal-400',
-  business_plus: 'text-teal-300',
+  org_plus: 'text-amber-400',
+  org_pro: 'text-amber-300',
+  org_elite: 'text-amber-200',
+  org_enterprise: 'text-rose-300',
   other: 'text-slate-500',
 };
 
 const TIER_BG: Record<string, string> = {
   verified_identity: 'bg-amber-400',
   identity_plus: 'bg-amber-500',
-  club_starter: 'bg-amber-500',
-  club_pro: 'bg-amber-400',
-  club_elite: 'bg-amber-300',
-  league: 'bg-rose-400',
-  business_listing: 'bg-teal-500',
-  business_plus: 'bg-teal-400',
+  org_plus: 'bg-amber-500',
+  org_pro: 'bg-amber-400',
+  org_elite: 'bg-amber-300',
+  org_enterprise: 'bg-rose-400',
   other: 'bg-slate-800',
 };
 
@@ -122,7 +118,7 @@ export default function RevenueDashboard({ initial }: Props) {
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 mb-6">
         <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-4">Subscribers by Tier</h3>
         <div className="space-y-3">
-          {(['verified_identity', 'identity_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'business_listing', 'business_plus', 'other'] as const).map((tier) => {
+          {(['verified_identity', 'identity_plus', 'org_plus', 'org_pro', 'org_elite', 'org_enterprise', 'other'] as const).map((tier) => {
             const count = data.tierCounts[tier] || 0;
             const max = Math.max(...Object.values(data.tierCounts), 1);
             const pct = (count / max) * 100;

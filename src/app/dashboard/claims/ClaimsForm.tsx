@@ -381,11 +381,11 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
           )}
           {atCap && (
             <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
-              {tier === 'business_plus' || tier === 'federation' ? `You've reached the ${maxClaims}-claim limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
+              {tier === 'org_pro' || tier === 'org_enterprise' ? `You've reached the ${maxClaims}-claim limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
               <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                {tier === 'business_plus' || tier === 'federation' ? 'Contact Sales' : 'Upgrade'}
+                {tier === 'org_enterprise' ? 'Contact Sales' : 'Upgrade'}
               </Link>{' '}
-              {tier === 'business_plus' || tier === 'federation' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact sales for Federation.'}
+              {tier === 'org_enterprise' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact sales for Enterprise.'}
             </p>
           )}
         </div>
@@ -403,7 +403,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             Free claim used — upgrade for more
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            You&apos;ve used your 1 free claim. Hockey Passport is {formatTierPrice('verified_identity')}/year (unlimited roles under one identity), Hockey Passport Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
+            You&apos;ve used your 1 free claim. Hockey Passport is {formatTierPrice('verified_identity')}/year (unlimited roles under one identity), Hockey Passport Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Organization Plus is {formatTierPrice('org_plus')}/year (1 listing + team management), Organization Pro is {formatTierPrice('org_pro')}/year (multiple listings + featured placement + reporting), and Organization Enterprise is custom for larger organizations.
           </p>
           <Link
             href={`/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}
@@ -434,10 +434,10 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             Claim limit reached
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            {tier === 'business_plus' || tier === 'federation' ? `You've used all ${maxClaims} claim slots. Contact sales for Federation custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Federation.`}
+            {tier === 'org_enterprise' ? `You've used all ${maxClaims} claim slots. Contact sales for Enterprise custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Enterprise.`}
           </p>
           <Link
-            href={tier === 'business_plus' || tier === 'federation'
+            href={tier === 'org_enterprise'
               ? `/partner?source=claims-cap${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`
               : `/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}
             style={{
@@ -452,7 +452,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
               letterSpacing: '0.02em',
             }}
           >
-            {tier === 'business_plus' || tier === 'federation' ? 'Contact Sales →' : 'Upgrade →'}
+            {tier === 'org_enterprise' ? 'Contact Sales →' : 'Upgrade →'}
           </Link>
         </div>
       ) : (

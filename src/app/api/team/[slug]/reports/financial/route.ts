@@ -18,7 +18,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId } from '@/lib/connections';
-import { tierAtLeastSameTrack } from '@/lib/tier-gate';
+import { tierAtLeast } from '@/lib/tier';
 import {
   checkRateLimit,
   getClientIP,
@@ -29,8 +29,12 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-function tierOk(tier: string | null | undefined): boolean {
-  return tierAtLeastSameTrack(tier, 'club_pro');
+/**
+ * Financial reporting is an ORGANIZATION feature — it is gated on the team
+ * owner's organization tier (profiles.org_tier), not their personal tier.
+ */
+function tierOk(orgTier: string | null | undefined): boolean {
+  return tierAtLeast(orgTier, 'org_pro');
 }
 
 export async function GET(
@@ -98,12 +102,12 @@ export async function GET(
   }
   const { data: ownerProfile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('org_tier')
     .eq('user_id', teamRow.owner_user_id)
     .maybeSingle();
-  if (!tierOk((ownerProfile?.tier as string) ?? 'free')) {
+  if (!tierOk((ownerProfile?.org_tier as string) ?? 'org_free')) {
     const res = NextResponse.json(
-      { error: 'Financial reporting requires Club Pro or higher.', code: 'tier_required' },
+      { error: 'Financial reporting requires Organization Pro or higher.', code: 'tier_required' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);

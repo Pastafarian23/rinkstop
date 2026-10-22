@@ -47,7 +47,7 @@ const CLUB_BULLETS = [
 
 export default function ToolUpsell({ variant = 'passport', toolSlug }: ToolUpsellProps) {
   const isClub = variant === 'club';
-  const plan = isClub ? 'club_starter' : 'verified_identity';
+  const plan = isClub ? 'org_plus' : 'verified_identity';
   const heading = isClub ? 'Run a club?' : 'Save your results.';
   const subhead = isClub
     ? 'Claim your club page and put every team, player, and schedule in one place families can find.'

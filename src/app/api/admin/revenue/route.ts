@@ -12,15 +12,21 @@ const stripe = process.env.STRIPE_SECRET_KEY
 // names (roster, roster_plus, pro, premium, business_starter, business_pro,
 // business_premium, enterprise) are no longer referenced anywhere — see
 // supabase/migrations/2026-07-02_remove_old_tier_names.sql.
+// 2026-10-22 tier consolidation: organization plans now live under
+// STRIPE_PRICE_ORG_* env names. The legacy CLUB_*/BUSINESS_* env vars are
+// still read so an un-migrated .env keeps working during rollout.
 const PRICE_TO_TIER: Record<string, string> = {
   [process.env.STRIPE_PRICE_VERIFIED_IDENTITY || '']: 'verified_identity',
   [process.env.STRIPE_PRICE_IDENTITY_PLUS || '']: 'identity_plus',
-  [process.env.STRIPE_PRICE_CLUB_STARTER || '']: 'club_starter',
-  [process.env.STRIPE_PRICE_CLUB_PRO || '']: 'club_pro',
-  [process.env.STRIPE_PRICE_CLUB_ELITE || '']: 'club_elite',
-  [process.env.STRIPE_PRICE_LEAGUE || '']: 'league',
-  [process.env.STRIPE_PRICE_BUSINESS_LISTING || '']: 'business_listing',
-  [process.env.STRIPE_PRICE_BUSINESS_PLUS || '']: 'business_plus',
+  [process.env.STRIPE_PRICE_ORG_PLUS || '']: 'org_plus',
+  [process.env.STRIPE_PRICE_ORG_PRO || '']: 'org_pro',
+  [process.env.STRIPE_PRICE_ORG_ELITE || '']: 'org_elite',
+  [process.env.STRIPE_PRICE_CLUB_STARTER || '']: 'org_plus',
+  [process.env.STRIPE_PRICE_CLUB_PRO || '']: 'org_pro',
+  [process.env.STRIPE_PRICE_CLUB_ELITE || '']: 'org_elite',
+  [process.env.STRIPE_PRICE_LEAGUE || '']: 'org_enterprise',
+  [process.env.STRIPE_PRICE_BUSINESS_LISTING || '']: 'org_plus',
+  [process.env.STRIPE_PRICE_BUSINESS_PLUS || '']: 'org_pro',
 };
 
 /**
@@ -51,8 +57,7 @@ export async function GET(_req: NextRequest) {
 
     const tierCounts: Record<string, number> = {
       verified_identity: 0, identity_plus: 0,
-      club_starter: 0, club_pro: 0, club_elite: 0, league: 0,
-      business_listing: 0, business_plus: 0,
+      org_plus: 0, org_pro: 0, org_elite: 0, org_enterprise: 0,
       other: 0,
     };
     let mrrCents = 0;

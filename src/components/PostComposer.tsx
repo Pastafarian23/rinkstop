@@ -32,7 +32,7 @@ type ComposerMode =
   | 'org';
 
 interface ProfileMeResponse {
-  profile?: { user_id: string; username: string; display_name?: string | null; tier?: string };
+  profile?: { user_id: string; username: string; display_name?: string | null; tier?: string; org_tier?: string };
 }
 
 interface Rink {
@@ -295,14 +295,19 @@ export default function PostComposer() {
     : [];
 
   // 2026-10-16: tier gate for video uploads. Photos are free for all;
-  // video requires Hockey Passport Plus (identity_plus, personal track).
+  // video requires Hockey Passport Plus (identity_plus, personal track)
+  // OR any organization tier that allows video (org_plus and up).
   const PERSONAL_VIDEO_TIER_RANK: Record<string, number> = {
     free: 0, verified_identity: 1, identity_plus: 2,
   };
+  const ORG_VIDEO_TIER_RANK: Record<string, number> = {
+    org_free: 0, org_plus: 1, org_pro: 2, org_elite: 3, org_enterprise: 4,
+  };
   const canUploadVideo = (() => {
     const tier = (myProfile?.tier ?? 'free') as string;
-    // Block business/org track users entirely (they belong on org tools, not personal posts).
-    if (tier.startsWith('business_') || tier.startsWith('club_') || tier === 'league' || tier === 'federation') return false;
+    const orgTier = (myProfile?.org_tier ?? 'org_free') as string;
+    // The org ladder only unlocks video from org_plus up.
+    if ((ORG_VIDEO_TIER_RANK[orgTier] ?? 0) >= 1) return true;
     return (PERSONAL_VIDEO_TIER_RANK[tier] ?? 0) >= 2;
   })();
 

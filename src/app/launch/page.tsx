@@ -39,37 +39,32 @@ const ORG_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
+// Canonical organization tiers (2026-10-22 consolidation).
 const TIER_OPTIONS = [
   {
-    value: 'club_starter',
-    label: 'Club Starter',
-    price: '$149/year',
-    blurb: 'For small clubs (≤30 players). One organization, basic roster pages, visible to every coach and family in your area.',
+    value: 'org_plus',
+    label: 'Organization Plus',
+    price: '$99/year',
+    blurb: 'For small clubs (≤30 players, up to 3 teams). Roster, schedule, events, registrations and payments.',
   },
   {
-    value: 'club_pro',
-    label: 'Club Pro',
-    price: '$399/year',
-    blurb: 'For mid clubs (≤150 players). Multiple teams, schedule, standings, dedicated landing page.',
+    value: 'org_pro',
+    label: 'Organization Pro',
+    price: '$299/year',
+    blurb: 'For mid clubs (≤150 players, up to 10 teams). Financial reporting, API access, promotions and featured placement.',
     popular: true,
   },
   {
-    value: 'club_elite',
-    label: 'Club Elite',
-    price: '$999/year',
-    blurb: 'For large orgs (unlimited teams). Branded profile, analytics, integrated bookings.',
+    value: 'org_elite',
+    label: 'Organization Elite',
+    price: '$599/year',
+    blurb: 'For large orgs (unlimited teams). Custom branding, advanced analytics, priority support.',
   },
   {
-    value: 'league',
-    label: 'League',
-    price: '$1,999/year',
-    blurb: 'For full leagues. League-wide management: all clubs, all teams, all schedules.',
-  },
-  {
-    value: 'business_listing',
-    label: 'Business Listing',
-    price: '$99/year',
-    blurb: 'For rinks, pro shops, equipment vendors, training facilities. Get found in the directory, claim your listing, post events.',
+    value: 'org_enterprise',
+    label: 'Organization Enterprise',
+    price: 'Custom',
+    blurb: 'For leagues and federations. League-wide governance, compliance, member organizations, custom integrations.',
   },
 ];
 

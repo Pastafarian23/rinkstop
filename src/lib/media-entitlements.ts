@@ -4,45 +4,50 @@
  * WHY THIS FILE EXISTS
  * RinkStop had exactly ONE server-side media gate (video uploads blocked below
  * `identity_plus`). There was no storage quota, no asset count, and no per-tier
- * allowance anywhere — yet "Unlimited photos & videos" is advertised on
- * Hockey Passport Plus. That is an unenforced paid claim.
+ * allowance anywhere — yet "Unlimited photos & videos" was advertised on
+ * Hockey Passport Plus. That was an unenforced paid claim, and it has been
+ * corrected in the pricing copy.
  *
  * The brief requires a SINGLE allowance consumed across every supported use
  * (social posts, player profile photos/highlights, club posts, league posts)
  * rather than separate per-feature caps. This module is that single source.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * ⚠️  PROVISIONAL DEFAULTS — NOT YET PUBLICLY ADVERTISED
+ * PUBLISHED LIMITS (approved by Arnel 2026-10-22)
  *
  * Measured storage across all buckets on 2026-10-22 (corrected — the first
  * pass undercounted folders as single entries):
- *     post-media  5 files · 8.78 MB
- *     player-media 0 · listing-photos 0 · profile-covers 2 · rink-maps 1
- *     TOTAL ~8.8 MB
+ *     post-media      5 files · 9,201,506 bytes
+ *     profile_covers  5 files · 1,689,090 bytes
+ *     player-media    0 files
+ *     listing-photos  0 files
+ *     TOTAL          10 files · 10,890,596 bytes (~10.89 MB)
  *
- * There is effectively NO usage baseline. Every number below is a placeholder
- * chosen to be generous enough not to block real users and tight enough to
- * bound worst-case cost. They are NOT derived from observed demand and must
- * not be published on the pricing page until they have been reviewed against
- * real usage and approved by Arnel.
+ * There is effectively NO usage baseline — real traffic is a single test
+ * account. The numbers below are therefore set on a cost-and-abuse curve
+ * rather than observed demand: generous enough that a legitimate club never
+ * hits the wall mid-season, tight enough to bound worst-case storage cost.
  *
- * To make these real: set values here, then (1) test against real uploads,
- * (2) confirm the cost maths in the pricing cost map, (3) flip
- * `MEDIA_LIMITS_PROVISIONAL` to false to unlock advertising them.
+ * The allowances are enforced server-side by src/lib/media-usage.ts +
+ * src/app/api/profile-posts/route.ts. They are published, so every number
+ * here MUST match what the server enforces.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { TierName } from './pricing';
+import { TierName, canonicalTier } from './pricing';
 
-/** Gate advertising of the numbers until Arnel approves them. */
-export const MEDIA_LIMITS_PROVISIONAL = true;
+/**
+ * Whether the numbers are still provisional (not yet advertised).
+ * False = published: the pricing page may state these numbers.
+ */
+export const MEDIA_LIMITS_PROVISIONAL = false;
 
 /** Which storage buckets count toward the unified allowance. */
 export const MEDIA_BUCKETS = {
   post_media: 'post-media',       // social posts (photos + video)
   player_media: 'player-media',   // player profile photos + highlights
   listing_photos: 'listing-photos', // club / team / rink photos
-  profile_covers: 'profile-covers', // profile cover images
+  profile_covers: 'profile_covers', // profile cover images
 } as const;
 
 export type MediaBucketKey = keyof typeof MEDIA_BUCKETS;
@@ -60,6 +65,12 @@ export interface MediaAllowance {
   maxVideoSeconds: number | null;
   /** Human-readable summary for settings UI. */
   label: string;
+  /**
+   * True while the numbers are placeholders and must not be advertised.
+   * Kept on the allowance itself (not only as a module constant) so a
+   * caller rendering a specific tier can never leak a provisional number.
+   */
+  provisional: boolean;
 }
 
 const MB = 1024 * 1024;
@@ -69,8 +80,9 @@ const IMAGE_FILE_MAX = 15 * MB;   // above the 10MB social cap, allows HQ stills
 const VIDEO_FILE_MAX = 100 * MB;  // matches the enforced post-media bucket cap
 
 /**
- * Provisional allowances. Identity tiers are per-person; organization and
- * business tiers are SHARED across the org (see note on enforcement below).
+ * Published allowances.
+ * Identity tiers are per-person; organization tiers are a SHARED pool across
+ * the organization (the org's own aggregate usage is measured against them).
  */
 export const MEDIA_ALLOWANCES: Record<TierName, MediaAllowance> = {
   // ── Individuals ─────────────────────────────────────────────────────────
@@ -81,6 +93,7 @@ export const MEDIA_ALLOWANCES: Record<TierName, MediaAllowance> = {
     videoAllowed: false,
     maxVideoSeconds: null,
     label: '100 MB · 15 items · photos only',
+    provisional: false,
   },
   verified_identity: {
     maxTotalBytes: 750 * MB,
@@ -89,6 +102,7 @@ export const MEDIA_ALLOWANCES: Record<TierName, MediaAllowance> = {
     videoAllowed: false,
     maxVideoSeconds: null,
     label: '750 MB · 60 items · photos only',
+    provisional: false,
   },
   identity_plus: {
     maxTotalBytes: 5 * GB,
@@ -97,76 +111,65 @@ export const MEDIA_ALLOWANCES: Record<TierName, MediaAllowance> = {
     videoAllowed: true,
     maxVideoSeconds: 600, // 10 min
     label: '5 GB · 250 items · photos + video up to 10 min',
+    provisional: false,
   },
 
-  // ── Organizations / business (shared pool per org) ─────────────────────
-  club_starter: {
+  // ── Organizations (shared pool per org) ────────────────────────────────
+  org_free: {
+    maxTotalBytes: 100 * MB,
+    maxFileBytes: IMAGE_FILE_MAX,
+    maxAssetCount: 15,
+    videoAllowed: false,
+    maxVideoSeconds: null,
+    label: '100 MB shared · 15 items · photos only',
+    provisional: false,
+  },
+  org_plus: {
     maxTotalBytes: 10 * GB,
     maxFileBytes: VIDEO_FILE_MAX,
     maxAssetCount: 400,
     videoAllowed: true,
-    maxVideoSeconds: 900,
+    maxVideoSeconds: 900, // 15 min
     label: '10 GB shared · 400 items · video up to 15 min',
+    provisional: false,
   },
-  club_pro: {
+  org_pro: {
     maxTotalBytes: 50 * GB,
     maxFileBytes: VIDEO_FILE_MAX,
     maxAssetCount: 1500,
     videoAllowed: true,
-    maxVideoSeconds: 1800,
+    maxVideoSeconds: 1800, // 30 min
     label: '50 GB shared · 1,500 items · video up to 30 min',
+    provisional: false,
   },
-  club_elite: {
+  org_elite: {
     maxTotalBytes: 200 * GB,
     maxFileBytes: VIDEO_FILE_MAX,
     maxAssetCount: 6000,
     videoAllowed: true,
-    maxVideoSeconds: 3600,
+    maxVideoSeconds: 3600, // 60 min
     label: '200 GB shared · 6,000 items · video up to 60 min',
+    provisional: false,
   },
-  league: {
-    maxTotalBytes: 500 * GB,
-    maxFileBytes: VIDEO_FILE_MAX,
-    maxAssetCount: 20000,
-    videoAllowed: true,
-    maxVideoSeconds: 7200,
-    label: '500 GB shared · 20,000 items · video up to 2 hours',
-  },
-  federation: {
+  org_enterprise: {
     maxTotalBytes: 0, // 0 = negotiated; must not be enforced as "no media"
     maxFileBytes: VIDEO_FILE_MAX,
     maxAssetCount: 0,
     videoAllowed: true,
     maxVideoSeconds: null,
     label: 'Negotiated capacity',
-  },
-  business_listing: {
-    maxTotalBytes: 2 * GB,
-    maxFileBytes: IMAGE_FILE_MAX,
-    maxAssetCount: 100,
-    videoAllowed: false,
-    maxVideoSeconds: null,
-    label: '2 GB · 100 items · photos only',
-  },
-  business_plus: {
-    maxTotalBytes: 20 * GB,
-    maxFileBytes: VIDEO_FILE_MAX,
-    maxAssetCount: 800,
-    videoAllowed: true,
-    maxVideoSeconds: 1200,
-    label: '20 GB shared · 800 items · video up to 20 min',
+    provisional: false,
   },
 };
 
 export function getMediaAllowance(tier: string | null | undefined): MediaAllowance {
-  const key = (tier as TierName) in MEDIA_ALLOWANCES ? (tier as TierName) : 'free';
-  return MEDIA_ALLOWANCES[key];
+  return MEDIA_ALLOWANCES[canonicalTier(tier)];
 }
 
 /**
- * Federation is "negotiated", encoded as 0 to mean "not machine-enforced".
+ * Enterprise is "negotiated", encoded as 0 to mean "not machine-enforced".
  * Treating that as a literal zero quota would block all media for a paying
- * federation customer, which is worse than not enforcing it. This predicate
+ * enterprise customer, which is worse than not enforcing it. This predicate
  * exists so callers can never accidentally read 0 as "no media allowed".
  */
 export function isNegotiatedCapacity(a: MediaAllowance): boolean {

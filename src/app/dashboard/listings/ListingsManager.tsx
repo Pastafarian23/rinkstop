@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { meetsTierGate } from '@/lib/tier-gate';
 
 export type Category = 'pro_shop' | 'sharpening' | 'camp' | 'training' | 'equipment' | 'other';
 export const CATEGORIES: { value: Category; label: string; emoji: string }[] = [
@@ -46,7 +47,15 @@ const DAYS = [
   { key: 'sun', label: 'Sun' },
 ];
 
-export default function ListingsManager({ userTier = 'free' }: { userTier?: string } = {}) {
+export default function ListingsManager({
+  userTier = 'free',
+  userOrgTier = 'org_free',
+  isFoundingMember = false,
+}: {
+  userTier?: string;
+  userOrgTier?: string;
+  isFoundingMember?: boolean;
+} = {}) {
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [editing, setEditing] = useState<Listing | 'new' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,6 +120,8 @@ export default function ListingsManager({ userTier = 'free' }: { userTier?: stri
                   onEdit={() => setEditing(l)}
                   onDeleted={load}
                   userTier={userTier}
+                  userOrgTier={userOrgTier}
+                  isFoundingMember={isFoundingMember}
                   onChange={load}
                 />
               ))}
@@ -160,7 +171,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   );
 }
 
-function ListingCard({ listing, onEdit, onDeleted, userTier, onChange }: { listing: Listing; onEdit: () => void; onDeleted: () => void; userTier: string; onChange: () => void }) {
+function ListingCard({ listing, onEdit, onDeleted, userTier, userOrgTier, isFoundingMember, onChange }: { listing: Listing; onEdit: () => void; onDeleted: () => void; userTier: string; userOrgTier: string; isFoundingMember: boolean; onChange: () => void }) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -228,7 +239,13 @@ function ListingCard({ listing, onEdit, onDeleted, userTier, onChange }: { listi
           >
             Edit
           </button>
-          <FeatureButton listing={listing} userTier={userTier} onChange={onChange} />
+          <FeatureButton
+            listing={listing}
+            userTier={userTier}
+            userOrgTier={userOrgTier}
+            isFoundingMember={isFoundingMember}
+            onChange={onChange}
+          />
           {!confirming ? (
             <button
               type="button"
@@ -668,27 +685,31 @@ function PhotoManager({ listingId, photos, onChange }: { listingId: string | nul
 
 // Phase 1c-2: Featured placement toggle. Tier-gated on Business Plus+.
 // Free feature in v1 (no payment); v2 will gate behind a payment flow.
-function FeatureButton({ listing, userTier, onChange }: { listing: Listing; userTier: string; onChange: () => void }) {
+function FeatureButton({ listing, userTier, userOrgTier, isFoundingMember, onChange }: { listing: Listing; userTier: string; userOrgTier: string; isFoundingMember: boolean; onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tierOk = userTier === 'business_plus' || userTier === 'founding_member' || (userTier as string) === 'club_elite' || (userTier as string) === 'club_pro';
-  // The pricing page promises Featured Placement at Business Plus ($299/yr).
-  // We also allow Founding Member and Club Pro/Elite (tier hierarchy; the gate
-  // function is the same one used in the API route — kept inline here to
-  // avoid a circular import).
+  // 2026-10-22: the old check was a flat equality list
+  // `userTier === 'business_plus' || userTier === 'founding_member' ||
+  //  userTier === 'club_elite' || userTier === 'club_pro'`.
+  // It read only the PERSONAL column and compared against pre-consolidation
+  // names, so featured placement never unlocked. The pricing page promises
+  // "Promotions and featured placement" on Organization Pro ($299/yr), so
+  // org_pro on the organization track is the correct floor. Founding members
+  // stay exempt. This mirrors the API route's gate exactly.
+  const tierOk = isFoundingMember || meetsTierGate(userTier, userOrgTier, null, 'org_pro');
   const isFeatured = listing.is_featured === true && (!listing.featured_until || listing.featured_until > new Date().toISOString());
   const canFeature = tierOk;
 
   if (!canFeature) {
     return (
       <span
-        title="Featured placement requires Business Plus or higher"
+        title="Featured placement requires Organization Pro or higher"
         style={{
           background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)',
           borderRadius: 6, padding: '0.4rem 0.85rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'not-allowed',
         }}
       >
-        ⭐ Featured (Business Plus)
+        ⭐ Featured (Organization Pro)
       </span>
     );
   }

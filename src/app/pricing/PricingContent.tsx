@@ -8,6 +8,7 @@ import Link from 'next/link';
 import RelatedProducts from '@/components/RelatedProducts';
 import PricingComparisonTable from '@/components/PricingComparisonTable';
 import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
+import { tierRank, tierTrack } from '@/lib/tier';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
 type Tier = {
@@ -44,20 +45,14 @@ const TIERS_DISPLAY: Tier[] = PRICING_DISPLAY_ORDER.map((id) => {
     color:
       t.group === 'organization'
         ? '#C8102E'
-        : t.group === 'business'
-        ? '#14B8A6'
         : '#FFB81C',
     bgColor:
       t.group === 'organization'
         ? 'rgba(200,16,46,0.06)'
-        : t.group === 'business'
-        ? 'rgba(20,184,166,0.06)'
         : 'rgba(255,184,28,0.06)',
     borderColor:
       t.group === 'organization'
         ? 'rgba(200,16,46,0.4)'
-        : t.group === 'business'
-        ? 'rgba(20,184,166,0.4)'
         : 'rgba(255,184,28,0.4)',
     popular: t.popular ?? false,
     cta: t.cta,
@@ -79,18 +74,12 @@ const GROUP_ORDER: { id: TierGroup; title: string; subtitle: string }[] = [
     title: 'Organizations',
     subtitle: 'Clubs, leagues, federations, teams and associations. Subscribed by the organization.',
   },
-  {
-    id: 'business',
-    title: 'Businesses',
-    subtitle: 'Commercial businesses -- shops, sharpeners, clinics, trainers, equipment rental, travel, photography.',
-  },
 ];
 
 const ROLE_TABS = [
   { id: 'all', label: 'All plans' },
   { id: 'identity', label: 'For me' },
-  { id: 'organization', label: 'For my club / team' },
-  { id: 'business', label: 'For my business' },
+  { id: 'organization', label: 'For my club / team / business' },
 ];
 
 const FAQ = [
@@ -112,15 +101,15 @@ const FAQ = [
   },
   {
     q: 'What does Hockey Passport Plus add?',
-    a: 'Hockey Passport Plus ($59.99/year) adds Family Hub, unlimited children, career timeline, advanced player analytics, unlimited photos and videos, achievement tracking, advanced messaging, premium insights, and priority support.',
+    a: 'Hockey Passport Plus ($59.99/year) adds Family Hub, unlimited children, career timeline, advanced player analytics, 5 GB of media storage (250 items, photos and video up to 10 minutes each), achievement tracking, advanced messaging, premium insights, and priority support.',
   },
   {
     q: 'How do organizations subscribe differently from individuals?',
-    a: 'Individual identity subscriptions never include organization management. Organizations (clubs, leagues, federations, teams, associations) subscribe on their own plan -- Club Starter, Club Pro, Club Elite, League, or Federation.',
+    a: 'Individual identity subscriptions never include organization management. Organizations (clubs, leagues, federations, teams, associations, and businesses) subscribe on their own plan -- Organization Free, Plus ($99), Pro ($299), Elite ($599), or Enterprise (custom). Your personal plan and your organization plan are billed separately and neither cancels the other.',
   },
   {
     q: 'How do businesses subscribe?',
-    a: 'Business Listing ($99/year) for a single business claim. Business Plus ($299/year) for multiple listings, featured placement, promotions, messaging, enhanced analytics, and booking support. Business subscriptions are separate from organization subscriptions -- businesses never see roster management, and organizations never see lead generation.',
+    a: 'Businesses use the same organization ladder. Organization Plus ($99/year) covers a single business or rink claim plus team management, registrations and payments. Organization Pro ($299/year) adds multiple listings, featured placement, promotions and financial reporting. There is no separate business subscription.',
   },
   {
     q: 'Can I upgrade mid-year?',
@@ -170,7 +159,7 @@ export default function PricingContent({
   // Role-tab: derive the default from the URL (?for=) or the user's current tier.
   // Org/business users land on their own track; guests and identity users see all.
   const urlRole = searchParams?.get('for');
-  const validRoleTab = urlRole === 'identity' || urlRole === 'organization' || urlRole === 'business'
+  const validRoleTab = urlRole === 'identity' || urlRole === 'organization'
     ? urlRole
     : null;
   if (!roleTab) {
@@ -178,7 +167,7 @@ export default function PricingContent({
       setRoleTab(validRoleTab);
     } else if (currentUserTier) {
       const group = getGroupForTier(currentUserTier);
-      setRoleTab(group === 'organization' || group === 'business' ? group : 'all');
+      setRoleTab(group === 'organization' ? group : 'all');
     } else {
       setRoleTab('all');
     }
@@ -318,35 +307,11 @@ export default function PricingContent({
     //
     // Cross-track upgrades ARE allowed (e.g. individual -> organization), so
     // we only block within the same track.
-    const TIER_RANK: Record<string, number> = {
-      free: 0,
-      verified_identity: 1,
-      identity_plus: 2,
-      club_starter: 1,
-      club_pro: 2,
-      club_elite: 3,
-      league: 4,
-      federation: 5,
-      business_listing: 1,
-      business_plus: 2,
-    };
-    const TIER_TO_TRACK: Record<string, 'personal' | 'business'> = {
-      free: 'personal',
-      verified_identity: 'personal',
-      identity_plus: 'personal',
-      club_starter: 'business',
-      club_pro: 'business',
-      club_elite: 'business',
-      league: 'business',
-      federation: 'business',
-      business_listing: 'business',
-      business_plus: 'business',
-    };
     const currentTier = currentUserTier || 'free';
     const isCurrent = currentTier === tier.id;
-    const currentRank = TIER_RANK[currentTier] ?? 0;
-    const requestedRank = TIER_RANK[tier.id] ?? 0;
-    const sameTrack = TIER_TO_TRACK[currentTier] === TIER_TO_TRACK[tier.id];
+    const currentRank = tierRank(currentTier);
+    const requestedRank = tierRank(tier.id);
+    const sameTrack = tierTrack(currentTier) === tierTrack(tier.id);
     const isDowngradeOrSame = sameTrack && requestedRank <= currentRank && !isCurrent && !isFree;
     // 'locked' = don't show an upgrade CTA. 'current' = current plan.
     // We only treat "same" within track as locked; cross-track options
@@ -477,7 +442,7 @@ export default function PricingContent({
             type="button"
             disabled
             data-testid={`tier-cta-${tier.id}`}
-            title={`You're already on a higher or equal ${TIER_TO_TRACK[currentTier] === 'personal' ? 'individual' : 'organization'} plan. To change, contact support@rinkstop.com.`}
+            title={`You're already on a higher or equal ${tierTrack(currentTier) === 'personal' ? 'individual' : 'organization'} plan. To change, contact support@rinkstop.com.`}
             style={{
               width: '100%',
               padding: '0.75rem 1rem',
@@ -554,7 +519,6 @@ export default function PricingContent({
   const tiersByGroup: Record<TierGroup, Tier[]> = {
     identity: TIERS_DISPLAY.filter((t) => t.group === 'identity'),
     organization: TIERS_DISPLAY.filter((t) => t.group === 'organization'),
-    business: TIERS_DISPLAY.filter((t) => t.group === 'business'),
   };
 
   return (

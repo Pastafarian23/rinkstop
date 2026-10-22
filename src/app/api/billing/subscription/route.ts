@@ -46,7 +46,7 @@ export async function GET(_req: NextRequest) {
 
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles')
-    .select('stripe_customer_id, stripe_subscription_id, tier, tier_expires_at, subscription_status, is_founding_member')
+    .select('stripe_customer_id, stripe_subscription_id, stripe_org_subscription_id, tier, org_tier, tier_expires_at, subscription_status, org_subscription_status, is_founding_member')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -57,15 +57,18 @@ export async function GET(_req: NextRequest) {
 
   const customerId = profile?.stripe_customer_id || null;
   const subscriptionId = profile?.stripe_subscription_id || null;
+  const orgSubscriptionId = profile?.stripe_org_subscription_id || null;
 
   // No Stripe customer yet — fully free user.
   if (!customerId) {
     return NextResponse.json({
       subscription: null,
+      org_subscription: null,
       payment_method: null,
       invoices: [],
       customer_id: null,
       profile_tier: profile?.tier || 'free',
+      profile_org_tier: profile?.org_tier || 'org_free',
       is_founding_member: profile?.is_founding_member || false,
     });
   }
@@ -74,6 +77,7 @@ export async function GET(_req: NextRequest) {
 
   // Fetch subscription (live from Stripe — most accurate)
   let subscription: any = null;
+  let orgSubscription: any = null;
   let paymentMethod: any = null;
   let invoices: any[] = [];
 
@@ -124,6 +128,33 @@ export async function GET(_req: NextRequest) {
     }
   }
 
+  // The ORGANIZATION track subscription is a separate Stripe subscription.
+  if (orgSubscriptionId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(orgSubscriptionId, {
+        expand: ['default_payment_method', 'items.data.price.product'],
+      });
+      orgSubscription = {
+        id: sub.id,
+        status: sub.status,
+        current_period_end:
+          (sub as any).current_period_end ?? sub.items.data[0]?.current_period_end ?? null,
+        cancel_at_period_end: sub.cancel_at_period_end,
+        canceled_at: sub.canceled_at,
+        price_amount: sub.items.data[0]?.price?.unit_amount ?? null,
+        price_currency: sub.items.data[0]?.price?.currency ?? 'usd',
+        price_interval: sub.items.data[0]?.price?.recurring?.interval ?? null,
+        product_name:
+          typeof sub.items.data[0]?.price?.product === 'object' &&
+          sub.items.data[0]?.price?.product !== null
+            ? (sub.items.data[0]?.price?.product as any).name
+            : null,
+      };
+    } catch (e) {
+      console.warn('[billing/subscription] org subscription retrieve failed', e);
+    }
+  }
+
   // Fetch last 10 invoices for the customer
   try {
     const list = await stripe.invoices.list({
@@ -148,12 +179,15 @@ export async function GET(_req: NextRequest) {
 
   return NextResponse.json({
     subscription,
+    org_subscription: orgSubscription,
     payment_method: paymentMethod,
     invoices,
     customer_id: customerId,
     profile_tier: profile?.tier || 'free',
+    profile_org_tier: profile?.org_tier || 'org_free',
     is_founding_member: profile?.is_founding_member || false,
     tier_expires_at: profile?.tier_expires_at,
     subscription_status: profile?.subscription_status,
+    org_subscription_status: profile?.org_subscription_status,
   });
 }

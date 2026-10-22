@@ -5,7 +5,8 @@ import Stripe from 'stripe';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
-import { TierName, TIER_TO_TRACK, MAX_CLAIMS_PER_TIER } from '@/lib/pricing';
+import { TierName, TIER_TO_TRACK, MAX_CLAIMS_PER_TIER, canonicalTier } from '@/lib/pricing';
+import { tierRank } from '@/lib/tier';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { emitIdentityVerifyRecommended } from '@/lib/notifications/emit';
 
@@ -27,36 +28,19 @@ const stripe = process.env.STRIPE_SECRET_KEY
  * Tier to track-specific price env var mapping.
  * Each track has its own Stripe price ID (separate products).
  *
- * Federation has no Stripe product (contact sales only).
- * New tiers (verified_identity, identity_plus, club_*, league, business_listing,
- * business_plus) will return 503 "tier_not_configured" until their Stripe
- * products are created and the env var is set in Vercel.
+ * Organization Enterprise has no Stripe product (contact sales only).
+ * Tiers without a configured env var return 503 "tier_not_configured" until
+ * the Stripe product is created and the env var is set in Vercel.
  */
 const TIER_TO_PRICE_ENV: Record<TierName, string> = {
   free: '',
   verified_identity: 'STRIPE_PRICE_VERIFIED_IDENTITY',
   identity_plus: 'STRIPE_PRICE_IDENTITY_PLUS',
-  club_starter: 'STRIPE_PRICE_CLUB_STARTER',
-  club_pro: 'STRIPE_PRICE_CLUB_PRO',
-  club_elite: 'STRIPE_PRICE_CLUB_ELITE',
-  league: 'STRIPE_PRICE_LEAGUE',
-  federation: '', // contact sales - no Stripe product
-  business_listing: 'STRIPE_PRICE_BUSINESS_LISTING',
-  business_plus: 'STRIPE_PRICE_BUSINESS_PLUS',
-};
-
-// Tier rank for downgrade prevention (within each track)
-const TIER_RANK: Record<TierName, number> = {
-  free: 0,
-  verified_identity: 1,
-  identity_plus: 2,
-  club_starter: 1,
-  club_pro: 2,
-  club_elite: 3,
-  league: 4,
-  federation: 5,
-  business_listing: 1,
-  business_plus: 2,
+  org_free: '',
+  org_plus: 'STRIPE_PRICE_ORG_PLUS',
+  org_pro: 'STRIPE_PRICE_ORG_PRO',
+  org_elite: 'STRIPE_PRICE_ORG_ELITE',
+  org_enterprise: '', // contact sales - no Stripe product
 };
 
 export async function POST(req: NextRequest) {
@@ -111,8 +95,7 @@ export async function POST(req: NextRequest) {
   if (userId && !isGuest) {
     const TRACKS_REQUIRING_IDENTITY = new Set([
       'identity_plus',
-      'club_starter', 'club_pro', 'club_elite',
-      'league',
+      'org_plus', 'org_pro', 'org_elite',
     ]);
     if (TRACKS_REQUIRING_IDENTITY.has(requestedTier)) {
       void (async () => {
@@ -167,20 +150,21 @@ export async function POST(req: NextRequest) {
         }
       : null;
 
-  // Federation has no Stripe product (contact sales only) — short-circuit with 303 redirect.
-  // League is also contact-sales but DOES have a Stripe price (lower-friction purchase).
-  if (requestedTier === 'federation') {
+  // Organization Enterprise has no Stripe product (contact sales only) —
+  // short-circuit with 303 redirect.
+  if (requestedTier === 'org_enterprise' || requestedTier === 'federation') {
     const res = NextResponse.json(
-      { error: 'federation_contact_sales', url: '/partner?source=tier-upgrade-api' },
+      { error: 'enterprise_contact_sales', url: '/partner?source=tier-upgrade-api' },
       { status: 303 }
     );
     return applyRateLimitHeaders(res, result);
   }
 
-  const tier = requestedTier as TierName;
+  // Accept legacy tier names from older links/UI (canonicalize before use).
+  const tier = canonicalTier(requestedTier);
   if (!tier || !(tier in TIER_TO_PRICE_ENV)) {
     const res = NextResponse.json(
-      { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV).filter(t => t !== 'free' && t !== 'federation') },
+      { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV).filter(t => t !== 'free' && t !== 'org_enterprise') },
       { status: 400 }
     );
     return applyRateLimitHeaders(res, result);
@@ -218,23 +202,41 @@ export async function POST(req: NextRequest) {
     // Look up profile for downgrade guard
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('profiles')
-      .select('stripe_customer_id, email, display_name, tier, stripe_subscription_id, subscription_status')
+      .select('stripe_customer_id, email, display_name, tier, org_tier, stripe_subscription_id, stripe_org_subscription_id, subscription_status')
       .eq('user_id', userId)
       .maybeSingle();
 
     // GUARD: Reject downgrades. Self-serve cancel/downgrade is intentionally not supported.
-    const currentTier = (profile?.tier || 'free') as TierName | 'free';
-    const currentUserTrack = TIER_TO_TRACK[currentTier as TierName] ?? 'personal';
+    //
+    // The requested tier is compared against the column that owns its track:
+    //   personal tier  -> profiles.tier
+    //   org tier       -> profiles.org_tier
+    // A personal subscription and an org subscription are independent, so an
+    // org downgrade must not be judged against the personal tier (and vice
+    // versa) — otherwise buying org_pro would lock the personal tier.
+    const currentTier = (profile?.tier || 'free') as TierName;
+    const currentOrgTier = (profile?.org_tier || 'org_free') as TierName;
     const requestedUserTrack = TIER_TO_TRACK[tier] ?? 'personal';
 
-    // Cross-track upgrades allowed, but downgrades within track blocked
-    if (profile?.stripe_subscription_id) {
+    // The downgrade guard is per track: it only applies when the user
+    // already has an ACTIVE subscription on the SAME track as the requested
+    // tier. A personal Passport never blocks an org purchase, and an org
+    // subscription never blocks a personal Passport purchase.
+    const existingSubscriptionId =
+      requestedUserTrack === 'organization'
+        ? (profile as any)?.stripe_org_subscription_id
+        : profile?.stripe_subscription_id;
+
+    if (existingSubscriptionId) {
       const isActive = subscriptionIsActive(profile.subscription_status);
-      const currentRank = TIER_RANK[currentTier as TierName] ?? 0;
-      const requestedRank = TIER_RANK[tier] ?? 0;
+      const currentRank =
+        requestedUserTrack === 'organization'
+          ? tierRank(currentOrgTier)
+          : tierRank(currentTier);
+      const requestedRank = tierRank(tier);
 
       // Block downgrade if same track and requested rank <= current
-      if (isActive && currentUserTrack === requestedUserTrack && requestedRank <= currentRank) {
+      if (isActive && requestedRank <= currentRank) {
         const res = NextResponse.json(
           {
             error: 'downgrade_not_self_serve',

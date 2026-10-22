@@ -8,31 +8,19 @@
 //     - Create a new promotion. Body: { listing_id, code, description,
 //       discount_type, discount_value, starts_at, ends_at, max_redemptions }
 //
-// Auth: caller must own the listing AND have a Business Plus tier
+// Auth: caller must own the listing AND have an Organization Pro tier
 // (or higher). RLS already enforces listing ownership; tier check is
 // a server-side guard for clarity in error messages.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { tierAtLeast } from '@/lib/tier';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const TIER_RANK: Record<string, number> = {
-  free: 0,
-  business_listing: 1,
-  business_plus: 2,
-  club_starter: 1,
-  club_pro: 2,
-  club_elite: 3,
-  league: 4,
-  federation: 5,
-};
 
-function tierAtLeast(actual: string, min: string): boolean {
-  return (TIER_RANK[actual] ?? 0) >= (TIER_RANK[min] ?? 0);
-}
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -118,13 +106,13 @@ export async function POST(req: NextRequest) {
   // Tier check: must be Business Plus or higher.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  const tier = profile?.tier || 'free';
-  if (!tierAtLeast(tier, 'business_plus')) {
+  const tier = profile?.org_tier || 'org_free';
+  if (!tierAtLeast(tier, 'org_pro')) {
     return NextResponse.json(
-      { error: 'Promotions require a Business Plus subscription', required_tier: 'business_plus', current_tier: tier },
+      { error: 'Promotions require an Organization Pro subscription', required_tier: 'org_pro', current_tier: tier },
       { status: 402 }
     );
   }

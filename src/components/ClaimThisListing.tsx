@@ -18,10 +18,10 @@ function fireCtaClick(entityType: 'rink' | 'team' | 'league' | 'player', entityI
 
 // Default tier per entity type (matches /claim-your-listing ClaimButton).
 // Used to display the entry price on the CTA so visitors know what they'll pay.
-const DEFAULT_TIER_BY_ENTITY: Record<ClaimEntityType, 'business_listing' | 'club_starter' | 'verified_identity'> = {
-  rink: 'business_listing',
-  team: 'club_starter',
-  league: 'club_starter',
+const DEFAULT_TIER_BY_ENTITY: Record<ClaimEntityType, 'org_plus' | 'verified_identity'> = {
+  rink: 'org_plus',
+  team: 'org_plus',
+  league: 'org_plus',
   player: 'verified_identity',
 };
 
@@ -30,8 +30,8 @@ export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
 export type ClaimCtaState =
   | { kind: 'signed_out' }
   | { kind: 'claim_form'; entityType: ClaimEntityType; entityId: string; entityName: string }
-  | { kind: 'free'; recommendedTier?: 'verified_identity' | 'identity_plus' | 'business_listing' | 'business_plus' | 'club_starter' | 'club_pro' | 'club_elite' }
-  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'identity_plus' | 'business_plus' | 'club_elite' | 'league' | 'federation' }
+  | { kind: 'free'; recommendedTier?: 'verified_identity' | 'identity_plus' | 'org_plus' | 'org_pro' | 'org_elite' }
+  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'identity_plus' | 'org_plus' | 'org_pro' | 'org_elite' | 'org_enterprise' }
   | { kind: 'pending'; tier: string };
 
 /**
@@ -206,15 +206,15 @@ export default function ClaimThisListing({
           <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
           <div style={textBlockStyle}>
             <div style={headlineStyle}>
-              {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? `You've reached your tier's claim limit. Federation covers enterprise-scale organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
+              {state.recommendedTier === 'org_enterprise' ? `You've reached your tier's claim limit. Organization Enterprise covers enterprise-scale organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
             </div>
             <div style={descriptionStyle}>
-              Club Pro covers up to 150 players with multiple teams. For leagues, brands, or organizations that need more, contact sales for Federation.
+              Organization Pro covers up to 150 players with multiple teams. For leagues, brands, or organizations that need more, contact sales for Enterprise.
             </div>
           </div>
         </div>
         <Link href={claimDestination} style={ctaDangerStyle} onClick={() => fireCtaClick(entityType, entityId)}>
-          {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Hockey Passport Plus →'}
+          {state.recommendedTier === 'org_enterprise' ? 'Contact Sales →' : 'Upgrade to Hockey Passport Plus →'}
         </Link>
       </div>
     );
