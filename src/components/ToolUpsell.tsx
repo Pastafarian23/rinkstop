@@ -198,7 +198,7 @@ export default function ToolUpsell({ variant = 'passport', toolSlug }: ToolUpsel
             fontSize: '0.75rem',
           }}
         >
-          Free = no card · Paid = cancel anytime
+          Free = no card · Paid = email support to change or cancel
         </span>
       </div>
     </div>
