@@ -9,11 +9,16 @@ interface Post {
   media_url: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export default function ProfilePostsPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [deleted, setDeleted] = useState<Post[]>([]);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [body, setBody] = useState('');
@@ -36,8 +41,62 @@ export default function ProfilePostsPage() {
         const { data } = await res.json();
         setPosts(data ?? []);
       }
+      // Deleted posts are fetched only when the section is opened, so the
+      // default view stays exactly what it was before this feature existed.
+      if (showDeleted) {
+        const del = await fetch('/api/profile-posts/me?include_deleted=true');
+        if (del.ok) {
+          const { data } = await del.json();
+          setDeleted((data ?? []).filter((p: Post) => p.deleted_at));
+        }
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function toggleDeleted() {
+    const next = !showDeleted;
+    setShowDeleted(next);
+    if (next) {
+      const del = await fetch('/api/profile-posts/me?include_deleted=true');
+      if (del.ok) {
+        const { data } = await del.json();
+        setDeleted((data ?? []).filter((p: Post) => p.deleted_at));
+      }
+    }
+  }
+
+  /**
+   * Restore a soft-deleted post.
+   *
+   * The server may refuse with 413 if restoring would exceed the current media
+   * allowance — the user could have used the freed quota in the meantime. In
+   * that case the post and its media stay saved and the server's message is
+   * shown verbatim, so the user knows to free space or upgrade and retry. We
+   * never silently drop content.
+   */
+  async function handleRestore(id: string) {
+    setRestoringId(id);
+    setRestoreError('');
+    try {
+      const res = await fetch(`/api/profile-posts/${id}/restore`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRestoreError(json.hint ? `${json.error} ${json.hint}` : (json.error ?? 'Could not restore this post.'));
+        return;
+      }
+      const restored = deleted.find(p => p.id === id) ?? null;
+      setDeleted(prev => prev.filter(p => p.id !== id));
+      if (restored) {
+        setPosts(prev => [{ ...restored, deleted_at: null }, ...prev]);
+      }
+      setSuccess('Post restored.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {
+      setRestoreError('Network error');
+    } finally {
+      setRestoringId(null);
     }
   }
 
@@ -174,6 +233,56 @@ export default function ProfilePostsPage() {
           ))}
         </div>
       )}
+
+      {/* Recently deleted — makes the 30-day retention period real */}
+      <div style={{ marginTop: '2.5rem' }}>
+        <button
+          onClick={toggleDeleted}
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.85rem', padding: '0.25rem 0', fontFamily: 'inherit' }}
+        >
+          {showDeleted ? '▾' : '▸'} Recently deleted{deleted.length ? ` (${deleted.length})` : ''}
+        </button>
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', margin: '0.4rem 0 0' }}>
+          Deleted posts and their media can be restored for 30 days.
+        </p>
+        {restoreError && (
+          <p style={{ color: '#ffb3b3', fontSize: '0.82rem', marginTop: '0.6rem', background: 'rgba(200,16,46,0.12)', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 6, padding: '0.6rem 0.75rem' }}>
+            {restoreError}
+          </p>
+        )}
+        {showDeleted && deleted.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.85rem' }}>
+            {deleted.map(post => (
+              <div key={post.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '0.85rem', opacity: 0.75 }}>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', whiteSpace: 'pre-wrap', margin: '0 0 0.6rem', textDecoration: 'line-through' }}>
+                  {post.body.slice(0, 140)}{post.body.length > 140 ? '…' : ''}
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>
+                    Deleted {post.deleted_at ? formatDate(post.deleted_at) : ''}
+                  </span>
+                  <button
+                    onClick={() => handleRestore(post.id)}
+                    disabled={restoringId === post.id}
+                    style={{
+                      background: 'rgba(200,16,46,0.2)', border: '1px solid rgba(200,16,46,0.45)',
+                      color: '#fff', cursor: restoringId === post.id ? 'progress' : 'pointer',
+                      fontSize: '0.76rem', padding: '0.25rem 0.7rem', borderRadius: 5, fontFamily: 'inherit',
+                    }}
+                  >
+                    {restoringId === post.id ? 'Restoring…' : 'Restore'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {showDeleted && deleted.length === 0 && (
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+            Nothing deleted.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
