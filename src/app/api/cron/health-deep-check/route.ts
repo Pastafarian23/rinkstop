@@ -10,17 +10,35 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 
-// Canonical tier → env-var mapping. Single source of truth — must match
-// TIER_TO_PRICE_ENV in src/app/api/tier/upgrade/route.ts.
+// Canonical tier → env-var mapping.
+//
+// This list was NOT updated during the 2026-10-22 org-tier consolidation. It
+// still listed the six ARCHIVED Club/Business/League price vars, which meant the
+// only automated check on Stripe configuration was watching prices that can no
+// longer be used for checkout, while the three prices that DO drive revenue —
+// STRIPE_PRICE_ORG_PLUS / _PRO / _ELITE — were unmonitored.
+//
+// The exact failure this misses: `STRIPE_PRICE_ORG_PRO` gets unset (a redeploy,
+// a dashboard edit, an env sync that drops unknown keys). Organization Pro
+// checkout starts returning 503. Nothing alerts, because this file was checking
+// that STRIPE_PRICE_CLUB_PRO still existed.
+//
+// Must match TIER_TO_PRICE_ENV in src/app/api/tier/upgrade/route.ts.
 const TIER_TO_ENV_VAR: Record<string, string> = {
+  // Personal track
   verified_identity: 'STRIPE_PRICE_VERIFIED_IDENTITY',
   identity_plus:     'STRIPE_PRICE_IDENTITY_PLUS',
-  club_starter:      'STRIPE_PRICE_CLUB_STARTER',
-  club_pro:          'STRIPE_PRICE_CLUB_PRO',
-  club_elite:        'STRIPE_PRICE_CLUB_ELITE',
-  league:            'STRIPE_PRICE_LEAGUE',
-  business_listing:  'STRIPE_PRICE_BUSINESS_LISTING',
-  business_plus:     'STRIPE_PRICE_BUSINESS_PLUS',
+  // Organization track — the live, purchasable plans
+  org_plus:          'STRIPE_PRICE_ORG_PLUS',
+  org_pro:           'STRIPE_PRICE_ORG_PRO',
+  org_elite:         'STRIPE_PRICE_ORG_ELITE',
+  // free / org_free / org_enterprise have no Stripe product by design:
+  // free is $0 and Enterprise is a sales conversation, so there is no price to
+  // be missing. Deliberately absent rather than forgotten.
+  //
+  // The archived Club/Business/League vars are intentionally NOT listed. They
+  // remain in .env so legacy payment links keep resolving, but they are not a
+  // checkout path and a missing one must not raise an alert.
 };
 
 interface CheckResult {

@@ -333,14 +333,40 @@ export const PRICING_DISPLAY_ORDER: TierName[] = [
 ];
 
 /**
- * MAX LISTING CLAIMS per tier.
+ * LISTING CLAIM ALLOWANCE per tier — how many APPROVED claims (a verified
+ * ownership claim on a rink / team / league / player listing) a user may hold.
  *
- * This counts listings a person/org can CLAIM (rink, team, league, player
- * profile, business). It is deliberately separate from player capacity and
- * team capacity — those are in PLAYER_CAPACITY_PER_TIER and
- * TEAM_LIMIT_PER_TIER.
+ * WHAT A "CLAIM" IS
+ * A row in the `claims` table with status='approved' linking a user to an
+ * entity they own. This is a VERIFICATION QUEUE: the user submits proof, staff
+ * approve, and the approval grants listing-management rights (editing, leads,
+ * reviews, featured placement).
+ *
+ * This is deliberately NOT the same thing as player capacity. The old name,
+ * MAX_CLAIMS_PER_TIER, was carried over from a design where "claims" was
+ * ambiguous and one table was doing two jobs. They are now separate constants
+ * because they answer different questions and are enforced at different layers:
+ *
+ *   LISTING_CLAIMS_PER_TIER  → verified ownership of DIRECTORY ENTITIES
+ *                               (a rink you run, a club you own). Enforced in
+ *                               POST /api/claims by counting approved rows.
+ *
+ *   PLAYER_CAPACITY_PER_TIER → how many PLAYER RECORDS an org may manage.
+ *                               Enforced in src/lib/org-limits.ts against
+ *                               `players`/`managed_profiles`, not `claims`.
+ *
+ * Keeping them merged meant an org with 150 player capacity could be told it
+ * had only 25 claims, and a user with 25 approved rink claims could be denied
+ * roster spots. Both numbers were real; they were just sharing a name.
+ *
+ * Counts only APPROVED claims — pending submissions are in flight and must not
+ * consume the cap, or a user cannot claim a second listing while the first is
+ * still in review.
+ *
+ * `parent_managed:` reason claims are exempt at the API layer (a parent may
+ * manage many children); see POST /api/claims.
  */
-export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
+export const LISTING_CLAIMS_PER_TIER: Record<TierName, number> = {
   // Identity
   // WS25 (2026-08-23): free tier lifted from 0 to 1 so free users can claim
   // one listing per profile type without paying. Verification is bundled into
@@ -355,6 +381,16 @@ export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
   org_elite: Infinity,
   org_enterprise: Infinity,
 };
+
+/**
+ * DEPRECATED ALIAS — kept so existing imports keep compiling.
+ *
+ * Do not add new usages. This name is ambiguous by exactly the amount the
+ * previous audit was trying to remove: it reads as a general "claims" cap but
+ * only ever governed listing ownership claims. New code should import
+ * LISTING_CLAIMS_PER_TIER (or PLAYER_CAPACITY_PER_TIER / TEAM_LIMIT_PER_TIER).
+ */
+export const MAX_CLAIMS_PER_TIER = LISTING_CLAIMS_PER_TIER;
 
 /**
  * PLAYER CAPACITY per tier — how many players an organization may manage.

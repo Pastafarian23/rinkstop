@@ -162,6 +162,54 @@ async function processMediaFile(file: File): Promise<PendingMedia> {
 }
 
 /**
+ * Read a video's duration in the browser.
+ *
+ * WHY THE CLIENT MEASURES THIS
+ * There is no ffprobe/ffmpeg in the Vercel serverless runtime, so the server
+ * cannot read container metadata. The browser already has a working decoder for
+ * this exact file (the poster capture below uses one), so the duration is read
+ * here and sent alongside the upload.
+ *
+ * This is not a billing input: the byte quota, which is what a client could
+ * actually profit from under-reporting, is computed server-side from the real
+ * file size. Duration is a secondary policy cap, bounded server-side by a
+ * plausibility check and by the bucket's file_size_limit.
+ *
+ * Resolves to null — never throws — when the codec is undecodable, the file is
+ * corrupt, or metadata takes too long. A null duration must not block upload.
+ */
+function probeVideoDuration(url: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    let settled = false;
+    const finish = (result: number | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      video.removeAttribute('src');
+      video.load();
+      resolve(result);
+    };
+    // A local blob: URL decodes in well under a second. 6s matches the poster
+    // probe so a slow device behaves the same way for both.
+    const timer = setTimeout(() => finish(null), 6000);
+
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    video.onloadedmetadata = () => {
+      const d = video.duration;
+      // A live stream or a malformed container reports Infinity or NaN. Both
+      // are useless for a policy check, so report "unknown" rather than a
+      // number that would mislead the server.
+      finish(Number.isFinite(d) && d > 0 ? d : null);
+    };
+    video.onerror = () => finish(null);
+    video.src = url;
+  });
+}
+
+/**
  * Decode the first frame of a video and return it as a data URL for use as
  * a <video poster>. Resolves to undefined if the browser can't decode the
  * codec, the file is corrupt, or it takes too long — a missing poster must
@@ -552,6 +600,20 @@ export default function PostComposer() {
       if (destination) { fd.append('target_type', destination.target_type); fd.append('target_id', destination.target_id); }
       if (sport) fd.append('sport', sport);
       fd.append('file', media.file);
+
+      // Measure duration in the browser — there is no ffprobe in the Vercel
+      // serverless runtime. Sent as a form field and plausibility-bounded
+      // server-side. A null result is fine: the byte quota is enforced from the
+      // real file size, and the bucket's own file_size_limit is the backstop.
+      if (media.isVideo) {
+        try {
+          const probeUrl = URL.createObjectURL(media.file);
+          const duration = await probeVideoDuration(probeUrl);
+          URL.revokeObjectURL(probeUrl);
+          if (duration != null) fd.append('durationSeconds', String(duration));
+        } catch { /* noop — never block upload on metadata */ }
+      }
+
       const r = await fetch('/api/profile-posts', { method: 'POST', body: fd });
       const json = await r.json().catch(() => ({}));
       setMediaStage('none');

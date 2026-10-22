@@ -20,7 +20,7 @@ import {
   TierName,
   TIER_TO_TRACK,
   AccountTrack,
-  MAX_CLAIMS_PER_TIER,
+  LISTING_CLAIMS_PER_TIER,
   canonicalTier,
 } from './pricing';
 import { tierAtLeast, tierRank, tierTrack } from './tier';
@@ -96,11 +96,17 @@ export function tierAtLeastSameTrack(
 }
 
 /**
- * Get max claims for a tier (shared function re-exported for convenience).
+ * Get the LISTING CLAIM allowance for a tier.
+ *
+ * Named for what it measures: approved ownership claims on directory entities
+ * (rink / team / league / player profile). NOT player capacity and NOT team
+ * capacity — see PLAYER_CAPACITY_PER_TIER and TEAM_LIMIT_PER_TIER in
+ * src/lib/pricing.ts. They were previously conflated behind the ambiguous
+ * `MAX_CLAIMS_PER_TIER` name.
  */
 export function getTierMaxClaims(tier: TierName | string | null | undefined): number {
   if (!tier) return 0;
-  return MAX_CLAIMS_PER_TIER[canonicalTier(tier)] ?? 0;
+  return LISTING_CLAIMS_PER_TIER[canonicalTier(tier)] ?? 0;
 }
 
 /**

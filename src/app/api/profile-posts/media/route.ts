@@ -20,20 +20,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
+import { registerAsset } from '@/lib/media-ledger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.invalid', supabaseServiceKey || 'placeholder');
 
 const BUCKET = 'post-media';
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+// Bucket-level hard cap for a single social-post asset (matches the Supabase
+// bucket's own file_size_limit, which remains the authoritative backstop for
+// direct-to-Storage uploads that bypass this route).
+const MAX_BYTES = 100 * 1024 * 1024; // 100 MB — video is allowed here
 
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'video/mp4', 'video/webm', 'video/quicktime',
+]);
 const EXT_FOR_MIME: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
 };
 
 export async function POST(request: NextRequest) {
@@ -55,13 +65,13 @@ export async function POST(request: NextRequest) {
   }
   if (!ALLOWED_MIME.has(file.type)) {
     return NextResponse.json(
-      { error: 'Unsupported image type. Use JPEG, PNG, WebP, or GIF.' },
+      { error: 'Unsupported media type. Use JPEG, PNG, WebP, GIF, MP4, WebM, or MOV.' },
       { status: 400 },
     );
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json(
-      { error: 'Image too large. Max 10 MB.' },
+      { error: `File too large. Max ${Math.round(MAX_BYTES / 1024 / 1024)} MB.` },
       { status: 400 },
     );
   }
@@ -98,6 +108,25 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+
+  // Register the object in the quota ledger BEFORE returning the URL.
+  //
+  // This row starts with zero references (no post points at it yet). The post
+  // creation route attaches the reference. An upload that is never attached —
+  // user abandons the composer — therefore becomes reapable after the grace
+  // window instead of silently consuming quota forever. That was the original
+  // leak: the bucket walk counted abandoned uploads and there was no way to
+  // tell them apart from live ones.
+  //
+  // Fails soft inside registerAsset: if the ledger write fails, the upload still
+  // succeeds and the bucket-walk fallback in media-usage.ts still measures it.
+  await registerAsset({
+    bucket: BUCKET,
+    objectPath: `${BUCKET}/${storagePath}`,
+    ownerUserId: userId,
+    bytes: file.size,
+    mimeType: file.type,
+  });
 
   const { data: publicUrlData } = supabaseAdmin.storage
     .from(BUCKET)
