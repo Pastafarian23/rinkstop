@@ -121,6 +121,27 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 100;            // normal clients per window per IP
 const TRUSTED_RATE_LIMIT_MAX = 1000;   // UA-claimed crawlers per window per IP
 
+// 2026-10-22 (Arnel, after the Singapore traffic review): tighter bucket for
+// bulk public-data reads.
+//
+// GA4 showed ~41k sessions from Singapore in one period (vs 1,215 US), and
+// ~11,800 rows are reachable through PostgREST with the public anon key and
+// no limit: players 6,352 / teams 3,244 / rinks 1,919 / leagues 298.
+//
+// These are legitimate PUBLIC directory pages in the UI — the browser fetch
+// API data the same way. But no human ever needs 100 requests/minute to a
+// JSON row endpoint, so we can cap those far below the page rate.
+//
+// Why this does NOT affect SEO or AI discoverability:
+//   - Crawlers (Googlebot, Bingbot, OAI-SearchBot, ChatGPT-User) fetch
+//     HTML pages and sitemaps. They do not query PostgREST for content.
+//   - The 1000/min trusted-crawler tier still applies, so any genuine
+//     crawler is unaffected even if it does touch these paths.
+//   - Human browsing a team page makes a handful of these calls, not 100.
+//   This is a traffic-control measure, not a crawler block. Nothing in
+// robots.txt changes and no UA is denied.
+const DATA_RATE_LIMIT_MAX = 30; // anon bulk-data reads per window per IP
+
 type RateLimitResult = { blocked: boolean; limit: number; remaining: number; resetMs: number };
 
 function checkRateLimit(
@@ -161,6 +182,21 @@ function cleanupOldEntries() {
   // the rate limit windows expire, we want to log 'new visitor'
   // again.
   firstSeenIPs.clear();
+}
+
+// Bulk public-data endpoints worth capping harder than normal page routes.
+// These serve the directory JSON that the anon key can already reach.
+const BULK_DATA_PATH_PREFIXES = [
+  '/api/rinks',
+  '/api/teams',
+  '/api/players',
+  '/api/leagues',
+  '/rest/v1/',        // direct PostgREST calls, if proxied through us
+  '/api/directory',
+];
+
+function isBulkDataPath(path: string): boolean {
+  return BULK_DATA_PATH_PREFIXES.some((p) => path === p || path.startsWith(p + '/') || path.startsWith(p));
 }
 
 export default clerkMiddleware(async (auth, request) => {
@@ -341,7 +377,12 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
                'unknown';
 
     const map = isTrustedBot ? trustedRateLimitMap : rateLimitMap;
-    const max = isTrustedBot ? TRUSTED_RATE_LIMIT_MAX : RATE_LIMIT_MAX;
+    // Bulk-data reads get their own tighter bucket unless the caller is a
+    // verified-by-UA crawler, which keeps the higher tier for real crawlers.
+    const isBulkData = !isTrustedBot && isBulkDataPath(path);
+    const max = isTrustedBot
+      ? TRUSTED_RATE_LIMIT_MAX
+      : (isBulkData ? DATA_RATE_LIMIT_MAX : RATE_LIMIT_MAX);
     const result = checkRateLimit(ip, map, max);
 
     if (result.blocked) {
@@ -351,6 +392,13 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
       // low for that engine) OR a flooder is impersonating a crawler.
       if (isTrustedBot) {
         console.warn('[middleware] crawler cap exceeded', JSON.stringify({
+          ip, ua: userAgent, path, limit: result.limit, at: Date.now(),
+        }));
+      } else if (isBulkData) {
+        // 2026-10-22: high-signal for bulk-data harvesting. A real user does
+        // not need 30/min to a JSON row endpoint. Log IP + path so we can
+        // identify harvest patterns without logging every normal request.
+        console.warn('[middleware] bulk data cap exceeded', JSON.stringify({
           ip, ua: userAgent, path, limit: result.limit, at: Date.now(),
         }));
       }

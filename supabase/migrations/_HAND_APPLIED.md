@@ -19,6 +19,59 @@ hand-applied files and will attempt to re-apply them, causing
 
 ---
 
+## 📋 CHECKLIST — every migration that CREATES a public table
+
+**Supabase stops auto-granting Data API access to new `public` tables on
+2026-10-30.** After that date a table created without explicit GRANTs is
+invisible to PostgREST and the feature that reads it returns
+`permission denied` at runtime — with no error at migration time.
+
+Every migration containing `CREATE TABLE ... public.<name>` MUST also
+contain explicit grants. Copy this block:
+
+```sql
+-- Required from 2026-10-30: Supabase no longer auto-grants Data API
+-- access to new public tables. Without these, PostgREST returns
+-- "permission denied" for this table and every feature that reads it
+-- breaks at runtime.
+grant select on public.<table> to anon;            -- only if publicly readable
+grant select, insert, update, delete on public.<table> to authenticated;
+grant all on public.<table> to service_role;       -- always
+```
+
+**Rules of thumb for which roles get `anon`:**
+
+| audience | anon | authenticated | service_role |
+|---|---|---|---|
+| public directory data (rinks, teams, players, leagues) | ✅ | ✅ | ✅ |
+| user-owned data (posts, prefs, saved items) | ❌ | ✅ | ✅ |
+| payments / subscriptions | ❌ | ✅ (RLS-scoped) | ✅ |
+| script-only audit tables | ❌ | ❌ | ✅ |
+
+**`anon` access is a deliberate decision, not a default.** A table with anon
+SELECT is publicly readable by anyone who loads rinkstop.com — the anon key
+ships in client JS. Only grant it when the data is meant to be public.
+
+**If a table has RLS enabled, anon/authenticated grants may still be
+required** — RLS filters *which rows* are visible, but without a table-level
+grant PostgREST denies the request outright. Grant the role AND write the
+policy; the policy is what makes it safe.
+
+**Also required for any new public table:**
+- `enable row level security` unless the table is intentionally
+  PostGIS/system-owned (`spatial_ref_sys` is the only current exception)
+- at least one policy, or RLS-on-with-zero-policies means nobody can read it
+  (see the `fixture_dedup_audit` entry below for a deliberate example)
+
+**Checklist:**
+1. Explicit GRANTs for each role that needs access
+2. RLS enabled (non-system table)
+3. Policies written for every role that received a grant
+4. `notify pgrst, 'reload schema';` at the end
+5. Verify with `information_schema.role_table_grants` after applying
+
+---
+
 ## 2026-07-05 — `2026-07-05_family_setup_completed_at.sql`
 
 **Applied:** 2026-07-06 03:01 CDT (Mon, ~7 hours after file was created)
@@ -399,6 +452,23 @@ middleware, crawler policy, or any publicly-readable content.
 - `conversion_daily_snapshots` has 0 anon and 0 authenticated grants
   (service_role only). If any feature reads it client-side it is already
   broken; worth confirming which.
+
+### Audited 2026-10-22 — both resolved, no action needed
+
+**`spatial_ref_sys` = known false positive.** Supabase's
+`rls_disabled_in_public` advisor flags it alongside `fixture_dedup_audit`,
+but the table is owned by PostGIS (7 anon grants included). Enabling RLS on
+it risks breaking geospatial queries. **Deliberately left alone.** If the
+advisor alert reappears naming it, that is expected and is not a finding.
+
+**`conversion_daily_snapshots` = correctly locked, not broken.** Verified:
+- 14 rows of aggregated GA4 funnel counters (searches_total, checkout_started,
+  claim_submitted, etc.). No PII, no user identifiers.
+- 1 RLS policy, and anon=0 / authenticated=0 / service_role=7 grants.
+- Only writer is `src/app/api/cron/conversion-snapshot/route.ts`, which uses
+  `supabaseAdmin` (service_role) behind a `CRON_SECRET` bearer check.
+- So the empty anon/authenticated grants are deliberate and correct. No code
+  reads it client-side. **Nothing to fix.**
 
 ## 2026-10-22 — `2026-10-22_post_media_bucket_video.sql`
 
