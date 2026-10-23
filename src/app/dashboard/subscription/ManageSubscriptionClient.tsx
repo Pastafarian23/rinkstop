@@ -14,13 +14,28 @@ interface Props {
  * Provides a "Manage in Stripe" button that opens the Stripe Customer Portal
  * for billing history, payment method, and invoice PDFs.
  *
- * INTENTIONAL: There is no "Cancel subscription" button here.
- * To change or cancel a paid plan, users must contact support@rinkstop.com.
- * This is a founder-friendly design decision — easy billing history,
- * friction on cancel/downgrade so we can hear what we could do better.
+ * SELF-SERVICE CANCELLATION (changed 2026-10-22)
  *
- * The Stripe Customer Portal must be configured (in the Stripe Dashboard)
- * to disable the "Cancel subscription" flow. See /api/billing/portal/route.ts.
+ * There is still no "Cancel subscription" button here — that lives in the Stripe
+ * Customer Portal, which is where Stripe expects customers to manage billing.
+ *
+ * This used to be deliberate friction: the Portal config had
+ * subscription_cancel DISABLED so cancellation required emailing support, on the
+ * theory that we would learn why people were leaving first. That was changed.
+ * Requiring an email to cancel creates friction at exactly the moment a
+ * customer is already unhappy, and it was never actually a supported policy —
+ * the copy claiming "cancel anytime in dashboard" was false while the Portal
+ * had it disabled.
+ *
+ * Live Portal config (bpc_1TgF86CJiUbEZVbnPPKN4ui5), verified after the change:
+ *   subscription_cancel: enabled, mode=at_period_end, proration_behavior=none,
+ *                        cancellation_reason optional
+ *   subscription_update: STILL DISABLED — self-serve plan switching would need
+ *                        proration the codebase does not implement
+ *
+ * So: cancel yourself in the Portal (effective at period end, no fee, no
+ * refund); switch plans by email. The code below is unchanged by design — the
+ * Portal button already opened the right place.
  */
 export default function ManageSubscriptionClient({ hasStripeCustomer, initialTier }: Props) {
   const [loading, setLoading] = useState(false);
@@ -107,8 +122,8 @@ export default function ManageSubscriptionClient({ hasStripeCustomer, initialTie
         paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)',
         lineHeight: 1.5,
       }}>
-        To change or cancel your plan, email <a href="mailto:support@rinkstop.com" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'underline' }}>support@rinkstop.com</a>.
-        We respond within 24 hours.
+        You can cancel in the portal above &mdash; it takes effect at the end of the period you already paid for, and your access continues until then. No cancellation fee, and we don&apos;t refund the unused remainder.
+        To switch between plans, email <a href="mailto:support@rinkstop.com" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'underline' }}>support@rinkstop.com</a> &mdash; we respond within 24 hours.
       </p>
     </div>
   );

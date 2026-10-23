@@ -378,7 +378,7 @@ export default function PricingComparisonTable() {
           }}
         >
           <div style={{ padding: '0 1rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
-            All paid plans renew automatically. To change or cancel a plan, email support@rinkstop.com — we respond within 24 hours, and your plan stays active through the end of the period you already paid for.
+            All paid plans renew automatically. To cancel, open Manage billing from your subscription page and choose Cancel plan — it takes effect at the end of the period you already paid for, and you keep full access until then. No cancellation fee, no refund for the unused remainder. To switch plans, email support@rinkstop.com.
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link

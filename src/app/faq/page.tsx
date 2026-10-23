@@ -113,11 +113,11 @@ const sections: Array<{
       },
       {
         q: 'How do I cancel or change my plan?',
-        a: 'Email support@rinkstop.com. We respond within 24 hours. We intentionally do not bury a cancel button in your account - we want to understand what we could have done better before you leave. Your benefits stay active through the end of the period you paid for, and we will not auto-renew.',
+        a: 'Go to /dashboard/subscription and click Manage billing, then choose Cancel plan. It takes effect at the end of the period you already paid for, so everything you bought keeps working until then. There is no cancellation fee, and we do not refund the unused remainder. You can optionally tell us why, which helps us improve. To switch plans instead of cancelling, email support@rinkstop.com and we will sort it out within 24 hours.',
       },
       {
         q: 'Can I upgrade mid-year?',
-        a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /pricing and pick the higher tier - the checkout flow handles proration automatically.',
+        a: 'Yes. Go to /pricing and pick the higher tier - your new plan takes effect as soon as checkout completes, and both entitlements stay active independently. Note that we do not automatically credit unused time from your current plan; if you upgrade part-way through, contact support@rinkstop.com and we will work it out with you.',
       },
       {
         q: 'What is the Founding Member badge?',
@@ -125,7 +125,7 @@ const sections: Array<{
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Hockey Passport - it is $24.99/year. To change or cancel a paid plan, email support@rinkstop.com and we respond within 24 hours; your plan stays active through the end of the period you paid for.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Hockey Passport - it is $24.99/year. To cancel, open Manage billing from your subscription page and choose Cancel plan. It takes effect at the end of the period you already paid for, so you keep everything you bought until then. There is no cancellation fee, and we do not refund the unused remainder. To switch between plans, email support@rinkstop.com and we respond within 24 hours.',
       },
     ],
   },

@@ -113,11 +113,11 @@ const FAQ = [
   },
   {
     q: 'Can I upgrade mid-year?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move between tiers in the same group at any time from your dashboard.',
+    a: 'Yes. Pick the higher tier on this page and checkout - your new plan takes effect as soon as payment clears. We do not automatically credit unused time from your current plan, so contact support@rinkstop.com if you are upgrading part-way through and we will work it out with you.',
   },
   {
     q: 'What if I want to change or cancel my subscription?',
-    a: 'Email support@rinkstop.com. We respond within 24 hours. Your benefits stay active through the end of your paid period.',
+    a: 'You can cancel yourself: open Manage billing from your subscription page and choose Cancel plan. It takes effect at the end of the period you already paid for, so your benefits stay active until then. There is no cancellation fee and we do not refund the unused remainder. Switching plans is handled by email - support@rinkstop.com, and we respond within 24 hours.',
   },
 ];
 
