@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
+import { foldSlugToAscii } from './lib/ascii-slug';
 
 // Per docs/CLEAN-POST-SLUGS-SPEC.md §6: post-slug redirect lookup runs at
 // the top of the middleware chain, before rate limiting or auth. Slug
@@ -93,6 +94,47 @@ async function lookupTeamSlugRedirect(slug: string): Promise<string | null> {
     return rows[0].to_slug;
   } catch (e) {
     console.error('[middleware] team slug redirect lookup failed:', e);
+    return null;
+  }
+}
+
+// ASCII-fold fallback (2026-10-23, per Arnel). When the exact-slug lookup
+// misses, fold the incoming slug to pure ASCII and look for a team whose
+// slug folds to the same value — that catches `3l-riviere-du-loup` →
+// `3l-rivière-du-loup`, `kromeriz` → `kroměříž`, `amals` → `åmåls`, and
+// every other diacritic-only spelling difference.
+//
+// The 2026-10-23 migration pre-seeds 196 of these into team_slug_redirects,
+// which is the fast path. This live lookup is the safety net so a team
+// created with an accented slug after the migration still resolves without
+// waiting for the next alias regeneration.
+//
+// Runs last in the chain, after the exact lookup has already missed, so it
+// costs one extra query only on URLs that would otherwise 404.
+async function lookupTeamSlugByFoldedSlug(slug: string): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  // Already pure ASCII and the exact lookup missed — folding would produce
+  // the same string, so a second query cannot help.
+  const folded = foldSlugToAscii(slug);
+  if (!folded || folded === slug) return null;
+  try {
+    const endpoint =
+      `${url}/rest/v1/team_workspaces` +
+      `?select=slug&is_active=eq.true&limit=3000`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(800),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ slug: string | null }>;
+    for (const row of rows) {
+      if (row.slug && foldSlugToAscii(row.slug) === folded) return row.slug;
+    }
+    return null;
+  } catch (e) {
+    console.error('[middleware] folded team slug lookup failed:', e);
     return null;
   }
 }
@@ -297,7 +339,10 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
     if (path.startsWith(prefix) && path.length > prefix.length) {
       const slug = path.slice(prefix.length).split('/')[0];
       if (slug && !slug.includes('.')) {
-        const toSlug = await lookupTeamSlugRedirect(slug);
+        let toSlug = await lookupTeamSlugRedirect(slug);
+        // Exact lookup missed. Fall back to ASCII-fold matching so a
+        // diacritic-only spelling difference still resolves.
+        if (!toSlug) toSlug = await lookupTeamSlugByFoldedSlug(slug);
         if (toSlug && toSlug !== slug) {
           const dest = new URL(prefix + toSlug + path.slice(prefix.length + slug.length), request.url);
           return NextResponse.redirect(dest, 308);
