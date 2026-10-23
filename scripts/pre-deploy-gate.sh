@@ -95,7 +95,7 @@ fi
 # makes the audit script a false ground-truth (passes while production is
 # broken, or vice versa). See scripts/autolink-drift-check.sh.
 if should_run 3; then
-  echo "[3/7] autolink drift check..."
+  echo "[3/9] autolink drift check..."
   if ! bash "$SCRIPT_DIR/autolink-drift-check.sh" 2>&1 | tail -30; then
     fail "autolink drift detected"
     note "src/lib/autolink.ts and scripts/_autolink-audit.mjs have diverged"
@@ -110,7 +110,7 @@ if should_run 4; then
   if [ "$SKIP_BUILD" -eq 1 ]; then
     note "build skipped (--skip-build)"
   else
-    echo "[4/7] running pnpm build (this takes 60-120s)..."
+    echo "[4/9] running pnpm build (this takes 60-120s)..."
     # 2026-09-04: the 2 GiB default Node heap OOMs on this project's
     # full route compile; bump to 4 GiB to mirror the Vercel build image.
     if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096" pnpm build 2>&1 | tail -30; then
@@ -131,7 +131,7 @@ fi
 # pages (which is what just got merged). If you want to check pages that
 # aren't on prod yet, run this manually with the file path.
 if should_run 5; then
-  echo "[5/7] HTML color audit (light-mode hex on dark bg)..."
+  echo "[5/9] HTML color audit (light-mode hex on dark bg)..."
   BASE="${BASE_URL:-https://rinkstop.com}"
 
   # Find all pages that were modified in the last commit (or against main
@@ -214,7 +214,7 @@ fi
 #
 # Only runs if migrations were added in the last commit.
 if should_run 6; then
-  echo "[6/7] migration sanity..."
+  echo "[6/9] migration sanity..."
   NEW_MIGS=$(git diff --name-only HEAD~1..HEAD 2>/dev/null | grep -E "^supabase/migrations/.*\.sql$" || true)
 
   if [ -z "$NEW_MIGS" ]; then
@@ -278,7 +278,7 @@ fi
 # Runs by default (no env var needed). Set SUPABASE_LIVE_CHECK=0 to skip
 # (e.g. when working offline).
 if should_run 7; then
-  echo "[7/7] live RLS sweep (all tables)..."
+  echo "[7/9] live RLS sweep (all tables)..."
   if [ "${SUPABASE_LIVE_CHECK:-1}" != "1" ]; then
     note "SUPABASE_LIVE_CHECK=0 — skipping live RLS sweep"
     ok "live RLS sweep skipped"
@@ -301,7 +301,7 @@ fi
 # user with an org plan but no personal plan gets locked out of features
 # their org plan unlocks. See memory/2026-10-22-org-tier-audit.md §9.
 if should_run 8; then
-  echo "[8/8] cross-track tier comparison check..."
+  echo "[8/9] cross-track tier comparison check..."
   CROSS_TRACK=$(grep -rnE "tierAtLeast(SameTrack)?\([A-Za-z_.]+, *'(business_|club_|league|federation|enterprise)" src/ --include='*.ts' --include='*.tsx' 2>/dev/null | grep -v "^src/app/api/listings/\[id\]/feature/route.ts" || true)
   if [ -n "$CROSS_TRACK" ]; then
     fail "cross-track tier comparison found"
@@ -311,6 +311,27 @@ if should_run 8; then
     note "Use tierAtLeastSameTrack(orgTier, 'org_pro') for org-track gates."
   else
     ok "no cross-track tier comparisons"
+  fi
+fi
+
+# ------------------------------------------------------------------ Gate 9
+# Vercel auto-promote selection logic. The script in
+# scripts/cron-vercel-auto-promote.mjs is the only thing that moves the
+# production alias onto the newest main deploy (the project has no
+# productionBranch set). It already failed silently twice on 2026-10-23:
+# the target===null filter stopped matching, and the alias lookup 403'd and
+# was swallowed. A third bug rolled production backwards.
+#
+# tests/vercel-auto-promote.test.ts encodes those cases so a future edit that
+# reintroduces them fails the push instead of failing silently in production.
+if should_run 9; then
+  echo "[9/9] vercel auto-promote selection logic..."
+  if npx vitest run tests/vercel-auto-promote.test.ts 2>&1 | tail -12; then
+    ok "auto-promote selection logic tests passed"
+  else
+    fail "auto-promote selection logic tests failed"
+    note "scripts/cron-vercel-auto-promote.mjs picked the wrong deploy."
+    note "Update the test alongside the script — the cases encode a real rollback."
   fi
 fi
 
