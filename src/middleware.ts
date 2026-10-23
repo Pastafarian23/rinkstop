@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { foldSlugToAscii, hasNonAscii } from './lib/ascii-slug';
 import {
+  getCrawlerIpLists,
+  isVerifiedBingIp,
+  isVerifiedGoogleIp,
+} from './lib/crawler-ip-verification';
+import {
   buildLogLine,
   extractIp,
   isTrackedPath,
@@ -512,13 +517,22 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
   //   second").  Real crawlers stay under the cap; spammers get
   //   capped too.
   //
-  // NOTE: UA alone is not a real verification.  This is an interim
-  // fix until we can implement IP-range verification (see Task 1.2).
-  // UA-claimed requests from IPs OUTSIDE the published crawler
-  // ranges are logged for analysis (Task 1.3) but are still served
-  // at the higher tier.
+  // 2026-10-23: IP-range verification added (Arnel-approved).
+  //
+  // The UA string alone is NOT a verification — anyone can send
+  // `User-Agent: Googlebot` in one line of code, which previously bought a
+  // free 10x allowance. Now the elevated tier is only granted when the
+  // SOURCE IP is inside the crawler's officially published ranges
+  // (Google common-crawlers.json, Bing bingbot.json).
+  //
+  // FAIL-OPEN BY DESIGN: if the published lists cannot be fetched, we fall
+  // back to trusting the UA. A network hiccup must never cost us Google or
+  // Bing rankings. The exposure is a bounded, temporary window — and the
+  // global per-path cap (which ignores IP and UA entirely) still applies.
   const userAgent = request.headers.get('user-agent') || '';
-  const isTrustedBot = /\bGooglebot\b|\bbingbot\b|\bSlurp\b|\bDuckDuckBot\b|\bBaiduspider\b|\bYandexBot\b|\bApplebot\b/i.test(userAgent);
+  const claimsBotUa = /\bGooglebot\b|\bbingbot\b|\bSlurp\b|\bDuckDuckBot\b|\bBaiduspider\b|\bYandexBot\b|\bApplebot\b/i.test(userAgent);
+  const claimsGoogleUa = /\bGooglebot\b|\bGoogle-InspectionTool\b|\bStorebot-Google\b|\bGoogleOther\b/i.test(userAgent);
+  const claimsBingUa = /\bbingbot\b|\bmsnbot\b/i.test(userAgent);
 
   // 2026-10-23: abuse forensics. We log IP + UA ourselves on the paths that
   // attract abuse, because Vercel's runtime logs carry neither and roll over
@@ -535,6 +549,41 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
                request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                request.headers.get('x-real-ip') ||
                'unknown';
+
+    // 2026-10-23: verify claimed-crawler UAs against the published IP ranges.
+    //
+    // The elevated tier used to be granted on the UA string alone, which meant
+    // anyone could claim `Googlebot` and get 10x the rate limit for free. Now
+    // the tier is EARNED: the source IP must be inside Google's or Bing's
+    // officially published ranges.
+    //
+    // The list fetch is cached for 24h in module scope, so this is a Map lookup
+    // on the hot path, not a network call.
+    let isVerifiedCrawler = false;
+    let spoofedCrawlerUa = false;
+    if (claimsBotUa) {
+      const lists = await getCrawlerIpLists();
+      if (lists) {
+        isVerifiedCrawler =
+          (claimsGoogleUa && isVerifiedGoogleIp(ip, lists)) ||
+          (claimsBingUa && isVerifiedBingIp(ip, lists));
+        // A request claiming to be Google/Bing from an IP outside their published
+        // ranges is almost certainly an impersonator. It drops to the normal tier
+        // AND gets logged, so the pattern becomes visible.
+        spoofedCrawlerUa = !isVerifiedCrawler && (claimsGoogleUa || claimsBingUa);
+        if (spoofedCrawlerUa) {
+          console.warn('[middleware] crawler UA spoof detected', JSON.stringify({
+            ip, ua: userAgent, path, at: Date.now(),
+          }));
+        }
+      } else {
+        // Fail OPEN: the list was unavailable, so trust the UA as before.
+        // The global per-path cap still applies regardless.
+        isVerifiedCrawler = true;
+      }
+    }
+
+    const isTrustedBot = claimsBotUa && isVerifiedCrawler;
 
     const map = isTrustedBot ? trustedRateLimitMap : rateLimitMap;
     // Bulk-data reads get their own tighter bucket unless the caller is a
