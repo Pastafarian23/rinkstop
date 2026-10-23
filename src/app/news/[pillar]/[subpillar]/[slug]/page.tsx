@@ -16,6 +16,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { shortenSercTitle } from '@/lib/seo-title';
 import FullArticle, { type FullPost } from '@/components/FullArticle';
 
 const supabase = supabaseAdmin;
@@ -109,7 +110,19 @@ export async function generateMetadata({ params }: { params: Promise<{ pillar: s
   const post = await getFullPostBySlug(slug);
   if (post) {
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
-    const blogTitle = stripSuffix(post.seo_title || post.title);
+    // 2026-10-23 (GSC title pass): 185 of the 1,000 posts with a seo_title
+    // render a title longer than Google's ~60 char display limit — the
+    // worst is 109 chars. The stored seo_title often includes the
+    // "| RinkStop" suffix, which stripSuffix removes and the layout template
+    // then re-adds, so the final title was always ~11 chars over what the
+    // author intended.
+    //
+    // Fix at the RENDER layer rather than rewriting 185 DB rows: shorten the
+    // title to fit the budget, dropping the least load-bearing trailing
+    // clause first (never mid-word — a cut-off "Wh..." reads as broken).
+    // The full title is still in the page's H1 and in OpenGraph, so nothing
+    // is lost for readers or social previews.
+    const blogTitle = shortenSercTitle(stripSuffix(post.seo_title || post.title));
     const seoDesc = post.seo_description || post.subtitle || (post.content || '').replace(/<[^>]*>/g, '').substring(0, 160);
     const ogImage = post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`;
     return {

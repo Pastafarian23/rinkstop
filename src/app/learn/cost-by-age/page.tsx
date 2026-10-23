@@ -5,7 +5,13 @@ import LearnJsonLd from '@/components/LearnJsonLd';
 import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
-  title: 'Hockey Cost by Age — What Youth Hockey Costs from 6U to 18U',
+  // 2026-10-23 (GSC title pass): the layout's title template appends
+  // " | RinkStop" (11 chars), so the page's own title must fit in 49 chars
+  // for the FINAL title to stay under Google's ~60 char display limit.
+  // The previous title was 62 chars, rendering at 72 and getting truncated
+  // mid-phrase in the SERP. This page ranks at position 7.1 with 1,162
+  // impressions, so the truncation was costing real clicks.
+  title: 'Hockey Cost by Age: 6U to 18U Pricing',
   description: 'How much does youth hockey cost? 2026 pricing for 6U through 18U: registration ($150-$3,000), equipment ($200-$1,500), ice time, travel. Real family budgets, cost calculator, and ways to save.',
   keywords: ['hockey cost by age', 'hockey cost', 'youth hockey cost', 'how much does hockey cost', 'hockey budget', 'hockey family budget'],
   alternates: { canonical: 'https://rinkstop.com/learn/cost-by-age' },
