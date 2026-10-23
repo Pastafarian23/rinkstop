@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase';
 import { NhlMatch, buildGameSlug, slugify } from '@/lib/nhl-data';
 
@@ -10,35 +11,63 @@ export const metadata: Metadata = {
 
 export const revalidate = 300; // 5 min
 
+// 2026-10-23 (Singapore traffic incident):
+//
+// This page reads `searchParams`, which makes Next.js treat the route as
+// DYNAMIC. That silently disables the `revalidate = 300` above — production
+// served `cache-control: private, no-cache, no-store` with `x-vercel-cache:
+// MISS` on every single request, so every hit re-rendered the page AND
+// re-queried Supabase server-side.
+//
+// GA4 measured 74,971 Singapore users hitting this one URL on 2026-10-22
+// alone (77,528 sessions / 77,954 pageviews, 99.7% bounce, 4.17s avg
+// duration). At ~270ms per query that is ~5.6 hours of pure database time
+// from a single day of bot traffic.
+//
+// The structural fix is to cache the DATABASE READ, not to rely on the
+// route-level `revalidate` (which cannot apply to a dynamic route).
+// `unstable_cache` memoizes the query result per (from,to) pair with a
+// 5-minute TTL, so 75,000 requests collapse into ~1 query per distinct
+// date range per 5-minute window.
+//
+// This is a win for legitimate traffic too: the page was paying a full DB
+// round-trip on every single page view for every real user as well.
+const getGamesForDateRangeCached = (fromIso: string, toIso: string) =>
+  unstable_cache(
+    async () => {
+      let all: NhlMatch[] = [];
+      let from = 0;
+      const batch = 1000;
+      while (true) {
+        const { data, error } = await supabaseAdmin
+          .from('nhl_matches')
+          .select('*')
+          .gte('date', fromIso)
+          .lt('date', toIso)
+          .order('date', { ascending: true })
+          .range(from, from + batch - 1);
+        if (error) {
+          console.error('[nhl-schedule] error:', error.message);
+          return all;
+        }
+        if (!data || data.length === 0) break;
+        all = all.concat(data as NhlMatch[]);
+        if (data.length < batch) break;
+        from += batch;
+      }
+      return all;
+    },
+    ['nhl-schedule', fromIso, toIso],
+    { revalidate: 300, tags: ['nhl-schedule'] },
+  )();
+
 interface DayGroup {
   dateKey: string;       // YYYY-MM-DD
   dateObj: Date;
   games: NhlMatch[];
 }
 
-async function getGamesForDateRange(fromIso: string, toIso: string): Promise<NhlMatch[]> {
-  let all: NhlMatch[] = [];
-  let from = 0;
-  const batch = 1000;
-  while (true) {
-    const { data, error } = await supabaseAdmin
-      .from('nhl_matches')
-      .select('*')
-      .gte('date', fromIso)
-      .lt('date', toIso)
-      .order('date', { ascending: true })
-      .range(from, from + batch - 1);
-    if (error) {
-      console.error('[nhl-schedule] error:', error.message);
-      return all;
-    }
-    if (!data || data.length === 0) break;
-    all = all.concat(data as NhlMatch[]);
-    if (data.length < batch) break;
-    from += batch;
-  }
-  return all;
-}
+// See getGamesForDateRangeCached above for why the read is memoized.
 
 function fmtTime(iso: string): string {
   // NHL games are scheduled in the venue's local time, but DB stores UTC.
@@ -138,7 +167,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     toDate.setDate(toDate.getDate() + 2);
   }
 
-  const games = await getGamesForDateRange(fromDate.toISOString(), toDate.toISOString());
+  const games = await getGamesForDateRangeCached(fromDate.toISOString(), toDate.toISOString());
 
   // Group by date in ET (America/New_York), matching fmtDateLong display.
   // Late-night games stored as early-morning UTC must group under their ET date,

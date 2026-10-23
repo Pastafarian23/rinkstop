@@ -175,9 +175,42 @@ const trustedRateLimitMap = new Map<string, { count: number; windowStart: number
 // cycle (every 100 requests) so the set doesn't grow unbounded.
 const firstSeenIPs = new Set<string>();
 
+// 2026-10-23 (Singapore traffic incident): GLOBAL per-path limiter.
+//
+// The existing limiter is keyed by IP only. A scraper running an IP pool
+// (proxy / botnet / cloud fleet) therefore bypasses it completely — 75,000
+// requests spread over N IPs each sit under the per-IP cap. That is exactly
+// what GA4 measured: 74,971 Singapore users on /directory/nhl/schedule in a
+// single day (2026-10-22), on top of a normal traffic base.
+//
+// This limiter counts requests per PATH across ALL clients, so distributing
+// across IPs no longer helps. It is applied only to paths that are
+// (a) expensive to serve and (b) not meaningfully useful to crawl in bulk.
+// It deliberately does NOT apply to /news/*, /directory/rinks/*, /learn/*
+// or the sitemap — those are the pages we WANT indexed.
+//
+// The cap is generous (600/min across the whole site for a given path).
+// A real Googlebot crawl of one path is far below that; a human browsing
+// is 1-2/min. A flooder gets cut off at the edge instead of driving
+// thousands of server-side DB queries.
+const globalPathRateLimitMap = new Map<string, { count: number; windowStart: number }>();
+
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 100;            // normal clients per window per IP
 const TRUSTED_RATE_LIMIT_MAX = 1000;   // UA-claimed crawlers per window per IP
+
+// Paths subject to the global per-path cap. Deliberately narrow: only
+// pages that were measured as expensive AND that a scraper has an
+// incentive to hammer. See the comment block above.
+const GLOBAL_PATH_LIMIT_PREFIXES = [
+  '/directory/nhl/schedule',
+  '/directory/games',
+  '/sign-up',
+  '/login',
+  '/claim-your-listing',
+  '/ice-rinks-near-me',
+];
+const GLOBAL_PATH_LIMIT_MAX = 600; // requests/min for the whole site on one path
 
 // 2026-10-22 (Arnel, after the Singapore traffic review): tighter bucket for
 // bulk public-data reads.
@@ -234,6 +267,12 @@ function cleanupOldEntries() {
       }
     }
   }
+  // Same cleanup for the global per-path map (2026-10-23).
+  for (const [key, record] of globalPathRateLimitMap.entries()) {
+    if (now - record.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
+      globalPathRateLimitMap.delete(key);
+    }
+  }
   // Also clear the 'first seen' IP set.  After cleanup, the next
   // crawler request from any IP will be logged again (and the IP
   // will be re-added to the set).  This is intentional: after
@@ -251,10 +290,45 @@ const BULK_DATA_PATH_PREFIXES = [
   '/api/leagues',
   '/rest/v1/',        // direct PostgREST calls, if proxied through us
   '/api/directory',
+  // 2026-10-23: the bulk dataset export is ~5.5MB per request and was
+  // uncapped — it sits outside every other prefix above. Not the source
+  // of the Singapore burst (GA4 shows that traffic landing on HTML
+  // pages), but it is the single most expensive endpoint we expose and
+  // should not be fetchable without a limit.
+  '/api/data',
 ];
 
 function isBulkDataPath(path: string): boolean {
   return BULK_DATA_PATH_PREFIXES.some((p) => path === p || path.startsWith(p + '/') || path.startsWith(p));
+}
+
+// Returns the path prefix this request should be globally capped on, or null.
+function getGlobalLimitedPath(path: string): string | null {
+  for (const p of GLOBAL_PATH_LIMIT_PREFIXES) {
+    if (path === p || path.startsWith(p + '/') || path.startsWith(p)) return p;
+  }
+  return null;
+}
+
+// Global (all-IP) per-path limiter. Separate map from the per-IP one so a
+// distributed scraper cannot spread its requests thin enough to stay under
+// the per-IP cap.
+function checkGlobalPathRateLimit(path: string): RateLimitResult {
+  const key = getGlobalLimitedPath(path)!;
+  const now = Date.now();
+  const record = globalPathRateLimitMap.get(key);
+
+  if (!record || now - record.windowStart > RATE_LIMIT_WINDOW_MS) {
+    globalPathRateLimitMap.set(key, { count: 1, windowStart: now });
+    return { blocked: false, limit: GLOBAL_PATH_LIMIT_MAX, remaining: GLOBAL_PATH_LIMIT_MAX - 1, resetMs: now + RATE_LIMIT_WINDOW_MS };
+  }
+
+  if (record.count >= GLOBAL_PATH_LIMIT_MAX) {
+    return { blocked: true, limit: GLOBAL_PATH_LIMIT_MAX, remaining: 0, resetMs: record.windowStart + RATE_LIMIT_WINDOW_MS };
+  }
+
+  record.count++;
+  return { blocked: false, limit: GLOBAL_PATH_LIMIT_MAX, remaining: GLOBAL_PATH_LIMIT_MAX - record.count, resetMs: record.windowStart + RATE_LIMIT_WINDOW_MS };
 }
 
 export default clerkMiddleware(async (auth, request) => {
@@ -445,6 +519,29 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
       ? TRUSTED_RATE_LIMIT_MAX
       : (isBulkData ? DATA_RATE_LIMIT_MAX : RATE_LIMIT_MAX);
     const result = checkRateLimit(ip, map, max);
+
+    // 2026-10-23: global per-path cap, applied to ALL callers regardless of
+    // IP or UA. This is the layer that stops a distributed scraper, which
+    // the per-IP limiter above cannot touch. Runs AFTER the per-IP check so
+    // the more specific per-IP limit still reports first.
+    const globalPath = getGlobalLimitedPath(path);
+    if (globalPath) {
+      const globalResult = checkGlobalPathRateLimit(path);
+      if (globalResult.blocked) {
+        console.warn('[middleware] global path cap exceeded', JSON.stringify({
+          ip, ua: userAgent, path, limit: globalResult.limit, at: Date.now(),
+        }));
+        return new NextResponse('Too Many Requests', {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'X-RateLimit-Limit': String(globalResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(globalResult.resetMs),
+          },
+        });
+      }
+    }
 
     if (result.blocked) {
       // Always log the 429 (crawler cap exceeded).  This is the
