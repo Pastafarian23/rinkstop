@@ -238,16 +238,22 @@ describe('related copy consistency', () => {
 
 describe('cancellation policy is stated the same way everywhere', () => {
   /**
-   * The Portal cannot cancel or switch plans (subscription_cancel and
-   * subscription_update are both DISABLED, verified against the live default
-   * configuration), and /api/tier/upgrade rejects self-serve downgrades by
-   * design. So every customer-facing surface must say "email support",
-   * not imply a self-serve button.
+   * SELF-SERVICE CANCELLATION IS NOW ENABLED (2026-10-22).
    *
-   * This is the third distinct place copy has contradicted the product, after
-   * "Cancel anytime in dashboard" and the unreachably-promised retention. The
-   * common factor is that each was plausible marketing language nobody checked
-   * against the actual capability.
+   * Stripe Portal config bpc_1TgF86CJiUbEZVbnPPKN4ui5 was changed:
+   *   subscription_cancel: enabled=true, mode=at_period_end,
+   *                        proration_behavior=none, cancellation_reason optional
+   *   subscription_update: STILL DISABLED (no proration logic exists)
+   *
+   * So the policy is: cancel yourself in the Portal, effective at period end,
+   * access preserved until then, no fee, no refund of the unused remainder.
+   * Switching plans is still email-only — that is a genuine limitation, not an
+   * oversight, because self-serve switching would need proration we do not have.
+   *
+   * These tests exist because copy has now contradicted the product FIVE times:
+   * "cancel anytime in dashboard", an unreachably-promised retention window, a
+   * proration credit that no code computes, email-only cancellation after
+   * self-service was enabled, and a dashboard tier-switch that does not exist.
    */
   const CANCELLATION_SURFACES = [
     'src/components/PricingComparisonTable.tsx',
@@ -258,75 +264,143 @@ describe('cancellation policy is stated the same way everywhere', () => {
     'src/components/ToolUpsell.tsx',
   ];
 
-  it('no surface promises self-serve cancellation or switching', () => {
-    const banned = [
-      /cancel anytime(?! by emailing)/i,
-      /Cancel anytime in dashboard/i,
-      /switch tiers or self-serve/i,
-    ];
+  it('no surface still claims cancellation requires email', () => {
     const offenders: string[] = [];
     for (const rel of CANCELLATION_SURFACES) {
       const src = readFileSync(join(process.cwd(), rel), 'utf8');
-      for (const re of banned) {
-        if (re.test(src)) offenders.push(`${rel} :: ${re}`);
+      // These are TS object literals whose values are single-quoted strings
+      // containing escaped apostrophes and long prose. Splitting on [.!?]
+      // alone walks straight through a closing quote and merges the next
+      // question into the previous answer — which is what caused two rounds of
+      // false positives on copy that was already correct.
+      //
+      // So: isolate each string literal first, then split THAT into sentences.
+      // Also normalise \' so an escaped apostrophe is not read as a sentence
+      // break.
+      const literals = src.match(/'(?:[^'\\]|\\.)*'/g) ?? [];
+      for (const raw of literals) {
+        const text = raw.replace(/\\'/g, "'").replace(/^'|'$/g, '');
+        const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+        for (const sentence of sentences) {
+          const aboutCancellation =
+            /cancel (your |the |a )?(plan|subscription)/i.test(sentence) ||
+            /\bto cancel\b/i.test(sentence) ||
+            /cancelling, email/i.test(sentence) ||
+            /cancelling your/i.test(sentence);
+          const saysEmail =
+            /\b(email|contact|reach)\s+(us|support)\b/i.test(sentence) ||
+            /support@rinkstop\.com/i.test(sentence);
+          if (!aboutCancellation || !saysEmail) continue;
+
+          // "To switch plans instead of cancelling, email support" is CORRECT —
+          // it routes SWITCHING to email and contrasts it with the self-serve
+          // cancel described in the previous sentence.
+          const routesSwitching = /\binstead of\b|\bswitch\b|\bchange plans\b/i.test(sentence);
+          if (routesSwitching) continue;
+
+          offenders.push(`${rel} :: ${sentence.replace(/\s+/g, ' ').slice(0, 120)}`);
+        }
       }
     }
-    expect(offenders, 'surfaces implying self-serve cancellation').toEqual([]);
+    expect(offenders, 'sentences claiming cancellation requires email').toEqual([]);
   });
 
-  it('the surfaces that mention cancelling all point at support email', () => {
-    // Each of these tells the customer cancellation exists; they must also say
-    // how. A bare "cancel" with no route is the gap.
+  it('the surfaces that mention cancelling point at the Portal', () => {
     const mustRoute = [
       'src/components/PricingComparisonTable.tsx',
       'src/app/dashboard/subscription/ManageSubscriptionClient.tsx',
+      'src/app/faq/page.tsx',
+      'src/app/pricing/PricingContent.tsx',
       'src/app/guides/rinkstop-vs-competitors/page.tsx',
     ];
     for (const rel of mustRoute) {
       const src = readFileSync(join(process.cwd(), rel), 'utf8');
-      const mentionsCancel = /cancel/i.test(src);
-      if (!mentionsCancel) continue;
-      expect(src, `${rel} mentions cancellation without a support route`).toContain(
-        'support@rinkstop.com',
-      );
+      if (!/cancel/i.test(src)) continue;
+      expect(
+        src,
+        `${rel} mentions cancellation without naming Manage billing / the Portal`,
+      ).toMatch(/Manage billing|portal/i);
     }
   });
 
-  it('the advertised support response time is stated consistently', () => {
-    // "respond within 24 hours" appears in several surfaces. If one drifts to
-    // "48 hours" or drops it, customers get two different promises.
-    const withPromise = CANCELLATION_SURFACES.filter((rel) => {
+  it('states when cancellation takes effect, on every surface that mentions it', () => {
+    // The single most important fact: cancelling does NOT cut access now.
+    const mustStateTiming = [
+      'src/components/PricingComparisonTable.tsx',
+      'src/app/dashboard/subscription/ManageSubscriptionClient.tsx',
+      'src/app/faq/page.tsx',
+      'src/app/pricing/PricingContent.tsx',
+      'src/app/guides/rinkstop-vs-competitors/page.tsx',
+    ];
+    for (const rel of mustStateTiming) {
       const src = readFileSync(join(process.cwd(), rel), 'utf8');
-      return /respond within/i.test(src);
-    });
-    expect(withPromise.length).toBeGreaterThan(0);
-    for (const rel of withPromise) {
+      if (!/cancel/i.test(src)) continue;
+      expect(
+        src,
+        `${rel} does not say cancellation takes effect at period end`,
+      ).toMatch(/end of the period|until then|takes effect at the end/i);
+    }
+  });
+
+  it('does not promise refunds or credits, because none are implemented', () => {
+    // proration_behavior='none' means Stripe issues no credit at all.
+    const offenders: string[] = [];
+    for (const rel of CANCELLATION_SURFACES) {
       const src = readFileSync(join(process.cwd(), rel), 'utf8');
-      const matches = src.match(/respond within (\d+) hours?/gi) ?? [];
-      for (const m of matches) {
-        expect(m.toLowerCase(), `${rel} promises a different response time`).toContain(
-          'within 24 hours',
-        );
+      // A statement that we DO NOT refund is fine; a promise of a refund is not.
+      const promisesRefund =
+        /\b(we (will )?refund|full refund|refund you)\b/i.test(src) &&
+        !/\b(no|not|never|do not|don't)\b[^.]{0,40}refund/i.test(src);
+      if (promisesRefund) offenders.push(rel);
+    }
+    expect(offenders, 'surfaces promising a refund that never happens').toEqual([]);
+  });
+
+  it('no surface promises automatic proration on upgrade', () => {
+    // There is no proration_behavior set anywhere in the app code, and the
+    // upgrade flow creates a NEW subscription, so Stripe issues no credit.
+    //
+    // Only string literals are checked — a code comment that NAMES
+    // proration_behavior to explain why it is 'none' is documentation, not a
+    // customer promise, and flagging it would only encourage someone to delete
+    // the explanation.
+    const offenders: string[] = [];
+    for (const rel of CANCELLATION_SURFACES) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8');
+      const literals = (src.match(/'(?:[^'\\]|\\.)*'/g) ?? []).map((raw) =>
+        raw.replace(/\\'/g, "'").replace(/^'|'$/g, ''),
+      );
+      for (const text of literals) {
+        if (/prorat/i.test(text) || /unused portion[^.!]{0,40}credited/i.test(text)) {
+          offenders.push(`${rel} :: ${text.replace(/\s+/g, ' ').slice(0, 110)}`);
+        }
       }
     }
+    expect(offenders, 'customer-visible strings promising automatic proration').toEqual([]);
   });
 
-  it('does not claim proration or credits the system does not calculate', () => {
-    // The old competitor-guide answer promised "the unused portion of your
-    // current plan is credited". No proration logic exists in the codebase, so
-    // that was an unsupported financial promise.
+  it('does not promise self-serve tier switching, which is genuinely disabled', () => {
+    const offenders: string[] = [];
+    for (const rel of CANCELLATION_SURFACES) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8');
+      if (
+        /move between tiers[^.!]{0,60}(dashboard|yourself)/i.test(src) ||
+        /switch[^.!]{0,40}from your dashboard/i.test(src)
+      ) {
+        offenders.push(rel);
+      }
+    }
+    expect(offenders, 'surfaces promising self-serve tier switching').toEqual([]);
+  });
+
+  it('plan switching is still described as a support request, matching reality', () => {
+    // subscription_update is DISABLED, so this remains true — but it is
+    // asserted so that if the Portal later gains switching, the copy is
+    // revisited rather than silently left stale.
     const src = readFileSync(
-      join(process.cwd(), 'src/app/guides/rinkstop-vs-competitors/page.tsx'),
+      join(process.cwd(), 'src/app/pricing/PricingContent.tsx'),
       'utf8',
     );
-    expect(src).not.toMatch(/unused portion .{0,40}credited/i);
-  });
-
-  it('the FAQ does not claim the portal can cancel', () => {
-    // The FAQ answer about "Manage billing" is accurate about invoices and
-    // payment methods — those ARE enabled. It must not imply cancellation.
-    const src = readFileSync(join(process.cwd(), 'src/app/faq/page.tsx'), 'utf8');
-    const billingFaq = src.match(/Stripe Customer Portal[^']*/)?.[0] ?? '';
-    expect(billingFaq).not.toMatch(/cancel/i);
+    expect(src).toMatch(/[Ss]witching plans is handled by email/);
   });
 });

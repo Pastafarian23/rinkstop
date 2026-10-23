@@ -23,7 +23,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 //   not want users to cancel or downgrade without talking to support first. This route
 //   exists ONLY to give users billing history + payment method management.
 //
-//   If you need to change or cancel your plan: email support@rinkstop.com.
+//   Customers can now cancel from the Portal itself (cancel at period end,
+//   no proration). Switching between plans is still handled by support.
 //
 //   All plan changes (including tier upgrades) go through /api/tier/upgrade, which now
 //   rejects downgrade requests for users with an active subscription.

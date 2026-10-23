@@ -116,7 +116,7 @@ const FAQ = [
   },
   {
     q: 'How do I change tier or cancel my plan?',
-    a: 'Upgrades take effect immediately, and you keep both plans if you buy a personal Passport and an organization plan. To change or cancel a plan, email support@rinkstop.com — we respond within 24 hours and your plan stays active through the end of the period you already paid for. Downgrades are handled by us rather than self-serve, so nothing changes without you agreeing to it first.',
+    a: 'Upgrades take effect immediately, and you keep both plans if you buy a personal Passport and an organization plan. Cancellation is self-serve: open Manage billing and choose Cancel plan, and it takes effect at the end of the period you already paid for — no fee, and no refund for the unused remainder. Switching between plans is handled by us; email support@rinkstop.com and we respond within 24 hours.',
   },
 ];
 
