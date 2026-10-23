@@ -4,7 +4,12 @@
  * IdentityClient — the actual UI for /dashboard/identity
  *
  * States:
- *   - canVerify=false → upgrade CTA (Hockey Passport or Organization Plus+ required)
+ *   - canVerify=false → upgrade CTA. NOTE: as of WS25 (2026-08-23) the server
+ *     hardcodes canVerify=true because verification is free on every tier, so
+ *     this branch is currently unreachable. Kept as a guard rather than
+ *     deleted, because the prop is still passed in and removing the branch
+ *     would make a future re-gating a silent copy change instead of a
+ *     deliberate one.
  *   - status='active'  → "Identity verified" with date + expiry
  *   - status='expired' → "Re-verify" CTA
  *   - status='never_verified' OR 'in_progress' → "Verify" CTA + iframe after start
@@ -239,11 +244,11 @@ export default function IdentityClient({
       <div style={{ maxWidth: 720 }}>
         <h1 style={titleStyle}>Identity verification</h1>
         <p style={bodyStyle}>
-          Identity verification is available on <strong>Hockey Passport</strong> (personal) or <strong>Organization Plus</strong> (business). It costs you $0 — the platform absorbs the fee.
+          Identity verification is <strong>free on every account</strong>, including Free. It takes about a minute: a government-issued ID matched against a selfie. Paid plans do not unlock verification — they bundle it at no extra cost because the platform absorbs the provider fee.
         </p>
         <div style={cardStyle}>
           <p style={{ ...bodyStyle, marginBottom: '1.25rem' }}>
-            Upgrade to Hockey Passport ($24.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
+            Verification is available on every plan, including Free — no upgrade required.
           </p>
           <Link
             href="/pricing"
