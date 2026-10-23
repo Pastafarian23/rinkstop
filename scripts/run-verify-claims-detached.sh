@@ -4,7 +4,10 @@
 # Alerts to RinkStop Ops if any FAIL articles found (or if FAIL count grew
 # since the previous run).
 #
-# Result file at /tmp/audit-result.json. Log at /tmp/audit.log.
+# Result file at /tmp/verify-claims.result.json (hardcoded in _audit-nightly.cjs).
+# Log at /tmp/audit.log.
+# NOTE: AUDIT_RESULT_FILE is passed but NOT honored — _audit-nightly.cjs hardcodes
+# the result path. Kept only as a hint; do not rely on it for reads.
 
 set -e
 
@@ -25,4 +28,4 @@ setsid nohup env \
 PID=$!
 disown "$PID" 2>/dev/null || true
 echo "$PID" > "$PID_FILE"
-echo "Article audit started, PID=$PID, log=$LOG_FILE, result=$RESULT_FILE"
+echo "Article audit started, PID=$PID, log=$LOG_FILE, result=/tmp/verify-claims.result.json"
