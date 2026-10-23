@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { foldSlugToAscii, hasNonAscii } from './lib/ascii-slug';
+import {
+  buildLogLine,
+  extractIp,
+  isTrackedPath,
+  sanitizeUa,
+  shouldLogIdentity,
+} from './lib/request-logger';
 
 // Per docs/CLEAN-POST-SLUGS-SPEC.md §6: post-slug redirect lookup runs at
 // the top of the middleware chain, before rate limiting or auth. Slug
@@ -175,6 +182,11 @@ const trustedRateLimitMap = new Map<string, { count: number; windowStart: number
 // cycle (every 100 requests) so the set doesn't grow unbounded.
 const firstSeenIPs = new Set<string>();
 
+// 2026-10-23: IPs we have already emitted a structured forensics record for.
+// Used to decide "first time I've seen this IP" sampling. Bounded by the
+// cleanup cycle below so it cannot grow without limit.
+const loggedIps = new Set<string>();
+
 // 2026-10-23 (Singapore traffic incident): GLOBAL per-path limiter.
 //
 // The existing limiter is keyed by IP only. A scraper running an IP pool
@@ -272,6 +284,10 @@ function cleanupOldEntries() {
     if (now - record.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
       globalPathRateLimitMap.delete(key);
     }
+  }
+  // Bounded set of IPs we have logged a forensics record for (2026-10-23).
+  if (loggedIps.size > 5000) {
+    loggedIps.clear();
   }
   // Also clear the 'first seen' IP set.  After cleanup, the next
   // crawler request from any IP will be logged again (and the IP
@@ -504,6 +520,15 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
   const userAgent = request.headers.get('user-agent') || '';
   const isTrustedBot = /\bGooglebot\b|\bbingbot\b|\bSlurp\b|\bDuckDuckBot\b|\bBaiduspider\b|\bYandexBot\b|\bApplebot\b/i.test(userAgent);
 
+  // 2026-10-23: abuse forensics. We log IP + UA ourselves on the paths that
+  // attract abuse, because Vercel's runtime logs carry neither and roll over
+  // within minutes — which is exactly why the Oct 22 scraper could not be
+  // identified after the fact. See src/lib/request-logger.ts for the privacy
+  // contract (no cookies, no auth headers, no query strings).
+  const trackedPath = isTrackedPath(path);
+  const logStart = trackedPath ? Date.now() : 0;
+  let sawIpBefore = false;
+
   if (!isStatic) {
     // Get client IP (handle proxies)
     const ip = (request as any).ip ||
@@ -519,6 +544,9 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
       ? TRUSTED_RATE_LIMIT_MAX
       : (isBulkData ? DATA_RATE_LIMIT_MAX : RATE_LIMIT_MAX);
     const result = checkRateLimit(ip, map, max);
+    const appliedTier: 'normal' | 'trusted' | 'bulk' = isTrustedBot
+      ? 'trusted'
+      : (isBulkData ? 'bulk' : 'normal');
 
     // 2026-10-23: global per-path cap, applied to ALL callers regardless of
     // IP or UA. This is the layer that stops a distributed scraper, which
@@ -531,6 +559,14 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
         console.warn('[middleware] global path cap exceeded', JSON.stringify({
           ip, ua: userAgent, path, limit: globalResult.limit, at: Date.now(),
         }));
+        // 2026-10-23: structured forensics record. Always emitted for blocks.
+        if (trackedPath) {
+          console.log(buildLogLine({
+            path, method: request.method, status: 429, ip,
+            ua: sanitizeUa(userAgent), ms: Date.now() - logStart,
+            claimedBot: isTrustedBot, limited: true, tier: 'global',
+          }));
+        }
         return new NextResponse('Too Many Requests', {
           status: 429,
           headers: {
@@ -558,6 +594,13 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
         // identify harvest patterns without logging every normal request.
         console.warn('[middleware] bulk data cap exceeded', JSON.stringify({
           ip, ua: userAgent, path, limit: result.limit, at: Date.now(),
+        }));
+      }
+      if (trackedPath) {
+        console.log(buildLogLine({
+          path, method: request.method, status: 429, ip,
+          ua: sanitizeUa(userAgent), ms: Date.now() - logStart,
+          claimedBot: isTrustedBot, limited: true, tier: appliedTier,
         }));
       }
       return new NextResponse('Too Many Requests', {
@@ -590,6 +633,28 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
         firstSeenIPs.add(ip);
         console.log('[middleware] crawler request', JSON.stringify({
           ip, ua: userAgent, path, at: Date.now(),
+        }));
+      }
+    }
+
+    // 2026-10-23: structured forensics for ALLOWED requests on tracked paths.
+    //
+    // Sampling policy (see shouldLogIdentity in src/lib/request-logger.ts):
+    //   - every request from an IP we have NOT seen before (so an IP-rotating
+    //     scraper still produces one record per IP)
+    //   - a small random sample of the rest (so a slow drip from a known IP is
+    //     still visible in aggregate)
+    //
+    // We deliberately do NOT log the query string, cookies, or auth headers.
+    if (trackedPath) {
+      const ipSeenBefore = loggedIps.has(ip);
+      if (shouldLogIdentity({ ipSeenBefore, isBlocked: false, sampleRate: 0.02 })) {
+        loggedIps.add(ip);
+        sawIpBefore = true;
+        console.log(buildLogLine({
+          path, method: request.method, status: 200, ip,
+          ua: sanitizeUa(userAgent), ms: Date.now() - logStart,
+          claimedBot: isTrustedBot, limited: false, tier: appliedTier,
         }));
       }
     }
