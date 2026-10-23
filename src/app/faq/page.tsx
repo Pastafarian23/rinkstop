@@ -144,7 +144,7 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Anyone with a RinkStop account can claim one listing for free — players, parents, coaches, rink owners, team managers, and league admins. Free verification is included: complete a 60-second government ID + selfie check to add a Verified owner badge to your listing. Higher paid tiers unlock more claims and business/club features (lead capture, roster management, dues, etc.). Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page. See exact caps per tier at /pricing.',
+        a: 'Anyone with a RinkStop account can claim one listing for free — players, parents, coaches, rink owners, team managers, and league admins. Free verification is included: complete a 60-second government ID + selfie check to add a Verified owner badge to your listing, at no cost on any tier. Free accounts get one claim; Organization Plus raises that to five. Lead capture, roster management, and payment collection are the owner tools behind the claim and start at Organization Plus ($99/year). Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page. See exact caps per tier at /pricing.',
       },
       {
         q: 'Are NHL / AHL / KHL / PWHL players and teams claimable?',
@@ -358,7 +358,7 @@ const sections: Array<{
       },
       {
         q: 'Can I claim a listing before signing up?',
-        a: 'You need a RinkStop account before claiming, but the account itself is free and verification is also free. Sign up free, complete the optional free verification (~60 seconds, government ID + selfie), then claim. Verification earns your listing a "Verified owner" badge. You can pay for additional tools (lead capture, roster management, dues collection) any time after.',
+        a: 'You need a RinkStop account before claiming, but the account itself is free and verification is also free. Sign up free, complete the optional free verification (~60 seconds, government ID + selfie), then claim. Verification earns your listing a "Verified owner" badge. The claim itself is free too. Lead capture, roster management, and payment collection are optional owner tools available from Organization Plus ($99/year).',
       },
       {
         q: 'What payment methods are accepted?',
@@ -556,6 +556,67 @@ const sections: Array<{
       {
         q: 'Is the Handbook available offline?',
         a: 'Not currently. It is a web guide at /guides/hockey-parents-handbook. If you want a printable version, use your browser\'s print-to-PDF feature (works on every modern browser). The cost calculator at /tools/hockey-cost-calculator is a companion tool that gives you a personalized number to compare against the Handbook\'s ranges.',
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Plans, media, and billing — added 2026-10-22.
+  //
+  // These were genuine gaps. The pricing overhaul shipped pooled media
+  // allowances, a shared-media storage model, self-service cancellation, and a
+  // real claim/roster/team capacity ladder, and the FAQ still described the
+  // older product. Every answer below was written against the implemented
+  // behaviour, not against the intent.
+  // ────────────────────────────────────────────────────────────────────────────
+  {
+    id: 'plans-media',
+    title: 'Plans, Media & Limits',
+    icon: '📦',
+    qa: [
+      {
+        q: 'How much media storage does my plan include?',
+        a: 'Free includes 100 MB and 15 items. Hockey Passport includes 750 MB and 60 items. Hockey Passport Plus includes 5 GB and 250 items. Organization Plus includes 10 GB shared and 400 items, Organization Pro 50 GB and 1,500 items, and Organization Elite 200 GB and 6,000 items. The full table is on /pricing.',
+      },
+      {
+        q: 'Does my media allowance cover all my uploads?',
+        a: 'Yes — one shared pool. Your allowance is measured across social posts, player media, profile covers, and listing photos combined, not separately per feature. Each uploaded file counts once, even if the same file appears in more than one place on RinkStop.',
+      },
+      {
+        q: 'Does Free allow video?',
+        a: 'No. Free and Hockey Passport cover photos only. Video uploads to social posts and player media start with Hockey Passport Plus ($59.99/year). Organizations unlock video from Organization Plus ($99/year).',
+      },
+      {
+        q: 'How long can a video be?',
+        a: 'Hockey Passport Plus allows up to 10 minutes, Organization Plus up to 15 minutes, Organization Pro up to 30 minutes, and Organization Elite up to 60 minutes per video. Any one file is capped at 100 MB regardless of plan.',
+      },
+      {
+        q: 'I deleted a post but I am still at my storage limit.',
+        a: 'It may take a moment to reflect, but quota is released as soon as the media is no longer referenced anywhere else — not on a 30-day timer. If the same file is used by a player profile or a listing, it stays counted until that reference is also removed.',
+      },
+      {
+        q: 'I deleted a post by mistake. Can I get it back?',
+        a: 'Yes, for 30 days. Open /dashboard/profile/posts and expand "Recently deleted" under your posts. Deleted posts and their media stay recoverable for 30 days, after which they are permanently removed. If you have already used the freed storage, restoring may ask you to free something else first.',
+      },
+      {
+        q: 'How many claims, players, and teams can my plan hold?',
+        a: 'Free gets one listing claim. Organization Plus gets 5 claims, 3 team workspaces, and up to 30 players. Organization Pro gets 25 claims, 10 teams, and up to 150 players. Organization Elite is unlimited on all three. Personal Passport plans are for individuals and do not include team workspaces.',
+      },
+      {
+        q: 'What happens if I exceed my plan limit?',
+        a: 'The upload is refused with a message telling you what your limit is and how much you are currently using. Nothing is deleted and nothing is charged automatically — you can remove something, or move up a plan, and try again.',
+      },
+      {
+        q: 'What happens when my payment fails?',
+        a: 'Your plan stays active while Stripe retries the card, so a single failed payment does not remove your access. Stripe retries for roughly two weeks. Only if every retry fails does the subscription end and your account return to its free tier.',
+      },
+      {
+        q: 'If I downgrade, what happens to my data?',
+        a: 'Nothing is deleted. If you are above a lower plan\'s limits after a change, the affected features pause — you keep your posts, players, teams, and media, and regain access if you upgrade again. Please email support@rinkstop.com so we can walk through it with you rather than have you discover it.',
+      },
+      {
+        q: 'Do I get a refund if I cancel?',
+        a: 'Cancelling stops the next renewal, so you are not charged again. There is no cancellation fee. We do not refund the unused remainder of a period you have already paid for, and we do not issue automatic credits when switching plans. If your situation is unusual, email support@rinkstop.com and we will look at it.',
       },
     ],
   },

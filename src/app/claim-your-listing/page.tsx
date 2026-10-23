@@ -16,12 +16,12 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 export const metadata: Metadata = {
   title: { absolute: 'Claim Your Listing on RinkStop' },
   description:
-    "Search for your rink or team's RinkStop listing and claim it. Verified listings get a checkmark, lead capture, and featured rotation.",
+    "Search for your rink or team's RinkStop listing and claim it. Claiming and verification are free; lead capture is an Organization Plus feature.",
   alternates: { canonical: 'https://rinkstop.com/claim-your-listing' },
   robots: { index: true, follow: true },
   openGraph: withDefaultOg({
     title: 'Claim Your Listing on RinkStop',
-    description: "Search for your rink or team and claim your listing. Verified listings get a checkmark, lead capture, and featured rotation.",
+    description: "Search for your rink or team and claim your listing. Claiming and verification are free; lead capture is an Organization Plus feature.",
     url: 'https://rinkstop.com/claim-your-listing',
     siteName: 'RinkStop',
     type: 'website',

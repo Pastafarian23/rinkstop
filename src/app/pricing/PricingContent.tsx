@@ -596,14 +596,12 @@ export default function PricingContent({
               Why do I need a paid plan to claim a listing?
             </div>
             <p style={{ margin: '0 0 0.5rem' }}>
-              Claiming unlocks editable listings, lead capture, and a verified checkmark. To prevent
-              squatting, RinkStop requires{' '}
-              {claimEntityType === 'player'
-                ? 'a Verified Hockey Identity (or higher) to claim a player page'
-                : claimEntityType === 'team'
-                  ? 'a Organization Plus (or higher) to claim a team page'
-                  : 'a RinkStop Pro business plan to claim a rink page'}
-              . Operators claim once per listing, then own it for as long as the plan stays active.
+              Claiming itself is free on every account — one claim per free account, five on
+              Organization Plus. What costs money is the owner tooling that sits behind the claim:
+              lead capture, roster management, and payment collection all start at Organization Plus.
+              To prevent squatting, RinkStop checks that the claiming account looks like a real
+              person or organisation first — a government ID and selfie check, which is also free and
+              takes about a minute. Once approved, you keep the claim while your account stays active.
             </p>
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
               Not ready yet?{' '}
