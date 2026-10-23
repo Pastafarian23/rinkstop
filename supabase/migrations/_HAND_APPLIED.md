@@ -531,3 +531,32 @@ hours earlier: neither layer validated the other.
 
 **Caveats:**
 - 1 team (MTL) currently has is_active=false in our `teams` table but is_active in NHL.com. Ingest still writes the standings row (NHL.com data is real); the script logs a WARN. This is a data-fix to address in `teams` table — not in this migration.
+
+---
+
+## 2026-10-23_ascii_slug_aliases.sql — applied 2026-10-23 03:2x CDT
+
+**Applied:** `POST /v1/projects/yszheonqyyskkjoexk/database/query` via Management API PAT. Response 201, `[]`.
+
+**What it does:** INSERT of 196 rows into `public.team_slug_redirects` mapping each
+ASCII-folded team slug to its canonical accented slug. Additive only — no UPDATE, no DELETE.
+`ON CONFLICT (from_slug) DO UPDATE` makes it idempotent.
+
+**Verified post-apply (live PostgREST):**
+- `team_slug_redirects` total = 196 rows
+- 190 of those are pure-ASCII `from_slug` → accented `to_slug` (the other 6 fold to a
+  different non-ASCII canonical, e.g. `ø`→`o` expansions)
+
+**Pre-flight:** 201 accented team slugs found across 3,252 `team_workspaces` rows.
+5 skipped because the folded form is already a live distinct team and would create a
+duplicate-URL collision: `montreal-victoire`, `if-bjorkloven`, `vasby-ik`,
+`medvescak-zagreb`, `val-d-or-foreurs`.
+
+**Regeneration:** `node scripts/_ascii-alias-gen.cjs` writes `/tmp/ascii-alias-{teams,rinks,leagues}.json`.
+Re-run after any team rename that introduces diacritics. Its `fold()` must stay
+byte-identical to `foldSlugToAscii()` in `src/lib/ascii-slug.ts` and to the runtime
+fallback in `src/middleware.ts` — drift between them silently breaks one path.
+
+**Caveat:** this pre-seeds the fast path only. The middleware's live fold lookup
+(`lookupTeamSlugByFoldedSlug`) is the safety net for accented teams created after
+this date, so regeneration is a performance optimization, not a correctness requirement.
