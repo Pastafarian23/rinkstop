@@ -5,6 +5,7 @@ import PricingContent from './PricingContent';
 import SocialProof from '@/components/SocialProof';
 import { trackPageView, trackEvent } from '@/lib/analytics';
 import { supabaseAdmin } from '@/lib/supabase';
+import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
@@ -91,11 +92,27 @@ export default async function FoundingMemberPage({
   let foundingClaimed = 0;
   let userTier: string | null = null;
   try {
-    const { count } = await supabaseAdmin
-      .from('profiles')
-      .select('user_id', { count: 'exact', head: true })
-      .eq('is_founding_member', true);
-    foundingClaimed = count || 0;
+    // 2026-10-23 (perf): the page reads `searchParams`, so Next.js treats the
+    // route as dynamic and its `revalidate` is silently ignored.
+    //
+    // Only the PUBLIC part is cached (how many founding members exist). The
+    // per-user tier lookup below is deliberately NOT cached — caching it would
+    // serve one signed-in user's tier to every other visitor, including
+    // signed-out ones. That is the exact failure mode the cached-read safety
+    // contract warns about.
+    const foundingCount = await cachedPublicRead(
+      async () => {
+        const { count } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('is_founding_member', true);
+        return count || 0;
+      },
+      ['founding-member-count'],
+      300,
+      [...PUBLIC_READ_TAGS.directory],
+    );
+    foundingClaimed = foundingCount;
     if (userId) {
       const { data: p } = await supabaseAdmin
         .from('profiles')
