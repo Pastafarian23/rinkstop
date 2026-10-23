@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
-import { foldSlugToAscii } from './lib/ascii-slug';
+import { foldSlugToAscii, hasNonAscii } from './lib/ascii-slug';
 
 // Per docs/CLEAN-POST-SLUGS-SPEC.md §6: post-slug redirect lookup runs at
 // the top of the middleware chain, before rate limiting or auth. Slug
@@ -115,22 +115,38 @@ async function lookupTeamSlugByFoldedSlug(slug: string): Promise<string | null> 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
-  // Already pure ASCII and the exact lookup missed — folding would produce
-  // the same string, so a second query cannot help.
+  // Fold the incoming slug so mixed-case and diacritic spellings collapse to
+  // the same key. Note this must NOT bail when folded === slug: the incoming
+  // slug may be uppercase ("AMALS") while every stored slug is lowercase, so
+  // the fold still opens a path the case-sensitive exact lookup could not.
   const folded = foldSlugToAscii(slug);
-  if (!folded || folded === slug) return null;
+  if (!folded) return null;
+  // Only ASCII inputs can be the product of a fold — an accented slug in the
+  // URL is a real slug, handled by the exact lookup and the page handler.
+  if (hasNonAscii(slug)) return null;
   try {
-    const endpoint =
-      `${url}/rest/v1/team_workspaces` +
-      `?select=slug&is_active=eq.true&limit=3000`;
-    const res = await fetch(endpoint, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(800),
-    });
-    if (!res.ok) return null;
-    const rows = (await res.json()) as Array<{ slug: string | null }>;
-    for (const row of rows) {
-      if (row.slug && foldSlugToAscii(row.slug) === folded) return row.slug;
+    // PostgREST caps a single response at 1000 rows no matter what `limit`
+    // says (verified: limit=3000 returns content-range 0-999/2639), so a
+    // single request silently misses ~62% of active teams. Page explicitly,
+    // bounded by MAX_PAGES so a mis-set cap can never spin.
+    const PAGE = 1000;
+    const MAX_PAGES = 12;
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const endpoint =
+        `${url}/rest/v1/team_workspaces` +
+        `?select=slug&is_active=eq.true&limit=${PAGE}&offset=${page * PAGE}` +
+        `&order=slug.asc`;
+      const res = await fetch(endpoint, {
+        headers,
+        signal: AbortSignal.timeout(800),
+      });
+      if (!res.ok) return null;
+      const rows = (await res.json()) as Array<{ slug: string | null }>;
+      for (const row of rows) {
+        if (row.slug && foldSlugToAscii(row.slug) === folded) return row.slug;
+      }
+      if (rows.length < PAGE) break;
     }
     return null;
   } catch (e) {
