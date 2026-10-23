@@ -121,6 +121,26 @@ describe('shortenSercTitle', () => {
     const t = 'Hockey Cost by Age: 6U to 18U Pricing';
     expect(shortenSercTitle(t)).toBe(t);
   });
+
+  it('preserves the space around an em-dash separator', () => {
+    // Regression: the clause split keeps the separator attached to the
+    // PRECEDING part and consumes the space after it, so re-joining glued
+    // "ÖEHV —" to "Österreichischer" and produced "ÖEHV —Österreichischer".
+    const out = shortenSercTitle('ÖEHV — Österreichischer Eishockeyverband — Austria');
+    expect(out).toContain('— ');
+    expect(out).not.toMatch(/—\S/);
+  });
+
+  it('preserves the space around an en-dash separator', () => {
+    const out = shortenSercTitle('Ice Skating Rink – Othaim Mall Riyadh — Riyadh, Saudi Arabia 12839');
+    expect(out).not.toMatch(/–\S/);
+    expect(out).not.toMatch(/—\S/);
+  });
+
+  it('preserves the space after a colon', () => {
+    const out = shortenSercTitle('USA Hockey Development League: What Parents Need to Know (2027-28 Launch)');
+    expect(out).not.toMatch(/:\S/);
+  });
 });
 
 describe('layout template stays in sync', () => {
