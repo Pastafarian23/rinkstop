@@ -33,10 +33,18 @@ const PREV_FAIL_FILE = process.env.AUDIT_PREV_FAIL_FILE || '/tmp/audit-prev-fail
 
 function log(msg) { process.stdout.write(`[${new Date().toISOString()}] ${msg}\n`); }
 
+// Module-scope so processAuditResult() can read it. Previously this was a
+// `const` inside the async IIFE, which made it unreachable from
+// processAuditResult() — every run threw "sanity is not defined" AFTER the
+// audit had fully completed, so no result file was ever written and the
+// catch block misreported it as a transient Highlightly 429.
+// 2026-10-23 fix.
+let sanity = null;
+
 (async () => {
   log('Starting audit pipeline (all 688 articles)…');
   log('Running score sanity check (fixtures table)…');
-  const sanity = await runScoreSanityCheck();
+  sanity = await runScoreSanityCheck();
   log(`Score sanity: ${sanity.suspicious} suspicious, ${sanity.issues.length} issue type(s)`);
   for (const issue of sanity.issues) log(`  ⚠ ${issue}`);
 
@@ -59,15 +67,32 @@ function log(msg) { process.stdout.write(`[${new Date().toISOString()}] ${msg}\n
         // result on each post row so the admin UI can show freshness.
         await stampPostAuditResults(data);
       } catch (e) {
-        log(`Failed to parse audit JSON: ${e.message}`);
+        log(`Failed to process audit result: ${e.message}`);
         // Soft-error: still write to PREV_FAIL_FILE so we don't lose state
         // Don't escalate to cron-level failure — Highlightly 429 etc. are transient.
+        // 2026-10-23 fix: previously every error here was labelled "Likely
+        // transient (Highlightly 429 / API rate-limit)" regardless of the
+        // actual cause, which hid a hard scoping bug for days. Report the real
+        // error, and still write the legacy path so the cron never sees a
+        // missing result file.
+        const errMsg = `⚠️ Audit run finished but result processing failed: ${e.message}\n` +
+                       `This is NOT necessarily transient. Check /tmp/audit.log for the full trace.`;
         fs.writeFileSync(RESULT_FILE, JSON.stringify({
           status: 'warn',
           error: e.message,
           exitCode: code,
           timestamp: new Date().toISOString(),
-          message: `⚠️ Audit run finished but JSON parse failed: ${e.message}\nLikely transient (Highlightly 429 / API rate-limit). Will retry at next cron tick.`,
+          message: errMsg,
+        }, null, 2));
+        fs.writeFileSync('/tmp/verify-claims.result.json', JSON.stringify({
+          status: 'warn',
+          total: 0,
+          ok: 0,
+          false: 0,
+          no_fixture: 0,
+          no_foundation: 0,
+          archived: 0,
+          message: errMsg,
         }, null, 2));
         if (fs.existsSync(PREV_FAIL_FILE)) {
           // Keep prev FAIL count unchanged
