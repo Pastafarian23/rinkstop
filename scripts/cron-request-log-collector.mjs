@@ -182,6 +182,9 @@ function extractStructured(logStdout) {
 
     found.push({
       key,
+      // Dedupe signature: epoch-ms timestamp + path + ip. See the note in main()
+      // about why the raw ISO strings must not be compared directly.
+      dedupeKey: `${new Date(payload.ts || rec.timestamp || Date.now()).getTime()}|${String(payload.path || '/')}|${String(payload.ip || 'unknown')}`,
       occurred_at: payload.ts || new Date(rec.timestamp || Date.now()).toISOString(),
       path: String(payload.path || '/'),
       method: String(payload.method || 'GET'),
@@ -223,13 +226,24 @@ async function main() {
       console.error('[collector] could not read existing rows for dedupe:', readErr.message);
     }
 
+    // Dedupe signature: occurred_at + path + ip.
+    //
+    // NOTE on formatting: the record's `occurred_at` is an ISO string ending in "Z"
+    // ("2026-10-23T18:06:03.256Z") while the value read back from Postgres is
+    // normalized to "+00:00". Comparing those two strings directly never matches,
+    // which silently disables dedupe and double-inserts every record. Normalise
+    // BOTH sides to epoch milliseconds before comparing.
+    const normTs = (v) => new Date(v).getTime();
     const existing = new Set(
-      (recent || []).map((r) => `${r.occurred_at}|${r.path}|${r.ip}`),
+      (recent || []).map(
+        (r) => `${normTs(r.occurred_at)}|${r.path}|${r.ip}`,
+      ),
     );
 
-    const toInsert = records.filter(
-      (r) => !existing.has(`${r.occurred_at}|${r.path}|${r.ip}`),
-    );
+    const toInsert = records
+      .filter((r) => !existing.has(r.dedupeKey))
+      // `key` and `dedupeKey` are internal handles, not table columns. Strip them.
+      .map(({ key, dedupeKey, ...row }) => row);
 
     if (toInsert.length > 0) {
       const { error } = await supabase.from('request_logs').insert(toInsert);
