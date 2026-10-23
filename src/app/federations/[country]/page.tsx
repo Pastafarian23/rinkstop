@@ -8,6 +8,7 @@ import {
 } from '@/lib/federations';
 import { countryToSlug } from '@/lib/country-page';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { shortenSercTitle } from '@/lib/seo-title';
 
 interface PageProps {
   params: Promise<{ country: string }>;
@@ -64,9 +65,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const fed = resolveFederation(country);
   if (!fed) return { title: 'Federation Not Found' };
 
-  // Cap at 60 chars for Google SERP preview (2026-08-19).
+  // 2026-10-23 (GSC title pass): the old code hard-truncated at 57 chars and
+  // appended "...", which produced titles that read as broken text in the SERP
+  // ("ÖEHV — Österreichischer Eishockeyverband — Au..."). It also ignored the
+  // layout's " | RinkStop" template suffix, so the FINAL title was ~11 chars
+  // longer than the 60-char budget it thought it was enforcing.
+  //
+  // shortenSercTitle drops trailing clauses at natural boundaries instead, and
+  // budgets against the FINAL rendered length.
   const fedTitle = `${fed.federationName} — ${fed.countryName}`;
-  const title = fedTitle.length > 60 ? fedTitle.slice(0, 57) + '...' : fedTitle;
+  const title = shortenSercTitle(fedTitle);
 
   return {
     title,

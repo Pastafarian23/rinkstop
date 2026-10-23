@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { SafeImage } from '@/components/SafeImage';
 import { supabase } from '@/lib/supabase';
+import { pickSercTitle } from '@/lib/seo-title';
 import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
@@ -355,31 +356,35 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   // Title priority: drop fields (in order: country, province, differentiator)
-  // when total exceeds 60 chars rather than truncating with "..." — a partial
-  // country name like "Pr..." reads as broken text in SERPs. Google will
-  // also auto-truncate, so being explicit looks worse than just dropping the
-  // least load-bearing field.
+  // when the FINAL title exceeds 60 chars rather than truncating with "..." —
+  // a partial country name like "Pr..." reads as broken text in SERPs. Google
+  // will also auto-truncate, so being explicit looks worse than just dropping
+  // the least load-bearing field.
+  //
+  // 2026-10-23 (GSC title pass): the budget must account for the layout's
+  // title TEMPLATE ("%s | RinkStop"). The root layout appends that 10-char
+  // suffix to every child title, so budgeting 60 chars for the page's own
+  // string produced 70-char rendered titles that Google truncated mid-phrase.
+  // pickSercTitle budgets against the FINAL length instead.
   const titleCityParts = [rink.city, provinceLabel].filter(Boolean).join(', ');
   const titleCityCountryParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
   let title: string;
   if (differentiators.length > 0) {
     const tag = differentiators[0];
     // Try: "name | tag — city, province, country" -> drop country -> drop province -> drop differentiator
-    const candidates = [
+    title = pickSercTitle([
       `${displayName} | ${tag} — ${titleCityCountryParts}`,
       `${displayName} | ${tag} — ${titleCityParts}`,
       `${displayName} — ${titleCityParts}`,
       `${displayName} — ${titleCityCountryParts}`,
       displayName,
-    ];
-    title = candidates.find(c => c.length <= 60) || candidates[candidates.length - 1];
+    ]);
   } else if (titleCityCountryParts) {
-    const candidates = [
+    title = pickSercTitle([
       `${displayName} — ${titleCityCountryParts}`,
       `${displayName} — ${titleCityParts}`,
       displayName,
-    ];
-    title = candidates.find(c => c.length <= 60) || candidates[candidates.length - 1];
+    ]);
   } else {
     title = displayName;
   }
