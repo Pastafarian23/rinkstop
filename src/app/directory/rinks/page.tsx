@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import RinksIndexClient from './RinksIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
+import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 
 interface Rink {
   id: string;
@@ -59,6 +60,23 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 export const dynamic = 'force-dynamic';
 
 async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
+  // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
+  // route as dynamic and its `revalidate` is silently ignored — production was
+  // serving `no-store` + `x-vercel-cache: MISS` on every request, re-querying
+  // up to 500 rink rows each time.
+  //
+  // Route-level revalidate cannot apply to a dynamic route, so the DATA READ
+  // is memoized instead (see src/lib/cached-read.ts). Public directory rows
+  // only — no user-specific data.
+  return cachedPublicRead(
+    () => fetchInitialRinksUncached(country),
+    [country ?? 'all'],
+    300,
+    [...PUBLIC_READ_TAGS.directory],
+  );
+}
+
+async function fetchInitialRinksUncached(country?: string | null): Promise<Rink[]> {
   try {
     let q = supabase
       .from('rinks')

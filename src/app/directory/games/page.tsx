@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import GamesIndexClient from './GamesIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -161,6 +162,43 @@ function computeDateRangeFromUrl(sp: { d?: string; w?: string }): { from: string
 }
 
 async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
+  games: Game[];
+  hasMore: boolean;
+  totalShown: number;
+  league: string;
+  time: string;
+  team: string;
+  subleague: string;
+  q: string;
+  from: string | null;
+  to: string | null;
+  selectedDate: string;
+  weekOffset: number;
+}> {
+  // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
+  // route as dynamic and its `revalidate` is silently ignored — production was
+  // serving `no-store` + `x-vercel-cache: MISS` on every request, re-querying
+  // Supabase each time. Route-level revalidate cannot fix a dynamic route, so
+  // the DATA READ is memoized instead (see src/lib/cached-read.ts).
+  //
+  // The key includes every searchParam that affects the result, so different
+  // filters never collide. Live scores tolerate a 2-minute TTL: the site is
+  // not a real-time scoreboard, and a 2-minute-old score is still useful.
+  const cacheKey = [
+    searchParams.league ?? 'nhl',
+    searchParams.team ?? '',
+    searchParams.time ?? 'current',
+    searchParams.subleague ?? '',
+    searchParams.q ?? '',
+    searchParams.d ?? '',
+    searchParams.w ?? '',
+  ];
+  return cachedPublicRead(() => fetchInitialGamesUncached(searchParams), cacheKey, 120, [
+    ...PUBLIC_READ_TAGS.schedule,
+  ]);
+}
+
+async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): Promise<{
   games: Game[];
   hasMore: boolean;
   totalShown: number;

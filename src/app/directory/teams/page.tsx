@@ -6,6 +6,7 @@ import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 import {
   getDirectoryCountsCached,
   getCountryTeamCountsCached,
@@ -105,6 +106,39 @@ async function leagueIdsForLevel(level: string): Promise<string[] | null> {
 }
 
 async function fetchInitialTeams(opts: {
+  country?: string | null;
+  level?: string | null;
+  league?: string | null;
+  limit?: number;
+  offset?: number;
+}): Promise<Team[]> {
+  // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
+  // route as dynamic and its `revalidate` is silently ignored — production was
+  // serving `no-store` + `x-vercel-cache: MISS` on every request.
+  //
+  // The sidebar counts were already cached (src/lib/directory-counts.ts), but
+  // the MAIN filtered team query was not. That is the expensive one: it joins
+  // leagues and filters by country/level/league.
+  //
+  // Route-level revalidate cannot apply to a dynamic route, so the DATA READ
+  // is memoized instead (see src/lib/cached-read.ts). The key includes every
+  // filter that affects the result, so different filter combinations never
+  // collide. These are public directory rows — no user-specific data.
+  return cachedPublicRead(
+    () => fetchInitialTeamsUncached(opts),
+    [
+      opts.country ?? '',
+      opts.level ?? '',
+      opts.league ?? '',
+      opts.limit ?? 500,
+      opts.offset ?? 0,
+    ],
+    300,
+    [...PUBLIC_READ_TAGS.directory],
+  );
+}
+
+async function fetchInitialTeamsUncached(opts: {
   country?: string | null;
   level?: string | null;
   league?: string | null;

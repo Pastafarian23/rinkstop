@@ -5,6 +5,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackPageView } from '@/lib/analytics';
 import { getDirectoryCounts } from '@/lib/directory-counts';
+import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 import { ClaimButton } from './ClaimButton';
 import { ClaimAbandonTracker } from './ClaimAbandonTracker';
 import AddListingLink from './AddListingLink';
@@ -110,34 +111,27 @@ interface ClaimResult {
   birth_year?: number | null;
 }
 
-async function searchEntities(query: string, type: ClaimType): Promise<ClaimResult[]> {
-  const q = query.trim();
-  if (q.length < 2) return [];
+/**
+ * A directory row as returned by the claim-funnel search. Declared at module
+ * level so the cached search helper can be typed independently.
+ */
+type RowShape = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  country: string | null;
+  // Player extras:
+  user_id?: string | null;
+  nationality?: string | null;
+  birth_date?: string | null;
+};
 
-  // Fail-safe wrapper: any Supabase error in the search path must NOT 500
-  // the page. Return an empty array on any thrown error so the EmptyState
-  // renders a polite "search above" message instead of crashing the
-  // conversion funnel.
-  // The try/catch wraps ONLY the Supabase query + claim-status read below,
-  // not the entire function body — wrapping the return would be unreachable
-  // code. The catch returns `[]` so the EmptyState renders cleanly.
-  let claimByEntityId = new Map<string, string>();
-  try {
-
-  // Pick the right table + columns based on type. We use ilike with %q% for
-  // the name column. For rinks we also match city (operators often search by
-  // city name). For teams we match city. For players we match first/last name.
-  type RowShape = {
-    id: string;
-    slug: string;
-    name: string;
-    city: string | null;
-    country: string | null;
-    // Player extras:
-    user_id?: string | null;
-    nationality?: string | null;
-    birth_date?: string | null;
-  };
+/**
+ * The PUBLIC half of the claim-funnel search: matching directory rows.
+ * Split out so it can be memoized independently of the live claim status.
+ */
+async function searchEntityRows(q: string, type: ClaimType): Promise<RowShape[]> {
   let rows: RowShape[] = [];
   if (type === 'rink') {
     const { data, error } = await supabaseAdmin
@@ -175,42 +169,70 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
       birth_date: p.birth_date,
     }));
   }
+  return rows;
+}
 
-  // Get the claim status for each returned entity. claims.claim_type must
-  // match the selected entity type (rink/team) because the claims endpoint
-  // only accepts those two types.
-  const entityIds = rows.map((r) => r.id);
-  const { data: claims } = await supabaseAdmin
-    .from('claims')
-    .select('entity_id, status, claim_type')
-    .eq('claim_type', type)
-    .in('entity_id', entityIds);
+async function searchEntities(query: string, type: ClaimType): Promise<ClaimResult[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
 
-  const claimByEntityId = new Map<string, string>();
-  for (const c of claims || []) {
-    if (!claimByEntityId.has(c.entity_id)) {
-      claimByEntityId.set(c.entity_id, c.status);
+  // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
+  // route as dynamic and its `revalidate` is silently ignored — production was
+  // serving `no-store` + `x-vercel-cache: MISS` on every request.
+  //
+  // The DIRECTORY SEARCH results are public (anyone can run the same search on
+  // the public site), so they are cached. The CLAIM STATUS is deliberately NOT
+  // cached — it changes when someone claims a listing, and a stale status
+  // would tell a visitor their listing is available when it is not (or vice
+  // versa). The two are separated so the cache cannot lie about claim state.
+  const rows = await cachedPublicRead(
+    () => searchEntityRows(q, type),
+    [q, type],
+    120,
+    [...PUBLIC_READ_TAGS.directory],
+  );
+  if (rows.length === 0) return [];
+
+  // Fail-safe wrapper: any Supabase error in the search path must NOT 500
+  // the page. Return an empty array on any thrown error so the EmptyState
+  // renders a polite "search above" message instead of crashing the
+  // conversion funnel.
+  try {
+    // Get the claim status for each returned entity. claims.claim_type must
+    // match the selected entity type (rink/team) because the claims endpoint
+    // only accepts those two types.
+    const entityIds = rows.map((r) => r.id);
+    const { data: claims } = await supabaseAdmin
+      .from('claims')
+      .select('entity_id, status, claim_type')
+      .eq('claim_type', type)
+      .in('entity_id', entityIds);
+
+    const claimByEntityId = new Map<string, string>();
+    for (const c of claims || []) {
+      if (!claimByEntityId.has(c.entity_id)) {
+        claimByEntityId.set(c.entity_id, c.status);
+      }
     }
-  }
 
-  return rows.map((r) => {
-    const out: ClaimResult = {
-      id: r.id,
-      slug: r.slug,
-      name: r.name,
-      city: r.city,
-      country: r.country,
-      type,
-      has_claim: claimByEntityId.has(r.id),
-      claim_status: claimByEntityId.get(r.id) || null,
-    };
-    if (type === 'player') {
-      out.is_self_managed = !!r.user_id;
-      out.nationality = r.nationality ?? null;
-      out.birth_year = r.birth_date ? Number(r.birth_date.slice(0, 4)) : null;
-    }
-    return out;
-  });
+    return rows.map((r) => {
+      const out: ClaimResult = {
+        id: r.id,
+        slug: r.slug,
+        name: r.name,
+        city: r.city,
+        country: r.country,
+        type,
+        has_claim: claimByEntityId.has(r.id),
+        claim_status: claimByEntityId.get(r.id) || null,
+      };
+      if (type === 'player') {
+        out.is_self_managed = !!r.user_id;
+        out.nationality = r.nationality ?? null;
+        out.birth_year = r.birth_date ? Number(r.birth_date.slice(0, 4)) : null;
+      }
+      return out;
+    });
   } catch (e) {
     // Fail-safe: never let a Supabase error in the search path 500 the
     // page. Return an empty array so the EmptyState renders a polite
