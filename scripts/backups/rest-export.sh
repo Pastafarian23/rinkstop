@@ -91,30 +91,92 @@ for table in "${TABLES_ARR[@]}"; do
     OFFSET=0
     PAGE_SIZE=1000
     TOTAL_FETCHED=0
+
+    # 2026-10-23 (disk-full incident): select=* on admin_audit_log produced a
+    # 4GB file. That table holds 140k rows whose `diff` column stores the full
+    # before/after JSON of edited post bodies — measured at 29-122KB per row.
+    # The 100k-row cap was NOT enough: 100k x ~29KB is still ~3GB, which filled
+    # the 25G host disk and killed the backup mid-run (and left the rest of the
+    # scheduled jobs failing behind it).
+    #
+    # The audit log is a diagnostic, not business-critical data. We keep every
+    # row's identity/action metadata but drop the oversized `diff` payload.
+    # Restoring a row's exact before/after body is not something the backup
+    # has ever been used for; the `admin_audit_log` rows themselves remain
+    # queryable in the live database.
+    SELECT_COLS="*"
+    case "${table}" in
+      admin_audit_log)
+        SELECT_COLS="id,actor_user_id,actor_email,actor_role,action,entity_type,entity_id,entity_name,ip_address,user_agent,created_at"
+        log "[info] ${table}: excluding the 'diff' column (it averages ~29-122KB/row and produced a 4GB export)"
+        ;;
+    esac
+
+    # Hard cap on any single table's export file, as a last-resort guard so a
+    # future table with an unexpectedly large row can never fill the disk.
+    MAX_TABLE_BYTES=$((512 * 1024 * 1024))
+
     while true; do
-      PAGE=$(curl -s "${SUPABASE_URL}/rest/v1/${table}?select=*&offset=${OFFSET}&limit=${PAGE_SIZE}" \
+      PAGE=$(curl -s "${SUPABASE_URL}/rest/v1/${table}?select=${SELECT_COLS}&offset=${OFFSET}&limit=${PAGE_SIZE}" \
         -H "apikey: ${SERVICE_KEY}" \
         -H "Authorization: Bearer ${SERVICE_KEY}")
       # Detect empty page.
       PAGE_LEN=$(echo "${PAGE}" | jq 'length' 2>/dev/null || echo 0)
       if [ "${PAGE_LEN}" -eq 0 ]; then break; fi
-      if [ "${OFFSET}" -eq 0 ]; then
-        echo "${PAGE}" | jq '.' > "${DATA_FILE}"
-      else
-        # Append page rows minus the closing bracket.
-        echo "${PAGE}" | jq -c '.[]' | jq -s '.' >> "${DATA_FILE}.tmp"
-        cat "${DATA_FILE}.tmp" >> "${DATA_FILE}"
-        rm -f "${DATA_FILE}.tmp"
-      fi
+      # Every page goes to the SAME append-only JSONL sidecar. An earlier version
+      # wrote offset 0 to ${DATA_FILE} and later pages to ${DATA_FILE}.jsonl,
+      # then converted the sidecar over ${DATA_FILE} — which silently DISCARDED
+      # the first page. The signature was exact: every multi-page table was
+      # missing exactly 1,000 rows (rinks 1919->919, players 6352->5352), while
+      # single-page tables (leagues 298, profiles 19) were correct.
+      echo "${PAGE}" | jq -c '.[]' >> "${DATA_FILE}.jsonl"
       TOTAL_FETCHED=$((TOTAL_FETCHED + PAGE_LEN))
       if [ "${TOTAL_FETCHED}" -ge "${COUNT}" ]; then break; fi
       OFFSET=$((OFFSET + PAGE_SIZE))
       if [ "${OFFSET}" -gt 100000 ]; then
-        log "[warn] ${table} export exceeded 100k rows, capping"
+        log "[warn] ${table} export exceeded 100k rows, capping (exported ${TOTAL_FETCHED} of ${COUNT})"
+        break
+      fi
+      # 2026-10-23 (disk-full incident): last-resort guard. If a table's export
+      # grows past MAX_TABLE_BYTES, stop writing it and remove the partial
+      # files so it can never fill the disk. A missing table is a recoverable
+      # backup gap; a full disk takes down every other scheduled job on the host.
+      #
+      # The row count for this table stays in COUNTS_JSON as the REAL count — the
+      # table exists and still has that many rows; we just did not copy its
+      # (too large) payload to disk. That way the daily row-count diff still
+      # reports accurately.
+      FILE_BYTES=0
+      if [ -f "${DATA_FILE}" ]; then
+        FILE_BYTES=$(wc -c < "${DATA_FILE}")
+      fi
+      if [ -f "${DATA_FILE}.jsonl" ]; then
+        JSONL_BYTES=$(wc -c < "${DATA_FILE}.jsonl")
+        if [ "${JSONL_BYTES}" -gt "${FILE_BYTES}" ]; then FILE_BYTES="${JSONL_BYTES}"; fi
+      fi
+      if [ "${FILE_BYTES}" -gt "${MAX_TABLE_BYTES}" ]; then
+        log "[alert] ${table} export exceeded ${MAX_TABLE_BYTES} bytes (${FILE_BYTES}); aborting this table to protect the disk"
+        rm -f "${DATA_FILE}" "${DATA_FILE}.jsonl"
         break
       fi
     done
-    gzip -9 -f "${DATA_FILE}"
+
+    # Convert the JSONL sidecar (if any pages were appended) into a single JSON
+    # array, then remove the sidecar. A table that fit on a single page has no
+    # sidecar and its .json file is already a valid array.
+    if [ -f "${DATA_FILE}.jsonl" ]; then
+      jq -s '.' "${DATA_FILE}.jsonl" > "${DATA_FILE}.tmp" \
+        && mv "${DATA_FILE}.tmp" "${DATA_FILE}" \
+        && rm -f "${DATA_FILE}.jsonl"
+      if [ ! -f "${DATA_FILE}" ]; then
+        log "[alert] ${table}: failed to assemble JSON array from page data; skipping this table"
+        rm -f "${DATA_FILE}.tmp" "${DATA_FILE}.jsonl"
+      fi
+    fi
+
+    if [ -f "${DATA_FILE}" ]; then
+      gzip -9 -f "${DATA_FILE}"
+    fi
   fi
 done
 
