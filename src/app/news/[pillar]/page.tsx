@@ -12,6 +12,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { shortenSercTitle } from '@/lib/seo-title';
 import FullArticle, { type FullPost } from '@/components/FullArticle';
 
 const supabase = supabaseAdmin;
@@ -124,7 +125,12 @@ export async function generateMetadata({ params }: { params: Promise<{ pillar: s
   const post = await getFullPostBySlug(pillar);
   if (!post) return { title: 'Not Found' };
   const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
-  const blogTitle = stripSuffix(post.seo_title || post.title);
+  // 2026-10-23 (GSC title pass): this route serves BARE article slugs
+  // (/news/<slug>) and is a SEPARATE handler from
+  // /news/[pillar]/[subpillar]/[slug]. The bare-slug route is the one that
+  // serves most articles, so it needs the same shortening the nested route
+  // got — 185 of 1,000 posts rendered over 60 chars, worst at 109.
+  const blogTitle = shortenSercTitle(stripSuffix(post.seo_title || post.title));
   const seoDesc = post.seo_description || post.subtitle || (post.content || '').replace(/<[^>]*>/g, '').substring(0, 160);
   const ogImage = post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`;
   return {

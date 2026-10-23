@@ -100,11 +100,26 @@ export function shortenSercTitle(
   const budget = pageTitleBudget(max, suffix);
 
   // Try progressively dropping trailing clauses.
-  // Split on clause boundaries but KEEP the separators so the result reads
-  // naturally ("Hockey in India 2026: All 6 Rinks" not "Hockey in India 2026").
+  //
+  // The split keeps the separator attached to the END of the preceding part
+  // and consumes the whitespace after it, so parts look like:
+  //   ["ÖEHV —", "Österreichischer Eishockeyverband —", "Austria"]
+  // Re-joining them directly would glue "ÖEHV —" to "Österreichischer" and
+  // produce "ÖEHV —Österreichischer". So we re-insert the space when a part
+  // ends with a separator and the next one does not start with whitespace.
   const parts = trimmed.split(/(?<=[:—–,–])\s*/);
   for (let i = parts.length - 1; i >= 1; i--) {
-    const candidate = parts.slice(0, i).join('').replace(/[\s:—–,–]+$/, '').trim();
+    let joined = '';
+    for (let k = 0; k < i; k++) {
+      const part = parts[k];
+      joined += part;
+      if (/[:—–,–]\s*$/.test(part) && k + 1 < i && !/^\s/.test(parts[k + 1])) {
+        joined += ' ';
+      }
+    }
+    // Strip a trailing separator plus any space after it, leaving the space
+    // that comes BEFORE the separator intact.
+    const candidate = joined.replace(/[:—–,–]\s*$/, '').trim();
     if (candidate.length > 0 && candidate.length <= budget) {
       return candidate;
     }
@@ -115,5 +130,7 @@ export function shortenSercTitle(
 
   const hardCut = trimmed.slice(0, budget);
   const lastSpace = hardCut.lastIndexOf(' ');
-  return (lastSpace > 20 ? hardCut.slice(0, lastSpace) : hardCut).replace(/[\s:—–,–]+$/, '').trim();
+  return (lastSpace > 20 ? hardCut.slice(0, lastSpace) : hardCut)
+    .replace(/[:—–,–]\s*$/, '')
+    .trim();
 }
