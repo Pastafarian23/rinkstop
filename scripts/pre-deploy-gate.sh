@@ -179,7 +179,15 @@ if should_run 5; then
 
       # Look for any color: that resolves to a light-mode hex on dark bg.
       # These are the values that disappeared text in 2026-09-11.
-      bad=$(echo "$body_only" | grep -oE 'color:\s*#041E42|color:\s*#1a1a1a|color:\s*#444[^0-9a-fA-F]|color:\s*#555[^0-9a-fA-F]|color:\s*#666[^0-9a-fA-F]|color:\s*#777[^0-9a-fA-F]|color:\s*#888[^0-9a-fA-F]|color:\s*#999[^0-9a-fA-F]|color:\s*#A0A0A0|color:\s*#38BDF8' | sort -u)
+      #
+      # 2026-10-28: #38BDF8 was REMOVED from this list. It is the site-wide
+      # sky-blue accent (links, buttons, active states) used in 84 places
+      # across 20+ files — not a light-mode text color. Its contrast on the
+      # #0D1117 page background is 8.83:1 (WCAG AAA). Flagging it produced a
+      # false positive on /events, which uses the accent for links on the
+      # dark background. Only genuinely invisible-on-dark text colors belong
+      # in this regex.
+      bad=$(echo "$body_only" | grep -oE 'color:\s*#041E42|color:\s*#1a1a1a|color:\s*#444[^0-9a-fA-F]|color:\s*#555[^0-9a-fA-F]|color:\s*#666[^0-9a-fA-F]|color:\s*#777[^0-9a-fA-F]|color:\s*#888[^0-9a-fA-F]|color:\s*#999[^0-9a-fA-F]|color:\s*#A0A0A0' | sort -u)
 
       if [ -n "$bad" ]; then
         echo "  ✗ $url has light-mode hex on dark bg:"
@@ -193,7 +201,7 @@ if should_run 5; then
     if [ "$COLOR_BAD" -gt 0 ]; then
       fail "$COLOR_BAD page(s) have light-mode hex on dark bg"
       note "Fix: replace #041E42 -> '#fff', #1a1a1a -> 'rgba(255,255,255,0.75)',"
-      note "     #888 -> 'rgba(255,255,255,0.4)', #38BDF8 -> '#FFB81C' (or similar dark-theme value)"
+      note "     #888 -> 'rgba(255,255,255,0.4)'"
       note "Reference template: src/app/guides/hockey-rules/page.tsx"
     else
       ok "all changed pages pass per-page color audit"
