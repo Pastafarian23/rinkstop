@@ -247,7 +247,7 @@ export async function GET(request: NextRequest) {
   // Default: RinkStop players table
   let query = supabase
     .from('players')
-    .select('*, teams(name, slug, logo_url, league_id, leagues(name, slug))', { count: 'exact' });
+    .select('*, teams!inner(name, slug, logo_url, league_id, leagues(name, slug))', { count: 'exact' });
 
   if (teamId) query = query.eq('team_id', teamId);
   if (position) query = query.eq('position', position);

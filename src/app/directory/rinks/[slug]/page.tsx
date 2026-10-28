@@ -495,10 +495,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .order('date', { ascending: true })
       .limit(20),
     // 2026-10-16: also pull NHL/fixtures scheduled at this rink via the team's home_rink_id.
-    // This is the source of truth for the 31 NHL teams that now have home_rink_id populated.
+    // This is the source of truth for the 32 NHL teams that now have home_rink_id populated.
+    // 2026-10-28: `!inner` is REQUIRED on both embeds. Without it PostgREST silently
+    // DROPS the embedded filter and returns unfiltered rows with a NULL home_team —
+    // so this rink showed other rinks' games with no team name. See
+    // memory/2026-10-28-postgrest-embedded-filter-bug.md.
     supabase
       .from('fixtures')
-      .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+      .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey!inner(name, slug), away_team:teams!fixtures_away_team_id_fkey!inner(name, slug)')
       .eq('home_team.home_rink_id', rink.id)
       .gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at', { ascending: true })
