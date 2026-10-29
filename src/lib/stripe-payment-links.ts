@@ -73,7 +73,17 @@ export const STRIPE_PAYMENT_LINKS: Record<StripePaymentLinkTier, string> = {
   league: 'https://buy.stripe.com/dRmdR8dLNgKjfll1LMeIw07',
   business_listing: 'https://buy.stripe.com/00w9AS5fh79Jgpp2PQeIw08',
   business_plus: 'https://buy.stripe.com/8x23cu6jl79J6OP1LMeIw09',
-  dataset_license: 'https://buy.stripe.com/aFa3cuazB8dN3CD1LMeIw0a',
+  // 2026-10-29: switched from the old link (plink_1ULK0VCJiUbEZVbnNi51XqVO,
+  // buy.stripe.com/aFa3cuazB8dN3CD1LMeIw0a). The old link's product was
+  // auto-created by Stripe, so its description could not be edited, and it
+  // advertised stale counts to buyers: "1,857 rinks, 2,601 teams, 305
+  // leagues, 6,351 players" vs the real deliverable of 1,859 / 2,639 / 294 /
+  // 6,352. The new link points at a product WE created, so its copy is
+  // editable and accurate.
+  //
+  // The old link is left ACTIVE (not deleted) so any link already shared or
+  // bookmarked still resolves. Do not delete it without Arnel's approval.
+  dataset_license: 'https://buy.stripe.com/dRmeVcgXZ3Xx3CDgGGeIw0e',
 };
 
 export function getStripePaymentLink(tier: StripePaymentLinkTier): string {
