@@ -60,6 +60,7 @@ interface SiteMetrics {
     pricingCardClicks: number;
     checkoutStarted: number;
     checkoutCompleted: number;
+    selfTrafficExcluded: number;
   };
   totals: { lifetimeRevenueCents: number; payingCustomers: number; realAudience: number };
   generatedAt: string;
@@ -235,6 +236,11 @@ export default function RevenueDashboard({ initial }: Props) {
               <Row label="Pricing card clicks" value={data.siteMetrics.funnel.pricingCardClicks} />
               <Row label="Checkout started" value={data.siteMetrics.funnel.checkoutStarted} />
               <Row label="Checkout completed" value={data.siteMetrics.funnel.checkoutCompleted} color={data.siteMetrics.funnel.checkoutCompleted > 0 ? 'text-teal-400' : 'text-rose-400'} />
+              {data.siteMetrics.funnel.selfTrafficExcluded > 0 && (
+                <div className="pt-2 border-t border-slate-800/60 text-xs text-slate-500">
+                  {data.siteMetrics.funnel.selfTrafficExcluded} event{data.siteMetrics.funnel.selfTrafficExcluded === 1 ? '' : 's'} excluded as self-traffic (our own checks + bot-shaped hits). Real traffic only is counted above.
+                </div>
+              )}
             </div>
             {Object.keys(data.siteMetrics.funnel.moneyPageViewsByPage).length > 0 && (
               <div className="mt-4 pt-4 border-t border-slate-800/60">

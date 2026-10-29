@@ -83,6 +83,13 @@ export interface RevenueMetrics {
     pricingCardClicks: number;
     checkoutStarted: number;
     checkoutCompleted: number;
+    /**
+     * Events dropped from the funnel above because they were our own
+     * verification traffic or bot-shaped self-referrer hits. Surfaced so
+     * the dashboard can say what it excluded instead of silently shrinking
+     * the numbers.
+     */
+    selfTrafficExcluded: number;
   };
   /** Paid totals across every channel. */
   totals: {
@@ -211,14 +218,20 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
   // ── Money-page funnel (last 30 days) ─────────────────────────────────────
   const funnelEvents = await fetchFunnelEvents(thirtyDaysAgo);
 
+  // Exclude our own verification traffic and bot-shaped self-referrer hits.
+  // A revenue dashboard that counts the operator's own curls as audience
+  // behaviour is worse than no dashboard.
+  const organicEvents = funnelEvents.filter((e) => !isSelfTraffic(e));
+  const selfTrafficExcluded = funnelEvents.length - organicEvents.length;
+
   const moneyPageViewsByPage: Record<string, number> = {};
-  for (const e of funnelEvents) {
+  for (const e of organicEvents) {
     if (e.name !== 'money_page_viewed') continue;
     const page = (e.props?.page as string) || 'unknown';
     moneyPageViewsByPage[page] = (moneyPageViewsByPage[page] || 0) + 1;
   }
 
-  const countEvent = (name: string) => funnelEvents.filter((e) => e.name === name).length;
+  const countEvent = (name: string) => organicEvents.filter((e) => e.name === name).length;
 
   const datasetRevenueCents = datasetReal * DATASET_LICENSE_PRICE_CENTS;
 
@@ -270,6 +283,7 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
       pricingCardClicks: countEvent('pricing_card_clicked'),
       checkoutStarted: countEvent('checkout_started'),
       checkoutCompleted: countEvent('checkout_completed'),
+      selfTrafficExcluded,
     },
     totals: {
       lifetimeRevenueCents,
@@ -283,6 +297,116 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
 interface FunnelEvent {
   name: string;
   props: Record<string, unknown> | null;
+  referrer?: string | null;
+  pathname?: string | null;
+}
+
+/**
+ * Is this event our own traffic (or a bot's), rather than a real visitor?
+ *
+ * 2026-10-29 (Arnel's revenue dashboard audit): every money-page event
+ * recorded in the first 24h of instrumentation was MY OWN verification
+ * traffic — a manual curl plus several real-browser tests. The dashboard was
+ * reporting `moneyPageViews: 3` and `datasetPurchaseClicks: 1` as if they
+ * were audience behaviour. They were not.
+ *
+ * Two filters:
+ *  1. `props.surface === 'verification'` — the explicit marker used by the
+ *     manual curl probe.
+ *  2. Self-referrer: the event's referrer equals the page's own URL, with no
+ *     query string. A human arriving from Google sends
+ *     `document.referrer = "https://www.google.com/"`; a page that
+ *     re-requests itself (bot, refresh, or our own browser test) ends up with
+ *     the current page as its referrer.
+ *
+ * WHY THE COLUMN IS AUTHORITATIVE FOR THIS CHECK:
+ * `client-track.ts` sends `referrer: document.referrer`. On a fresh page load
+ * from Google that is the external URL. When a page is opened with NO
+ * referrer (our own browser tests, a typed URL, a curl), `document.referrer`
+ * is empty and the server falls back to the HTTP `Referer` header — which for
+ * a fetch to /api/track is the current page. So:
+ *   column referrer == own pathname, no query  ->  self-traffic
+ *   column referrer is external                   ->  real visitor
+ *   column referrer is another rinkstop.com page -> internal navigation
+ *
+ * `props.referrer` is only set by AddListingForm, and it is NOT a reliable
+ * substitute: for HISTORICAL rows the column held the HTTP header while
+ * props held the true source, so a props-first precedence would classify
+ * real Google visitors (`props.referrer = "https://www.google.com/"`) as
+ * self-traffic via their stale self-referrer column and silently delete
+ * real audience from the funnel. The column-first rule gets both right.
+ *
+ * Deliberately NOT filtering on `props` being null or on user_id: the
+ * money pages are mostly visited by logged-out users.
+ */
+function isSelfTraffic(e: FunnelEvent): boolean {
+  if (e.props?.surface === 'verification') return true;
+
+  // NEVER filter a submission event. A submission means a human filled in a
+  // form and pressed submit -- the GLXY Cup submission (2026-10-21) has a
+  // bare self-referrer and would be dropped by the view heuristics below,
+  // but it is a verified real lead. Only VIEW and CLICK events can be
+  // bot-shaped.
+  const SUBMISSION_EVENTS = new Set([
+    'add_listing_submitted',
+    'contact_submitted',
+    'newsletter_signup_submitted',
+  ]);
+  if (SUBMISSION_EVENTS.has(e.name)) return false;
+
+  // The `referrer` COLUMN and `props.referrer` can disagree, and when they do
+  // the props value is the trustworthy one.
+  //
+  // The column was the HTTP `Referer` header until 2026-10-29, which for a
+  // client-side fetch is the current page -- so historical rows have a
+  // self-referrer in the column even when the visitor came from Google.
+  // `props.referrer` (document.referrer, set by AddListingForm) records the
+  // TRUE source for those same rows.
+  //
+  // So: if props.referrer exists and is EXTERNAL, it is a real visitor --
+  // never self-traffic, regardless of what the column says.
+  const columnRef = typeof e.referrer === 'string' ? e.referrer : null;
+  const propRef = typeof e.props?.referrer === 'string' ? e.props.referrer : null;
+
+  // An external props.referrer is authoritative proof of a real visitor.
+  if (propRef) {
+    try {
+      const propUrl = new URL(propRef);
+      if (!propUrl.hostname.endsWith('rinkstop.com')) return false;
+    } catch {
+      // unparseable -> fall through to the column check
+    }
+  }
+
+  // Otherwise use the column. For new rows it holds the real source; for old
+  // rows a bare self-referrer is the best available signal and the only
+  // thing that distinguishes "our own browser test" from a real visit.
+  const effectiveRef: string | null = columnRef ?? propRef;
+
+  // No referrer at all: could be direct traffic. Not enough to exclude.
+  if (!effectiveRef) return false;
+
+  try {
+    const refUrl = new URL(effectiveRef);
+    const path = e.pathname;
+
+    // Same page, no query string -> the page re-requested itself. Bot or
+    // refresh shaped. Exclude.
+    if (path && refUrl.pathname === path && !refUrl.search) return true;
+
+    // Same page WITH a query string -> a Next.js client-side navigation
+    // within our own site (e.g. /add-listing?name=slough). That is how
+    // BOTH real listing submissions arrived, so it must NOT be excluded.
+    if (path && refUrl.pathname === path && refUrl.search) return false;
+
+    // Different page on our own domain -> legitimate internal navigation.
+    if (refUrl.hostname.endsWith('rinkstop.com')) return false;
+
+    // External referrer (google.com etc.) -> a real visitor. Not self-traffic.
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 async function fetchFunnelEvents(sinceIso: string): Promise<FunnelEvent[]> {
@@ -309,7 +433,7 @@ async function fetchFunnelEvents(sinceIso: string): Promise<FunnelEvent[]> {
   for (let i = 0; i < 40; i++) {
     const { data, error } = await supabaseAdmin
       .from('analytics_events')
-      .select('name, ts, props')
+      .select('name, ts, props, referrer, pathname')
       .gte('ts', start)
       .in('name', Array.from(wanted))
       .order('ts', { ascending: true })

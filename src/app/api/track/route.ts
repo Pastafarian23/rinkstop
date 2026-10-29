@@ -116,7 +116,18 @@ export async function POST(req: NextRequest) {
     name,
     userId: userId ?? null,
     pathname: body.pathname ?? null,
-    referrer: req.headers.get('referer') || null,
+    // 2026-10-29: prefer the CLIENT-supplied referrer (document.referrer,
+    // sent by src/lib/client-track.ts) over the HTTP Referer header.
+    //
+    // Why: a client-side fetch to /api/track carries the CURRENT page as its
+    // HTTP Referer, so the header is a self-referrer for almost every event
+    // and tells us nothing about where the visitor came from. The body
+    // referrer is the real traffic source (google.com, a directory page,
+    // etc.). The header stays as the fallback for server-side callers.
+    referrer:
+      (typeof body.referrer === 'string' && body.referrer) ||
+      req.headers.get('referer') ||
+      null,
     utm_source: body.utm?.source ?? null,
     utm_medium: body.utm?.medium ?? null,
     utm_campaign: body.utm?.campaign ?? null,
