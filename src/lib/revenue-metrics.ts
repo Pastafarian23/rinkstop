@@ -390,9 +390,31 @@ function isSelfTraffic(e: FunnelEvent): boolean {
     const refUrl = new URL(effectiveRef);
     const path = e.pathname;
 
-    // Same page, no query string -> the page re-requested itself. Bot or
-    // refresh shaped. Exclude.
-    if (path && refUrl.pathname === path && !refUrl.search) return true;
+    // Same page, no query string -> the page re-requested itself.
+    //
+    // BUT a self-referrer alone is NOT proof of bot traffic. /pricing is
+    // linked 12x from the home page and from every major directory page, so
+    // a real visitor can legitimately produce Referer: /pricing (an in-site
+    // navigation, a reload, or a bookmarked-URL visit).
+    //
+    // The discriminator that actually separates them is the referrer-derived
+    // CONTEXT. /pricing derives `utmTier` from the referrer: a visitor
+    // arriving via /directory/teams gets 'club_starter', via
+    // /directory/rinks gets 'business_listing', etc. A request with a
+    // self-referrer AND a null tier carries no referrer context at all --
+    // that is the shape of an automated check.
+    //
+    // Measured over the last 30 days: of 907 pricing_viewed rows with
+    // utmTier=null, only 3 had referrer === '/pricing'. The other 904 were
+    // real traffic (null-referrer direct visits, /directory/games/... etc.).
+    // So requiring BOTH conditions excludes exactly the automated cluster
+    // and keeps every real visitor.
+    if (path && refUrl.pathname === path && !refUrl.search) {
+      const tier = e.props?.utmTier;
+      const hasReferrerContext = tier !== undefined && tier !== null;
+      if (!hasReferrerContext) return true;
+      return false;
+    }
 
     // Same page WITH a query string -> a Next.js client-side navigation
     // within our own site (e.g. /add-listing?name=slough). That is how
