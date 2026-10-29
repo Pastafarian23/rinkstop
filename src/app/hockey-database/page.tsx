@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import { supabaseAdmin } from '@/lib/supabase';
+import MoneyCtaLink from '@/components/MoneyCtaLink';
+import MoneyPageViewTracker from '@/components/MoneyPageViewTracker';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 /**
@@ -195,6 +197,10 @@ export default async function HockeyDatabasePage() {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+
+      {/* Revenue instrumentation (2026-10-28): this page is the top of the
+          $499 dataset funnel and previously had no tracked views at all. */}
+      <MoneyPageViewTracker page="hockey-database" surface="direct" />
 
       <nav aria-label="Breadcrumb" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginBottom: '20px' }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Home</Link>
@@ -471,7 +477,9 @@ export default async function HockeyDatabasePage() {
           ${counts.rinks.toLocaleString()} rinks · 2,601 teams · ${counts.leagues.toLocaleString()} ${1} · 6,351 players. CSV + JSON + JSONL.
           Commercial-use license. Quarterly refreshes for 12 months. No scraping.
         </p>
-        <Link
+        <MoneyCtaLink
+          eventName="hockey_database_cta_clicked"
+          props={{ page: 'hockey-database', placement: 'dataset_cta', price: 499 }}
           href="/dataset-license"
           style={{
             display: 'inline-block',
@@ -486,7 +494,7 @@ export default async function HockeyDatabasePage() {
           }}
         >
           Get the Dataset License →
-        </Link>
+        </MoneyCtaLink>
         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '0.75rem' }}>
           Or pay without signing up · Receipt emailed · Download link delivered immediately
         </div>

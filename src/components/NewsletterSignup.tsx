@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { trackClient } from '@/lib/client-track';
 
 /**
  * <NewsletterSignup /> — Email capture for the "Hockey Data Digest".
@@ -47,6 +48,7 @@ export default function NewsletterSignup({ source = 'unknown' }: { source?: stri
         }),
       });
       if (!res.ok) throw new Error('submit_failed');
+      trackClient('newsletter_signup_submitted', { source, role: 'fan' });
       setSubmitted(true);
     } catch {
       setError('Could not subscribe — try again in a moment.');

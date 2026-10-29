@@ -91,6 +91,16 @@ export async function POST(req: NextRequest) {
     // clicks were silently rejected with 400. Now properly captured.
     'tool_upsell_clicked',
     'tool_free_account_clicked',
+    // Revenue-page instrumentation (2026-10-28, Arnel directive):
+    // the money pages had ZERO tracked traffic, so revenue was invisible.
+    'money_page_viewed',
+    'dataset_license_purchase_clicked',
+    'dataset_license_cta_clicked',
+    'advertise_cta_clicked',
+    'advertise_inquiry_sent',
+    'partner_with_us_clicked',
+    'hockey_database_cta_clicked',
+    'newsletter_signup_submitted',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });

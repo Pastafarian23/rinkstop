@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import MoneyPageViewTracker from '@/components/MoneyPageViewTracker';
+import MoneyCtaLink from '@/components/MoneyCtaLink';
 
 export const metadata: Metadata = {
   title: { absolute: 'Partner With RinkStop' },
@@ -9,6 +11,9 @@ export const metadata: Metadata = {
 export default function PartnerPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
+      {/* Revenue instrumentation (2026-10-28). */}
+      <MoneyPageViewTracker page="partner-with-us" surface="direct" />
+
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -64,7 +69,9 @@ export default function PartnerPage() {
         <p style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
           We work with hockey organizations, brands, media companies, and technology platforms. Tell us about your goals and we&apos;ll put together a custom partnership proposal.
         </p>
-        <a
+        <MoneyCtaLink
+          eventName="partner_with_us_clicked"
+          props={{ page: 'partner-with-us', placement: 'lets_talk' }}
           href="mailto:support@rinkstop.com?subject=Federation%20Claim%20Access%20Inquiry"
           style={{
             display: 'inline-block',
@@ -78,7 +85,7 @@ export default function PartnerPage() {
           }}
         >
           Get in Touch →
-        </a>
+        </MoneyCtaLink>
       </div>
     </main>
   );
