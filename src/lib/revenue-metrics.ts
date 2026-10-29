@@ -69,6 +69,8 @@ export interface RevenueMetrics {
     partnerClicks: number;
     hockeyDatabaseClicks: number;
     newsletterSignupSubmissions: number;
+    /** Contact-form submissions (terminal step of the money-page funnel). */
+    contactSubmissions: number;
     pricingViews: number;
     pricingCardClicks: number;
     checkoutStarted: number;
@@ -253,6 +255,7 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
       partnerClicks: countEvent('partner_with_us_clicked'),
       hockeyDatabaseClicks: countEvent('hockey_database_cta_clicked'),
       newsletterSignupSubmissions: countEvent('newsletter_signup_submitted'),
+      contactSubmissions: countEvent('contact_submitted'),
       pricingViews: countEvent('pricing_viewed'),
       pricingCardClicks: countEvent('pricing_card_clicked'),
       checkoutStarted: countEvent('checkout_started'),
@@ -280,6 +283,7 @@ async function fetchFunnelEvents(sinceIso: string): Promise<FunnelEvent[]> {
     'partner_with_us_clicked',
     'hockey_database_cta_clicked',
     'newsletter_signup_submitted',
+    'contact_submitted',
     'pricing_viewed',
     'pricing_card_clicked',
     'checkout_started',
