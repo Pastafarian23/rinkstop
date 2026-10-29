@@ -28,6 +28,8 @@ const NAV = [
   { href: '/admin/audit-log', label: 'Audit Log', icon: '🧾' },
   { href: '/admin/stamps/disputes', label: 'Disputes', icon: '⚖️' },
   { href: '/admin/federation-registrations', label: 'Federation Reg.', icon: '🏛️' },
+  { href: '/admin/federations', label: 'Federations', icon: '🏆' },
+  { href: '/admin/claims', label: 'Claims', icon: '🔑' },
 ];
 
 interface AdminShellProps {

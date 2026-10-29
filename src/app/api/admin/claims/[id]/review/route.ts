@@ -24,6 +24,7 @@ import { getAdminFromRequest } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { getUserTier } from '@/lib/connections';
+import { applyFederationOwnership } from '@/lib/federation-ownership';
 import { emitClaimPaidTierUnlocked } from '@/lib/notifications/emit';
 import { getTierLabel } from '@/lib/pricing';
 
@@ -113,6 +114,29 @@ export async function POST(
     return applyRateLimitHeaders(res, rl);
   }
 
+  // Federation claims (2026-10-29): approving grants the federation admin
+  // ownership by setting federations.owner_user_id. That is what unlocks
+  // /dashboard/federation/[slug] and /api/manage/federation.
+  //
+  // The rules live in `applyFederationOwnership` so they can be tested
+  // against the live database by scripts/_test-federation-claim-flow.mjs
+  // instead of being re-implemented (and drifting) in a test.
+  let federationUpdateWarning: string | null = null;
+  if (claim.claim_type === 'federation') {
+    const ownership = await applyFederationOwnership({
+      user_id: claim.user_id,
+      entity_id: claim.entity_id,
+    });
+    if (ownership.ok === false) {
+      const res = NextResponse.json(
+        { error: ownership.message, code: ownership.code },
+        { status: 400 },
+      );
+      return applyRateLimitHeaders(res, rl);
+    }
+    federationUpdateWarning = ownership.warning;
+  }
+
   // For player claims, set players.user_id if not already taken by another user.
   let playerUpdateWarning: string | null = null;
   if (claim.claim_type === 'player') {
@@ -182,10 +206,11 @@ export async function POST(
     }
   })();
 
+  const warnings = [playerUpdateWarning, federationUpdateWarning].filter(Boolean);
   const res = NextResponse.json({
     ok: true,
     status: 'approved',
-    ...(playerUpdateWarning ? { warning: playerUpdateWarning } : {}),
+    ...(warnings.length > 0 ? { warning: warnings.join(' ') } : {}),
   });
   return applyRateLimitHeaders(res, rl);
 }
