@@ -24,7 +24,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getDirectoryCounts } from '@/lib/directory-counts';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 import MoneyPageViewTracker from '@/components/MoneyPageViewTracker';
 import MoneyCtaLink from '@/components/MoneyCtaLink';
 
@@ -33,10 +33,25 @@ export const metadata: Metadata = {
   description: 'Advertise your hockey brand, product, or service to a global audience. RinkStop reaches hockey enthusiasts across NHL, international leagues, youth, and non-traditional markets.',
 };
 
-export const dynamic = 'force-dynamic';
+// 2026-10-29: was `export const dynamic = 'force-dynamic'`, which made this
+// page render per-request (cache-control: private, no-cache, no-store;
+// x-vercel-cache: MISS on every hit) and forced a live `get_directory_stats`
+// RPC per visit.
+//
+// The page has NO per-request dependencies — no cookies(), headers(),
+// searchParams, auth, or direct table queries. The only dynamic input was
+// the directory counts, and a cached variant already exists
+// (`getDirectoryCountsCached`, 10-minute revalidate, tag 'directory-counts')
+// used by /directory, /directory/teams, /directory/rinks, /launch and others.
+//
+// So: use the cached counts and let the page be ISR like its sibling money
+// pages (/hockey-database uses `revalidate = 3600`). Directory counts shift
+// by a few per day, not per second, so a 10-minute data cache behind a
+// 1-hour page revalidate is not a meaningful accuracy loss on marketing copy.
+export const revalidate = 3600;
 
 export default async function AdvertisePage() {
-  const counts = await getDirectoryCounts();
+  const counts = await getDirectoryCountsCached();
 
   const reach = [
     {
