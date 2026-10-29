@@ -61,6 +61,7 @@ export default async function AdminClaimsPage() {
   const rinkIds = Array.from(new Set([...(pending || []), ...(recent || [])].filter((c) => c.claim_type === 'rink').map((c) => c.entity_id)));
   const teamIds = Array.from(new Set([...(pending || []), ...(recent || [])].filter((c) => c.claim_type === 'team').map((c) => c.entity_id)));
   const playerIds = Array.from(new Set([...(pending || []), ...(recent || [])].filter((c) => c.claim_type === 'player').map((c) => c.entity_id)));
+  const federationIds = Array.from(new Set([...(pending || []), ...(recent || [])].filter((c) => c.claim_type === 'federation').map((c) => c.entity_id)));
 
   if (rinkIds.length > 0) {
     const { data: rinks } = await supabaseAdmin
@@ -82,6 +83,15 @@ export default async function AdminClaimsPage() {
     for (const p of players || []) {
       const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.slug || p.id.slice(0, 8);
       entityLabels[`player:${p.id}`] = name;
+    }
+  }
+  if (federationIds.length > 0) {
+    const { data: feds } = await supabaseAdmin
+      .from('federations').select('id, name, country_code').in('id', federationIds);
+    for (const f of feds || []) {
+      entityLabels[`federation:${f.id}`] = f.country_code
+        ? `${f.name} (${f.country_code})`
+        : f.name;
     }
   }
 

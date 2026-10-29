@@ -560,3 +560,86 @@ fallback in `src/middleware.ts` — drift between them silently breaks one path.
 **Caveat:** this pre-seeds the fast path only. The middleware's live fold lookup
 (`lookupTeamSlugByFoldedSlug`) is the safety net for accented teams created after
 this date, so regeneration is a performance optimization, not a correctness requirement.
+
+---
+
+## 2026-10-29 — `2026-10-29_federation_ownership_and_invites.sql`
+
+**Applied:** 2026-10-29 18:1x CDT (Wed)
+**Applied by:** KiloClaw (main session, webchat)
+**Approval:** Arnel — "Plan approved proceed with recommendations" (2026-10-29 18:07 CDT)
+**Method:** `POST /v1/projects/yszheonqyyskkjoexk/database/query` via `/root/.openclaw/credentials/_run-migration.mjs`
+
+**Why:** Federations are contacted directly (e.g. Ice Hockey Association of India via
+their General Secretary). Arnel wants to send an invite link to the vetted contact
+so they can claim and manage their federation listing. There is NO public federation
+claim button — claiming is invite-only via `/profile/claim?token=...`.
+
+**Pre-flight verified (live DB):**
+- `public.federations` columns: id, slug, name, country_code, logo_url, website_url,
+  is_active, created_at, updated_at, category, kind (11 columns) — no owner column
+- `public.claims` constraint: `claims_claim_type_check CHECK (claim_type = ANY (ARRAY['rink','team','player']))`
+  — no 'federation' value
+- `public.leagues` has `federation_id UUID` (298 rows, 0 populated)
+- `public.team_workspaces` has `federation_id UUID` (3,253 rows, 0 populated)
+- `public.federation_registrations` / `rink_org_connections` / `league_members` /
+  `organizations`: all 0 rows
+
+**What this migration did:**
+- `public.federations`: +15 columns (owner_user_id, description, contact_email,
+  contact_phone, logo_source, logo_verified_at, claimable, 7 pending_* edit fields)
+  + 2 indexes
+- `public.claims`: constraint replaced to allow 'federation' claim_type
+  (rink/team/player preserved — verified post-apply)
+- `public.federation_claim_invites`: NEW table (token, federation_id FK, email,
+  contact_name, note, max_uses, times_used, expires_at, revoked_at, created_by,
+  accepted_by, accepted_at, created_at) + 2 indexes + RLS enabled (no policies —
+  service_role only, no anon/authenticated grants)
+- `public.federation_member_requests`: NEW table (federation_id FK, member_type
+  CHECK league|club, league_id FK, team_id FK, proposed_* fields, status
+  CHECK pending|approved|rejected, review fields) + 2 indexes + RLS enabled
+  (no policies — service_role only) + exactly-one-target CHECK constraint
+- `public.is_federation_admin(TEXT, UUID)` — SECURITY DEFINER, SET search_path = '',
+  fully public.-qualified
+- `public.redeem_federation_claim_invite(TEXT, TEXT, TEXT)` — SECURITY DEFINER,
+  SET search_path = '', validates token/expiry/uses/email and consumes the invite.
+  Raises: invite_not_found / invite_revoked / invite_expired / invite_exhausted /
+  invite_email_mismatch
+
+**Post-apply verified:**
+- `public.federations` now has 26 columns
+- `federation_claim_invites` + `federation_member_requests` exist
+- Both functions exist in pg_proc
+- `claims_claim_type_check` now reads
+  `CHECK ((claim_type = ANY (ARRAY['rink','team','player','federation'])))`
+
+**Grants:** both new tables are service_role only (no anon/authenticated). This is
+deliberate — every read/write goes through server code using the service-role
+client. PostgREST exposure is not needed for either table.
+
+**Rollback (if needed):**
+```sql
+DROP FUNCTION IF EXISTS public.redeem_federation_claim_invite(TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.is_federation_admin(TEXT, UUID);
+DROP TABLE IF EXISTS public.federation_member_requests CASCADE;
+DROP TABLE IF EXISTS public.federation_claim_invites CASCADE;
+ALTER TABLE public.claims DROP CONSTRAINT IF EXISTS claims_claim_type_check;
+ALTER TABLE public.claims ADD CONSTRAINT claims_claim_type_check
+  CHECK (claim_type = ANY (ARRAY['rink'::text,'team'::text,'player'::text]));
+ALTER TABLE public.federations
+  DROP COLUMN IF EXISTS owner_user_id,
+  DROP COLUMN IF EXISTS description,
+  DROP COLUMN IF EXISTS contact_email,
+  DROP COLUMN IF EXISTS contact_phone,
+  DROP COLUMN IF EXISTS logo_source,
+  DROP COLUMN IF EXISTS logo_verified_at,
+  DROP COLUMN IF EXISTS claimable,
+  DROP COLUMN IF EXISTS pending_name,
+  DROP COLUMN IF EXISTS pending_logo_url,
+  DROP COLUMN IF EXISTS pending_description,
+  DROP COLUMN IF EXISTS pending_website_url,
+  DROP COLUMN IF EXISTS pending_contact_email,
+  DROP COLUMN IF EXISTS pending_contact_phone,
+  DROP COLUMN IF EXISTS pending_submitted_at,
+  DROP COLUMN IF EXISTS pending_submitted_by;
+```

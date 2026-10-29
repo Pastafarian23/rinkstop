@@ -17,6 +17,7 @@ export const revalidate = 3600;
 
 const subSitemaps = [
   'sitemap-static.xml',
+  'sitemap-federations.xml',
   'sitemap-rinks.xml',
   'sitemap-teams.xml',
   'sitemap-players.xml',
