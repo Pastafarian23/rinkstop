@@ -51,6 +51,14 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/data-methodology`, changeFreq: 'yearly', priority: 0.5 },
   { url: `${baseUrl}/data-coverage`, changeFreq: 'weekly', priority: 0.7 },
   { url: `${baseUrl}/hockey-database`, changeFreq: 'weekly', priority: 0.8 },
+  // Revenue pages (2026-10-29): /dataset-license (the $499 product) and
+  // /partner-with-us were live and indexable but missing from every sitemap,
+  // so search engines had no sitemap path to them. /advertise was already
+  // listed below. /add-listing is the free listing-submission funnel and
+  // generated our only two real leads.
+  { url: `${baseUrl}/dataset-license`, changeFreq: 'weekly', priority: 0.9 },
+  { url: `${baseUrl}/partner-with-us`, changeFreq: 'monthly', priority: 0.6 },
+  { url: `${baseUrl}/add-listing`, changeFreq: 'monthly', priority: 0.7 },
   { url: `${baseUrl}/terms`, changeFreq: 'yearly', priority: 0.3 },
   { url: `${baseUrl}/advertise`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/directory/international`, changeFreq: 'monthly', priority: 0.6 },
