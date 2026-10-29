@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
     'partner_with_us_clicked',
     'hockey_database_cta_clicked',
     'newsletter_signup_submitted',
+    'contact_submitted',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });

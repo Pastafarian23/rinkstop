@@ -53,6 +53,7 @@ interface SiteMetrics {
     partnerClicks: number;
     hockeyDatabaseClicks: number;
     newsletterSignupSubmissions: number;
+    contactSubmissions: number;
     pricingViews: number;
     pricingCardClicks: number;
     checkoutStarted: number;
@@ -201,6 +202,7 @@ export default function RevenueDashboard({ initial }: Props) {
                 <Row label="Newsletter subscribers" value={data.siteMetrics.audience.newsletterSubscribers} color="text-teal-400" sub={`${data.siteMetrics.audience.newsletterSubscribersTest} test excluded`} />
                 <Row label="Leads captured" value={data.siteMetrics.audience.leads} color="text-teal-400" sub={`${data.siteMetrics.audience.leadsTest} test excluded`} />
                 <Row label="Newsletter signups (30d)" value={data.siteMetrics.funnel.newsletterSignupSubmissions} />
+                <Row label="Contact submissions (30d)" value={data.siteMetrics.funnel.contactSubmissions} sub="from any money page" />
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { trackEvent } from '@/lib/analytics';
 
 const SUPPORT_EMAIL = 'support@rinkstop.com';
 
@@ -60,6 +61,38 @@ export async function POST(req: NextRequest) {
   if (dbErr) {
     console.error('Contact form DB error:', dbErr);
   }
+
+  // 2026-10-29: contact submissions were COMPLETELY untracked — every money
+  // page (/dataset-license, /advertise, /partner-with-us, /hockey-database,
+  // /pricing) links to /contact, so inbound interest that arrived through a
+  // money page vanished into a table with no funnel event. That made the
+  // terminal step of the revenue funnel invisible.
+  //
+  // Fired server-side (not client-side) so it still records if the browser's
+  // JS never runs. `referer` is captured so we can attribute the submission
+  // back to the money page it came from.
+  //
+  // NOTE: we record the subject and the referer, NOT the message body or the
+  // email address — the funnel only needs to know that interest arrived and
+  // what it was about.
+  const refererHeader = req.headers.get('referer') || req.headers.get('x-rinkstop-referer') || null;
+  let refererPathname: string | null = null;
+  if (refererHeader) {
+    try {
+      refererPathname = new URL(refererHeader).pathname;
+    } catch {
+      refererPathname = null;
+    }
+  }
+  await trackEvent({
+    name: 'contact_submitted',
+    pathname: '/contact',
+    referrer: refererHeader,
+    props: {
+      subject: subject?.trim() || 'General Inquiry',
+      referer_pathname: refererPathname,
+    },
+  });
 
   // Forward to support email via Maton email API
   const subjectLine = subject ? `[RinkStop] ${subject}` : '[RinkStop] New Contact Form Submission';
