@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin-auth';
 import IntakeDashboard from './IntakeDashboard';
+import type { ListingSubmission } from './types';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,22 +39,6 @@ interface EmailCapture {
   created_at: string;
 }
 
-interface ListingSubmission {
-  id: string;
-  listing_type: string;
-  name: string;
-  city: string | null;
-  country: string | null;
-  website: string | null;
-  description: string | null;
-  email: string;
-  status: 'pending' | 'approved' | 'rejected';
-  reviewed_at: string | null;
-  reviewed_by: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 async function getIntakeData() {
   // Run all 4 queries in parallel.

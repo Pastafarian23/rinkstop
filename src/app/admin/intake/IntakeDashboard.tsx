@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import type { ListingSubmission } from './types';
 
 interface Lead {
   id: string;
@@ -36,22 +37,6 @@ interface EmailCapture {
   created_at: string;
 }
 
-interface ListingSubmission {
-  id: string;
-  listing_type: string;
-  name: string;
-  city: string | null;
-  country: string | null;
-  website: string | null;
-  description: string | null;
-  email: string;
-  status: 'pending' | 'approved' | 'rejected';
-  reviewed_at: string | null;
-  reviewed_by: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 interface Counts {
   leads: number;
@@ -250,6 +235,55 @@ export default function IntakeDashboard({
       });
       if (!r.ok) {
         alert('Reject failed');
+        return;
+      }
+      window.location.reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Record that we actually REPLIED to a lead.
+   *
+   * 2026-10-29: the contacted_at / reply_channel / outcome columns were
+   * WRITE-ONLY BY DIRECT DB EDIT — neither the PATCH endpoint nor this UI
+   * could set them. So the whole lead-response measurement ("Oldest
+   * unanswered lead: 27 days" on /admin/revenue and in the daily Telegram
+   * report) depended on someone remembering to hand-edit a table. It did not
+   * happen, and that is precisely why two real leads sat for 27 and 8 days
+   * with nothing recording it.
+   *
+   * This RECORDS a reply that already happened. It does NOT send one.
+   * The not-pushy rule is that we deliver before we ask.
+   */
+  async function logReply(id: string) {
+    const channel = prompt(
+      'How did you reply? (email / telegram / phone / whatsapp / other)',
+      'email',
+    );
+    if (channel === null) return;
+    const outcome = prompt(
+      'Outcome (listed / claimed / paid / declined / no_response)',
+      'listed',
+    );
+    if (outcome === null) return;
+    const notes = prompt('Notes (optional):', '');
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/admin/intake/listing-submission/${id}/contact`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contacted: true,
+          reply_channel: channel.trim() || 'email',
+          outcome: outcome.trim() || undefined,
+          outcome_notes: notes || undefined,
+        }),
+      });
+      const payload = (await r.json().catch((): unknown => null)) as { error?: string } | null;
+      if (!r.ok) {
+        alert(payload?.error ? `Could not log reply: ${payload.error}` : 'Could not log reply');
         return;
       }
       window.location.reload();
@@ -473,6 +507,7 @@ export default function IntakeDashboard({
           rows={filteredListingSubmissions}
           onApprove={approveSubmission}
           onReject={rejectSubmission}
+          onLogReply={logReply}
           busy={busy}
         />
       )}
@@ -699,11 +734,13 @@ function ListingSubmissionsTable({
   rows,
   onApprove,
   onReject,
+  onLogReply,
   busy,
 }: {
   rows: ListingSubmission[];
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onLogReply: (id: string) => void;
   busy: boolean;
 }) {
   if (rows.length === 0) {
@@ -719,6 +756,7 @@ function ListingSubmissionsTable({
             <th style={thStyle}>City / Country</th>
             <th style={thStyle}>Email</th>
             <th style={thStyle}>Status</th>
+            <th style={thStyle}>Replied?</th>
             <th style={thStyle}>Created</th>
             <th style={thStyle}>Actions</th>
           </tr>
@@ -784,6 +822,28 @@ function ListingSubmissionsTable({
                   </div>
                 )}
               </td>
+              <td style={tdStyle}>
+                {s.contacted_at ? (
+                  <div style={{ fontSize: '0.75rem' }}>
+                    <span style={{ color: '#2DD4BF' }}>
+                      ✓ {s.reply_channel || 'replied'}
+                    </span>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.15rem' }}>
+                      {new Date(s.contacted_at).toLocaleDateString()}
+                      {s.first_response_hours !== null && s.first_response_hours !== undefined && (
+                        <> · {Math.round(s.first_response_hours)}h to reply</>
+                      )}
+                    </div>
+                    {s.outcome && (
+                      <div style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.15rem' }}>
+                        {s.outcome}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '0.75rem', color: '#FBBF24' }}>not yet</span>
+                )}
+              </td>
               <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>
                 {new Date(s.created_at).toLocaleDateString()}
               </td>
@@ -813,6 +873,17 @@ function ListingSubmissionsTable({
                     {new Date(s.reviewed_at).toLocaleDateString()}
                   </span>
                 )}
+                <div style={{ marginTop: '0.4rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => onLogReply(s.id)}
+                    disabled={busy}
+                    style={actionBtnStyle(s.contacted_at ? '#94A3B8' : '#FBBF24')}
+                    title="Record that you already replied to this lead"
+                  >
+                    {s.contacted_at ? '✎ Update reply' : '✎ Log reply'}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
