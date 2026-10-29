@@ -74,7 +74,11 @@ export const supabase = supabaseAdmin;
 export const supabaseRead = supabaseAdmin;
 `;
 
-const stubPath = path.join(repoRoot, 'src', 'lib', '__daily_report_supabase_stub.ts');
+// The stub lives OUTSIDE src/ so it can never be picked up by tsc, the
+// Next build, or git as a stray source file. (An earlier version wrote it
+// to src/lib/__daily_report_supabase_stub.ts and it leaked into the working
+// tree and blocked the pre-push guard.)
+const stubPath = path.join(repoRoot, 'scripts', '.tmp-daily-report-supabase-stub.ts');
 fs.writeFileSync(stubPath, supabaseStub);
 
 let metrics;
