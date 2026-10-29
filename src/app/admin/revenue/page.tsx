@@ -29,7 +29,7 @@ export default async function RevenuePage() {
     <div>
       <div className="page-header">
         <h1><span aria-hidden="true">💰</span> Revenue</h1>
-        <p>Stripe-backed snapshot of subscriptions, MRR, churn, and recent events.</p>
+        <p>Stripe-backed subscriptions plus live site-side revenue signals: one-time purchases, audience, pipeline, and the money-page funnel. Test rows are excluded from every real count.</p>
       </div>
 
       <RevenueDashboard initial={initial} />

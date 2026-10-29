@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getAdminFromRequest } from '@/lib/admin-auth';
+import { getRevenueMetrics } from '@/lib/revenue-metrics';
 
 export const dynamic = 'force-dynamic';
 
@@ -146,6 +147,22 @@ export async function GET(_req: NextRequest) {
     const activeAtStart = subs.length + cancellationsLast7d - newSubsLast7d;
     const churnRate = activeAtStart > 0 ? cancellationsLast7d / activeAtStart : 0;
 
+    // ── Site-side revenue metrics (2026-10-28) ─────────────────────────────
+    // The Stripe block above reports subscriptions only. Because RinkStop had
+    // ZERO paid subscriptions for months, that block rendered an all-zero
+    // dashboard and hid every other revenue signal (one-time dataset
+    // purchases, leads, listing submissions, money-page funnel). These
+    // metrics come straight from Supabase and split real vs test rows so
+    // test data can never be reported as revenue again.
+    let siteMetrics = null;
+    let siteMetricsError: string | null = null;
+    try {
+      siteMetrics = await getRevenueMetrics();
+    } catch (e: any) {
+      siteMetricsError = e?.message ?? 'site_metrics_failed';
+      console.error('[admin/revenue] site metrics failed:', siteMetricsError);
+    }
+
     return NextResponse.json({
       activeSubscribers: subs.filter((s) => s.status === 'active' || s.status === 'trialing').length,
       tierCounts,
@@ -159,6 +176,8 @@ export async function GET(_req: NextRequest) {
       successfulPaymentsLast7d,
       churnRate,
       recentEvents: recentEvents.slice(0, 20),
+      siteMetrics,
+      siteMetricsError,
       generatedAt: Date.now(),
     });
   } catch (e: any) {

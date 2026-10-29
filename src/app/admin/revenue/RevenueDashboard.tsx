@@ -15,7 +15,51 @@ interface RevenueData {
   successfulPaymentsLast7d: number;
   churnRate: number;
   recentEvents: Array<{ type: string; created: number; amount?: number; tier?: string }>;
+  siteMetrics?: SiteMetrics | null;
+  siteMetricsError?: string | null;
   generatedAt: number;
+}
+
+interface SiteMetrics {
+  oneTime: {
+    datasetLicenses: number;
+    datasetLicensesTest: number;
+    datasetLicenseRevenueCents: number;
+    totalOneTimeCustomers: number;
+    totalOneTimeRevenueCents: number;
+  };
+  subscriptions: { activeProfiles: number; activeProfilesTest: number };
+  audience: {
+    newsletterSubscribers: number;
+    newsletterSubscribersTest: number;
+    leads: number;
+    leadsTest: number;
+    totalRealAudience: number;
+  };
+  pipeline: {
+    listingSubmissions: number;
+    listingSubmissionsTest: number;
+    pendingListingSubmissions: number;
+    listingInquiries: number;
+    bookingRequests: number;
+    paymentRecords: number;
+    b2bProspects: number;
+  };
+  funnel: {
+    moneyPageViews: number;
+    moneyPageViewsByPage: Record<string, number>;
+    datasetPurchaseClicks: number;
+    advertiseClicks: number;
+    partnerClicks: number;
+    hockeyDatabaseClicks: number;
+    newsletterSignupSubmissions: number;
+    pricingViews: number;
+    pricingCardClicks: number;
+    checkoutStarted: number;
+    checkoutCompleted: number;
+  };
+  totals: { lifetimeRevenueCents: number; payingCustomers: number; realAudience: number };
+  generatedAt: string;
 }
 
 interface Props {
@@ -113,6 +157,99 @@ export default function RevenueDashboard({ initial }: Props) {
           sub={`${data.cancellationsLast7d} canceled, ${data.newSubsLast7d} new`}
         />
       </div>
+
+      {/* ── Site-side revenue signals (2026-10-28) ───────────────────────────
+          The Stripe cards above only cover subscriptions. These cards cover
+          every OTHER revenue signal that was previously invisible: one-time
+          purchases, audience captured, inbound business pipeline, and the
+          money-page funnel. Test rows are excluded from the real counts. */}
+      {data.siteMetrics ? (
+        <>
+          <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3 mt-2">
+            Site Revenue Signals
+          </h3>
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            <Stat
+              label="Lifetime Revenue"
+              value={fmtMoney(data.siteMetrics.totals.lifetimeRevenueCents)}
+              color={data.siteMetrics.totals.lifetimeRevenueCents > 0 ? 'text-teal-400' : 'text-rose-400'}
+              sub="confirmed one-time purchases"
+            />
+            <Stat
+              label="Paying Customers"
+              value={data.siteMetrics.totals.payingCustomers.toLocaleString()}
+              color={data.siteMetrics.totals.payingCustomers > 0 ? 'text-teal-400' : 'text-rose-400'}
+              sub="real, test rows excluded"
+            />
+            <Stat
+              label="Dataset Licenses"
+              value={data.siteMetrics.oneTime.datasetLicenses.toLocaleString()}
+              color={data.siteMetrics.oneTime.datasetLicenses > 0 ? 'text-teal-400' : 'text-slate-300'}
+              sub={`$499 each · ${data.siteMetrics.oneTime.datasetLicensesTest} test excluded`}
+            />
+            <Stat
+              label="Real Audience"
+              value={data.siteMetrics.totals.realAudience.toLocaleString()}
+              sub="newsletter + leads, test excluded"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+              <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Audience (real only)</h3>
+              <div className="space-y-3">
+                <Row label="Newsletter subscribers" value={data.siteMetrics.audience.newsletterSubscribers} color="text-teal-400" sub={`${data.siteMetrics.audience.newsletterSubscribersTest} test excluded`} />
+                <Row label="Leads captured" value={data.siteMetrics.audience.leads} color="text-teal-400" sub={`${data.siteMetrics.audience.leadsTest} test excluded`} />
+                <Row label="Newsletter signups (30d)" value={data.siteMetrics.funnel.newsletterSignupSubmissions} />
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+              <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Business Pipeline</h3>
+              <div className="space-y-3">
+                <Row label="Listing submissions" value={data.siteMetrics.pipeline.listingSubmissions} color="text-teal-400" sub={`${data.siteMetrics.pipeline.pendingListingSubmissions} pending`} />
+                <Row label="Listing inquiries" value={data.siteMetrics.pipeline.listingInquiries} />
+                <Row label="Booking requests" value={data.siteMetrics.pipeline.bookingRequests} />
+                <Row label="B2B prospects" value={data.siteMetrics.pipeline.b2bProspects} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 mb-8">
+            <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
+              Money-Page Funnel (last 30 days)
+            </h3>
+            <div className="space-y-3">
+              <Row label="Money-page views" value={data.siteMetrics.funnel.moneyPageViews} />
+              <Row label="Dataset purchase clicks ($499)" value={data.siteMetrics.funnel.datasetPurchaseClicks} color={data.siteMetrics.funnel.datasetPurchaseClicks > 0 ? 'text-teal-400' : 'text-slate-300'} />
+              <Row label="Advertise CTA clicks" value={data.siteMetrics.funnel.advertiseClicks} />
+              <Row label="Partner CTA clicks" value={data.siteMetrics.funnel.partnerClicks} />
+              <Row label="Hockey-database CTA clicks" value={data.siteMetrics.funnel.hockeyDatabaseClicks} />
+              <Row label="Pricing views" value={data.siteMetrics.funnel.pricingViews} />
+              <Row label="Pricing card clicks" value={data.siteMetrics.funnel.pricingCardClicks} />
+              <Row label="Checkout started" value={data.siteMetrics.funnel.checkoutStarted} />
+              <Row label="Checkout completed" value={data.siteMetrics.funnel.checkoutCompleted} color={data.siteMetrics.funnel.checkoutCompleted > 0 ? 'text-teal-400' : 'text-rose-400'} />
+            </div>
+            {Object.keys(data.siteMetrics.funnel.moneyPageViewsByPage).length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-800/60">
+                <div className="text-xs uppercase tracking-wider text-slate-600 mb-2">Views by page</div>
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(data.siteMetrics.funnel.moneyPageViewsByPage).map(([page, n]) => (
+                    <span key={page} className="text-xs font-mono text-slate-400">
+                      {page}: <span className="text-slate-200">{n}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="bg-amber-400/10 border border-amber-400/20 text-amber-300 px-4 py-3 rounded-lg mb-8 text-sm">
+          Site revenue metrics unavailable
+          {data.siteMetricsError ? `: ${data.siteMetricsError}` : '.'}
+        </div>
+      )}
 
       {/* Subscribers by tier */}
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 mb-6">

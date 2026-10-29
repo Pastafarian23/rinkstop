@@ -4,6 +4,8 @@ import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import RelatedProducts from '@/components/RelatedProducts';
 import SocialProof from '@/components/SocialProof';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import MoneyPageViewTracker from '@/components/MoneyPageViewTracker';
+import MoneyCtaLink from '@/components/MoneyCtaLink';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
@@ -83,6 +85,12 @@ export default async function DatasetLicensePage() {
     }}>
       <div className="container" style={{ maxWidth: 900, margin: '0 auto', padding: '3rem 1rem 4rem' }}>
 
+        {/* Revenue instrumentation (2026-10-28): this page had ZERO tracked
+            views and ZERO tracked CTA clicks, so the $499 product was a
+            black box. One page_view + every CTA click now lands in
+            analytics_events and surfaces on /admin/revenue. */}
+        <MoneyPageViewTracker page="dataset-license" surface="direct" />
+
         {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{
@@ -123,7 +131,9 @@ export default async function DatasetLicensePage() {
             <br />
             Bulk download, CSV + JSON, commercial-use license.
           </p>
-          <a
+          <MoneyCtaLink
+            eventName="dataset_license_purchase_clicked"
+            props={{ page: 'dataset-license', placement: 'hero', price: 499 }}
             href={buyLink}
             target="_blank"
             rel="noopener"
@@ -142,7 +152,7 @@ export default async function DatasetLicensePage() {
             }}
           >
             License the Dataset — $499 →
-          </a>
+          </MoneyCtaLink>
           <div style={{
             marginTop: '1rem',
             fontSize: '0.85rem',
@@ -285,7 +295,9 @@ export default async function DatasetLicensePage() {
           <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '1.5rem' }}>
             Commercial-use license. Cite us in your methodology. Quarterly refreshes for 12 months.
           </p>
-          <a
+          <MoneyCtaLink
+            eventName="dataset_license_purchase_clicked"
+            props={{ page: 'dataset-license', placement: 'final_cta', price: 499 }}
             href={buyLink}
             target="_blank"
             rel="noopener"
@@ -301,7 +313,7 @@ export default async function DatasetLicensePage() {
             }}
           >
             License the Dataset — $499 →
-          </a>
+          </MoneyCtaLink>
           <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
             Or pay without signing up · Receipt emailed · Download link delivered immediately
           </div>

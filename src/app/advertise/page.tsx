@@ -25,6 +25,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDirectoryCounts } from '@/lib/directory-counts';
+import MoneyPageViewTracker from '@/components/MoneyPageViewTracker';
+import MoneyCtaLink from '@/components/MoneyCtaLink';
 
 export const metadata: Metadata = {
   title: 'Advertise with RinkStop | Hockey Directory Advertising',
@@ -80,6 +82,10 @@ export default async function AdvertisePage() {
 
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
+      {/* Revenue instrumentation (2026-10-28): the direct-ad sales page had
+          no tracked views and no tracked CTA clicks. */}
+      <MoneyPageViewTracker page="advertise" surface="direct" />
+
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -197,7 +203,9 @@ export default async function AdvertisePage() {
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
           Ready to reach the operators and organizers behind global hockey? Send us a message with details about your business, audience, and goals, and we'll put together a proposal.
         </p>
-        <a
+        <MoneyCtaLink
+          eventName="advertise_cta_clicked"
+          props={{ page: 'advertise', placement: 'get_started' }}
           href="/about#contact"
           style={{
             display: 'inline-block',
@@ -211,7 +219,7 @@ export default async function AdvertisePage() {
           }}
         >
           Send Us a Message
-        </a>
+        </MoneyCtaLink>
       </div>
     </main>
   );
