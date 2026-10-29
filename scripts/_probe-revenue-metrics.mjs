@@ -37,7 +37,9 @@ export const supabase = supabaseAdmin;
 export const supabaseRead = supabaseAdmin;
 `;
 
-const stubPath = path.join(repoRoot, 'src', 'lib', '__probe_supabase_stub.ts');
+// The stub lives OUTSIDE src/ so it can never be picked up by tsc, the
+// Next build, or git as a stray source file.
+const stubPath = path.join(repoRoot, 'scripts', '.tmp-probe-supabase-stub.ts');
 fs.writeFileSync(stubPath, supabaseStub);
 
 try {
