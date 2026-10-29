@@ -71,6 +71,14 @@ export interface RevenueMetrics {
     newsletterSignupSubmissions: number;
     /** Contact-form submissions (terminal step of the money-page funnel). */
     contactSubmissions: number;
+    /**
+     * Listing-submission funnel (30d). The listing form is our only source of
+     * REAL leads to date — both live submissions came through /add-listing.
+     * These events already existed (fired client-side by AddListingForm) but
+     * were only visible in /admin/funnel, not in the revenue dashboard.
+     */
+    addListingViews: number;
+    listingSubmissions30d: number;
     pricingViews: number;
     pricingCardClicks: number;
     checkoutStarted: number;
@@ -256,6 +264,8 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
       hockeyDatabaseClicks: countEvent('hockey_database_cta_clicked'),
       newsletterSignupSubmissions: countEvent('newsletter_signup_submitted'),
       contactSubmissions: countEvent('contact_submitted'),
+      addListingViews: countEvent('add_listing_intent_viewed'),
+      listingSubmissions30d: countEvent('add_listing_submitted'),
       pricingViews: countEvent('pricing_viewed'),
       pricingCardClicks: countEvent('pricing_card_clicked'),
       checkoutStarted: countEvent('checkout_started'),
@@ -284,6 +294,8 @@ async function fetchFunnelEvents(sinceIso: string): Promise<FunnelEvent[]> {
     'hockey_database_cta_clicked',
     'newsletter_signup_submitted',
     'contact_submitted',
+    'add_listing_intent_viewed',
+    'add_listing_submitted',
     'pricing_viewed',
     'pricing_card_clicked',
     'checkout_started',
