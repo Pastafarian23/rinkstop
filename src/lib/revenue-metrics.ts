@@ -59,6 +59,25 @@ export interface RevenueMetrics {
     bookingRequests: number;
     paymentRecords: number;
     b2bProspects: number;
+    /**
+     * Lead response (2026-10-29). Two real leads sat untouched for 8 and 27
+     * days with no field anywhere recording that we had never replied.
+     * These make the pipeline measurable.
+     */
+    leadResponse: {
+      /** Leads where we have never replied. */
+      neverContacted: number;
+      /** Leads we have replied to. */
+      contacted: number;
+      /** Leads converted to a live listing. */
+      convertedToListing: number;
+      /** Hours from submission to first reply, averaged over replied leads. */
+      avgFirstResponseHours: number | null;
+      /** Hours since the OLDEST never-replied lead was submitted. */
+      oldestUnansweredHours: number | null;
+      /** Average hours since submission across all never-replied leads. */
+      avgUnansweredHours: number | null;
+    };
   };
   /** Money-page funnel (last 30 days). */
   funnel: {
@@ -205,10 +224,50 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
   // ── Pipeline ─────────────────────────────────────────────────────────────
   const { data: submissionRows } = await supabaseAdmin
     .from('listing_submissions')
-    .select('id, email, status, listing_type, created_at');
+    .select('id, email, status, listing_type, created_at, contacted_at, listing_id');
   const submissionsAll = submissionRows ?? [];
   const submissionTest = submissionsAll.filter((r) => isTestEmail(r.email)).length;
   const pendingSubmissions = submissionsAll.filter((r) => r.status === 'pending').length;
+
+  // ── Lead response (2026-10-29) ───────────────────────────────────────────
+  // Two real leads sat untouched for 8 and 27 days and NOTHING in the system
+  // recorded that we had never replied. These numbers make that visible.
+  // Test-looking submissions are excluded, same as everywhere else.
+  const realSubmissions = submissionsAll.filter((r) => !isTestEmail(r.email));
+  const neverContactedRows = realSubmissions.filter((r) => !r.contacted_at);
+  const contactedRows = realSubmissions.filter((r) => !!r.contacted_at);
+  const convertedToListing = realSubmissions.filter((r) => !!r.listing_id).length;
+
+  const hoursSince = (iso: string | null): number | null => {
+    if (!iso) return null;
+    const ms = now.getTime() - new Date(iso).getTime();
+    return Number.isFinite(ms) ? Math.round(ms / 3600000) : null;
+  };
+
+  const unansweredAges = neverContactedRows
+    .map((r) => hoursSince(r.created_at))
+    .filter((n): n is number => n !== null);
+  const responseTimes = contactedRows
+    .map((r) => hoursSince(r.created_at))
+    .filter((n): n is number => n !== null);
+
+  const leadResponse = {
+    neverContacted: neverContactedRows.length,
+    contacted: contactedRows.length,
+    convertedToListing,
+    avgFirstResponseHours:
+      responseTimes.length > 0
+        ? Number(
+            (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1),
+          )
+        : null,
+    oldestUnansweredHours:
+      unansweredAges.length > 0 ? Math.max(...unansweredAges) : null,
+    avgUnansweredHours:
+      unansweredAges.length > 0
+        ? Number((unansweredAges.reduce((a, b) => a + b, 0) / unansweredAges.length).toFixed(1))
+        : null,
+  };
 
   const listingInquiries = await countNonNull('leads', 'listing_id');
   const bookingRequests = await countRows('booking_requests', (q) => q);
@@ -267,6 +326,7 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
       bookingRequests,
       paymentRecords,
       b2bProspects,
+      leadResponse,
     },
     funnel: {
       moneyPageViews: countEvent('money_page_viewed'),

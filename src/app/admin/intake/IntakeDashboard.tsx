@@ -198,7 +198,14 @@ export default function IntakeDashboard({
   }
 
   async function approveSubmission(id: string) {
-    if (!confirm('Approve this directory submission?')) return;
+    if (
+      !confirm(
+        'Approve this directory submission?\n\n' +
+          'This will CREATE the actual listing on the site (rink / team / league). ' +
+          'If a listing with the same name and city already exists, it will be linked to that one instead.'
+      )
+    )
+      return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/intake/listing-submission/${id}`, {
@@ -206,9 +213,24 @@ export default function IntakeDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'approved' }),
       });
+      const payload = (await r.json().catch((): unknown => null)) as {
+        error?: string;
+        listing?: { outcome?: string; listingUrl?: string | null; skipReason?: string };
+      } | null;
       if (!r.ok) {
-        alert('Approve failed');
+        alert(payload?.error ? `Approve failed: ${payload.error}` : 'Approve failed');
         return;
+      }
+      // 2026-10-29: approval now creates the listing. Tell the admin what
+      // actually happened instead of silently reloading.
+      const listing = payload?.listing;
+      if (listing?.outcome === 'created' && listing.listingUrl) {
+        alert(`Listing created:\n${listing.listingUrl}\n\nRemember to reply to the submitter.`);
+      } else if (listing?.outcome === 'matched') {
+        alert(
+          listing.skipReason ||
+            'An existing listing already covers this — no new listing was created.'
+        );
       }
       window.location.reload();
     } finally {

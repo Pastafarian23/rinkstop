@@ -139,6 +139,16 @@ lines.push('');
 lines.push('*Pipeline*');
 lines.push(`  Listing submissions: *${metrics.pipeline.listingSubmissions}** (${metrics.pipeline.pendingListingSubmissions} pending)`);
 lines.push(`  Bookings: *${metrics.pipeline.bookingRequests}** · Payment records: *${metrics.pipeline.paymentRecords}** · B2B: *${metrics.pipeline.b2bProspects}**`);
+const lr = metrics.pipeline.leadResponse;
+if (lr) {
+  lines.push('');
+  lines.push('*Lead response*');
+  lines.push(`  Replied to: *${lr.contacted}** · Never replied to: *${lr.neverContacted}**`);
+  lines.push(`  Converted to a live listing: *${lr.convertedToListing}**`);
+  if (lr.oldestUnansweredHours !== null && lr.oldestUnansweredHours !== undefined) {
+    lines.push(`  ⚠️ Oldest unanswered lead: *${Math.round(lr.oldestUnansweredHours / 24)} days*`);
+  }
+}
 lines.push('');
 lines.push('*Funnel (30d)*');
 lines.push(`  Money-page views: *${f.moneyPageViews}**`);
