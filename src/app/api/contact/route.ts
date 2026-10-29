@@ -107,28 +107,114 @@ Message:
 ${message.trim()}
   `.trim();
 
-  try {
-    const matonRes = await fetch('https://gateway.maton.ai/zoho-mail/api/v1/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.MATON_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: { address: 'info@sativaexchange.com' },
-        to: [{ email_address: SUPPORT_EMAIL }],
-        subject: subjectLine,
-        body: emailBody,
-      }),
-    });
+  // ── Notify support ───────────────────────────────────────────────────────
+  //
+  // 2026-10-29: this only tried the Maton zoho-mail gateway, and only
+  // logged failures to console.error. The MATON_API_KEY is REVOKED (401), so
+  // every contact-form message was being stored in the DB and then SILENTLY
+  // DROPPED — the endpoint still returned {"success":true}. That is how a
+  // real inbound message ("Amy Howard", a lighting vendor pitching us) sat
+  // unnoticed, and how the form could look healthy while nothing reached
+  // anybody.
+  //
+  // Now there is a fallback chain, and the response REFLECTS which path
+  // worked, so a broken notifier can never look like a working one again:
+  //   1. Direct Zoho SMTP (nodemailer) — uses ZOHOMAIL_APP_PASSWORD.
+  //   2. Maton zoho-mail API — if MATON_API_KEY is ever valid again.
+  //   3. Direct Telegram bot token to the Ops channel — always available,
+  //      and the same channel the daily revenue report goes to.
+  //
+  // If all three fail, the endpoint returns 502 with `notified: false` so the
+  // failure is visible to the caller rather than hidden behind a 200.
+  let notified = false;
+  const notifyErrors: string[] = [];
 
-    if (!matonRes.ok) {
-      const errText = await matonRes.text();
-      console.error('Maton email send failed:', errText);
-    }
+  // 1) Direct Zoho SMTP
+  try {
+    const { sendEmail } = await import('@/lib/email');
+    const sent = await sendEmail({
+      tag: 'contact-form',
+      to: SUPPORT_EMAIL,
+      subject: subjectLine,
+      text: emailBody,
+      html: `<pre style="white-space:pre-wrap;font-family:sans-serif">${emailBody
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')}</pre>`,
+    });
+    if (sent.ok) notified = true;
+    else notifyErrors.push(`smtp: ${sent.error}`);
   } catch (e) {
-    console.error('Failed to send email via Maton:', e);
+    notifyErrors.push(`smtp: ${e instanceof Error ? e.message : String(e)}`);
   }
+
+  // 2) Maton (keep for when the key is restored)
+  if (!notified && process.env.MATON_API_KEY) {
+    try {
+      const matonRes = await fetch('https://gateway.maton.ai/zoho-mail/api/v1/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.MATON_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: { address: 'info@sativaexchange.com' },
+          to: [{ email_address: SUPPORT_EMAIL }],
+          subject: subjectLine,
+          body: emailBody,
+        }),
+      });
+      if (matonRes.ok) notified = true;
+      else notifyErrors.push(`maton: ${(await matonRes.text()).slice(0, 120)}`);
+    } catch (e) {
+      notifyErrors.push(`maton: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  // 3) Direct Telegram bot token -> Ops channel (always available)
+  if (!notified && process.env.TELEGRAM_BOT_TOKEN) {
+    try {
+      const chatId = process.env.TELEGRAM_NOTIFY_CHAT_ID || '-5043773858';
+      const tg = await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text:
+              `📨 *New contact form message*\n\n` +
+              `Name: ${name.trim()}\n` +
+              `Email: ${email.trim().toLowerCase()}\n` +
+              `Subject: ${subject?.trim() || 'General Inquiry'}\n\n` +
+              `${message.trim()}`,
+            disable_web_page_preview: true,
+          }),
+        },
+      );
+      if (tg.ok) notified = true;
+      else notifyErrors.push(`telegram: ${(await tg.text()).slice(0, 120)}`);
+    } catch (e) {
+      notifyErrors.push(`telegram: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  if (!notified) {
+    console.error('[contact] ALL notification paths failed:', notifyErrors.join(' | '));
+    // The message IS safely stored in the DB (contact_submissions). Return a
+    // non-2xx so the failure is visible instead of a false success.
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Message saved but could not be delivered to support.',
+        notified: false,
+        notifyErrors,
+      },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json({ success: true, notified: true });
 
   return NextResponse.json({ success: true });
 }

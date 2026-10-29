@@ -40,22 +40,50 @@ async function sendTelegramNotification(submission: {
     parse_mode: 'Markdown',
   };
 
+  // 2026-10-29: this ONLY fetched the bot token via the Maton gateway, whose
+  // API key is revoked (401). So the "new listing submission" Telegram ping
+  // has been silently failing — and because the failure was swallowed, the
+  // daily revenue report showed "2 submissions, 0 replied to" with no
+  // indication that the notification channel itself was dead.
+  //
+  // Now: prefer the DIRECT bot token (TELEGRAM_BOT_TOKEN, already set in
+  // Vercel and used by other cron routes), and fall back to the Maton path in
+  // case that key is ever restored.
+  const errors: string[] = [];
+  const directToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (directToken) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${directToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) return;
+      errors.push(`direct: ${(await res.text()).slice(0, 120)}`);
+    } catch (err) {
+      errors.push(`direct: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   try {
-    // Get the Telegram bot token from openclaw config
+    // Fallback: Maton gateway (in case its key is restored).
     const tokenRes = await fetch('https://gateway.maton.ai/telegram/bot-token', {
       headers: { Authorization: `Bearer ${MATON_API_KEY}` },
     });
-    if (!tokenRes.ok) throw new Error('Could not get Telegram token');
+    if (!tokenRes.ok) throw new Error(`Could not get Telegram token: ${tokenRes.status}`);
     const { token } = await tokenRes.json();
 
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) errors.push(`maton: ${(await res.text()).slice(0, 120)}`);
   } catch (err) {
-    console.error('[listing-submit] Telegram notification failed:', err);
+    errors.push(`maton: ${err instanceof Error ? err.message : String(err)}`);
   }
+
+  console.error('[listing-submit] Telegram notification failed:', errors.join(' | '));
 }
 
 async function sendEmailNotification(submission: {
@@ -92,18 +120,51 @@ Review in Supabase → listing_submissions table.
     body,
   };
 
+  // 2026-10-29: this only tried the Maton zoho-mail gateway, whose API key
+  // is revoked (401). The "new listing submission" email to Arnel was
+  // therefore never delivered — silently, because the fetch's response was
+  // never checked. Arnel learned about the two real leads only because I
+  // queried the database directly.
+  //
+  // Now: direct SMTP first (the same helper every other route uses), with
+  // the Maton path kept as a fallback for when its key is restored.
+  const errors: string[] = [];
   try {
-    await fetch(`https://gateway.maton.ai/zoho-mail/api/accounts/${ZOHO_ACCOUNT_ID}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${MATON_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+    const { sendEmail } = await import('@/lib/email');
+    const sent = await sendEmail({
+      tag: 'listing-submission-admin',
+      to: 'arnellarracas@gmail.com',
+      subject,
+      text: body,
+      html: `<pre style="white-space:pre-wrap;font-family:sans-serif">${body
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')}</pre>`,
     });
+    if (sent.ok) return;
+    errors.push(`smtp: ${sent.error}`);
   } catch (err) {
-    console.error('[listing-submit] Email notification failed:', err);
+    errors.push(`smtp: ${err instanceof Error ? err.message : String(err)}`);
   }
+
+  try {
+    const res = await fetch(
+      `https://gateway.maton.ai/zoho-mail/api/accounts/${ZOHO_ACCOUNT_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${MATON_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!res.ok) errors.push(`maton: ${(await res.text()).slice(0, 120)}`);
+  } catch (err) {
+    errors.push(`maton: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  console.error('[listing-submit] Email notification failed:', errors.join(' | '));
 }
 
 export async function POST(request: NextRequest) {
