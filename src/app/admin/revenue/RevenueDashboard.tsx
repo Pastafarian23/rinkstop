@@ -44,6 +44,14 @@ interface SiteMetrics {
     bookingRequests: number;
     paymentRecords: number;
     b2bProspects: number;
+    leadResponse: {
+      neverContacted: number;
+      contacted: number;
+      convertedToListing: number;
+      avgFirstResponseHours: number | null;
+      oldestUnansweredHours: number | null;
+      avgUnansweredHours: number | null;
+    };
   };
   funnel: {
     moneyPageViews: number;
@@ -218,6 +226,31 @@ export default function RevenueDashboard({ initial }: Props) {
                 <Row label="Listing inquiries" value={data.siteMetrics.pipeline.listingInquiries} />
                 <Row label="Booking requests" value={data.siteMetrics.pipeline.bookingRequests} />
                 <Row label="B2B prospects" value={data.siteMetrics.pipeline.b2bProspects} />
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-800/60">
+                <div className="text-xs uppercase tracking-wider text-slate-600 mb-2">Lead response</div>
+                <div className="space-y-3">
+                  <Row
+                    label="Never replied to"
+                    value={data.siteMetrics.pipeline.leadResponse.neverContacted}
+                    color={data.siteMetrics.pipeline.leadResponse.neverContacted > 0 ? 'text-amber-400' : 'text-teal-400'}
+                  />
+                  <Row label="Replied to" value={data.siteMetrics.pipeline.leadResponse.contacted} />
+                  <Row label="Converted to a live listing" value={data.siteMetrics.pipeline.leadResponse.convertedToListing} />
+                  {data.siteMetrics.pipeline.leadResponse.oldestUnansweredHours !== null && (
+                    <div className="text-xs text-amber-400/80 pt-1">
+                      Oldest unanswered lead: {Math.round(data.siteMetrics.pipeline.leadResponse.oldestUnansweredHours / 24)} days.
+                      {data.siteMetrics.pipeline.leadResponse.avgUnansweredHours !== null && (
+                        <> Average wait: {Math.round(data.siteMetrics.pipeline.leadResponse.avgUnansweredHours / 24)} days.</>
+                      )}
+                    </div>
+                  )}
+                  {data.siteMetrics.pipeline.leadResponse.avgFirstResponseHours !== null && (
+                    <div className="text-xs text-slate-500 pt-1">
+                      Average first response: {data.siteMetrics.pipeline.leadResponse.avgFirstResponseHours}h
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
