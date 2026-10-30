@@ -74,6 +74,7 @@ export default function AddListingForm() {
   }, []);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [statusPath, setStatusPath] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -96,6 +97,16 @@ export default function AddListingForm() {
       });
       if (res.ok) {
         setSubmitted(true);
+        // 2026-10-30: keep the status link so the submitter can track the
+        // review instead of hitting a dead end. The old screen said "we'll
+        // review within 1-2 business days" and then gave them nothing —
+        // Slough Satans waited 27 days with no way to check.
+        try {
+          const payload = await res.json();
+          if (payload?.status_path) setStatusPath(payload.status_path);
+        } catch {
+          // non-fatal — the screen still renders without the link
+        }
         // Best-effort analytics: add_listing_submitted fires once per
         // successful form submission. We don't await (never block).
         try {
@@ -142,11 +153,39 @@ export default function AddListingForm() {
             LISTING SUBMITTED
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', marginBottom: '1.5rem' }}>
-            We received your submission and will review it within 1-2 business days. You&apos;ll hear from us at <strong style={{ color: '#fff' }}>{form.email}</strong>.
+            We received your submission and will review it within 3 business days. You&apos;ll hear from us at <strong style={{ color: '#fff' }}>{form.email}</strong>.
           </p>
-          <a href="/add-listing" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#C8102E', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem' }}>
-            Submit Another Listing
-          </a>
+          {statusPath ? (
+            <>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                You can track it here any time — this page updates on its own:
+              </p>
+              <a
+                href={statusPath}
+                style={{
+                  display: 'inline-block',
+                  padding: '0.75rem 1.5rem',
+                  background: '#FFB81C',
+                  color: '#041E42',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  marginBottom: '1.5rem',
+                }}
+              >
+                Check my submission status →
+              </a>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8125rem', marginBottom: '1.5rem' }}>
+                Bookmark that link so you do not have to search for it later.
+              </p>
+            </>
+          ) : null}
+          <div>
+            <a href="/add-listing" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#C8102E', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem' }}>
+              Submit Another Listing
+            </a>
+          </div>
         </div>
       </div>
     );

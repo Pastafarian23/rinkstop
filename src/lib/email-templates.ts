@@ -42,6 +42,8 @@ export type TemplateName =
   | 'dm-notification'
   | 'team-post'
   | 'listing-submission-confirmation'
+  | 'listing-submission-approved'
+  | 'listing-submission-rejected'
   | 'payment-pending'
   | 'notification'
   | 'booking-created-buyer'
@@ -83,6 +85,20 @@ export interface TemplateData {
     listingType: string;
     name: string;
     submissionId: string;
+    /** 2026-10-30: public status URL for this submission. */
+    statusUrl?: string;
+  };
+  'listing-submission-approved': {
+    listingType: string;
+    name: string;
+    liveUrl: string | null;
+    claimUrl: string | null;
+    statusUrl: string;
+  };
+  'listing-submission-rejected': {
+    listingType: string;
+    name: string;
+    statusUrl: string;
   };
   'payment-pending': {
     teamName: string;
@@ -245,16 +261,36 @@ function button(href: string, label: string, color: 'red' | 'navy' = 'red'): str
 
 function listingSubmissionConfirmation(d: TemplateData['listing-submission-confirmation']): Rendered {
   const subject = `We got your ${d.listingType} submission`;
+  const statusUrl = d.statusUrl || '';
   const bodyHtml = `
     <h1 style="margin:0 0 12px 0;font-size:22px;color:${COLORS.navy};font-weight:800;">Submission received.</h1>
-    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Thanks for submitting <strong>${escape(d.name)}</strong> to RinkStop. We review every submission manually — usually within 1–2 business days.</p>
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Thanks for submitting <strong>${escape(d.name)}</strong> to RinkStop. We review every submission by hand, usually within 3 business days.</p>
+    ${
+      statusUrl
+        ? `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">You can check the status of your submission any time here — the page updates on its own, so there is no need to email us to ask:</p>
+    <p style="margin:0 0 16px 0;">
+      <a href="${escape(statusUrl)}" style="display:inline-block;background:${COLORS.red};color:#ffffff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;">Check my submission status</a>
+    </p>
+    <p style="margin:0 0 12px 0;font-size:13px;color:${COLORS.textMuted};">If the button does not work, paste this into your browser:<br />
+      <a href="${escape(statusUrl)}" style="color:${COLORS.link};">${escape(statusUrl)}</a>
+    </p>`
+        : ''
+    }
     <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">If we need anything else (a photo, a clarification, a contact), we'll email you back. If everything checks out, your listing goes live and you'll get a confirmation.</p>
     <p style="margin:16px 0 0 0;font-size:13px;color:${COLORS.textMuted};">Submission ID: <code style="background:#f1f5f9;padding:2px 6px;border-radius:3px;">${escape(d.submissionId)}</code></p>
   `;
   const bodyText = [
     `Thanks for submitting ${d.name} to RinkStop.`,
     ``,
-    `We review every submission manually — usually within 1-2 business days.`,
+    `We review every submission by hand, usually within 3 business days.`,
+    ...(statusUrl
+      ? [
+          ``,
+          `Check the status of your submission here (the page updates on its own):`,
+          statusUrl,
+          ``,
+        ]
+      : []),
     `If we need anything else, we'll email you back. If everything checks out,`,
     `your listing goes live and you'll get a confirmation.`,
     ``,
@@ -264,6 +300,78 @@ function listingSubmissionConfirmation(d: TemplateData['listing-submission-confi
     html: shell(subject, bodyHtml),
     text: bodyText + footerText(),
   };
+}
+
+// --- 2026-10-30: decision emails ------------------------------------------------
+//
+// WHY THESE EXIST: before 2026-10-30 NOTHING was emailed to a submitter when
+// their submission was approved or rejected. Slough Satans submitted on
+// 2026-10-02, heard nothing, and only found out their listing was live
+// because we chased them on 2026-10-29. The silence was half of why the
+// relationship felt broken, so approving or rejecting a submission now
+// always emails the submitter.
+
+function listingSubmissionApproved(d: TemplateData['listing-submission-approved']): Rendered {
+  const subject = `Your ${d.listingType} listing is live on RinkStop`;
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px 0;font-size:22px;color:${COLORS.navy};font-weight:800;">Your listing is live.</h1>
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">We approved your submission for <strong>${escape(d.name)}</strong> and published it on RinkStop.</p>
+    ${
+      d.liveUrl
+        ? `<p style="margin:0 0 16px 0;">
+      <a href="${escape(d.liveUrl)}" style="display:inline-block;background:${COLORS.red};color:#ffffff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;">View your listing</a>
+    </p>`
+        : `<p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Your listing is being published right now — you will get the link by email shortly.</p>`
+    }
+    ${
+      d.claimUrl
+        ? `<p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">If you would like to add your own details, photos or contact information, you can claim the listing — it is free and takes a couple of minutes:</p>
+    <p style="margin:0 0 16px 0;">
+      <a href="${escape(d.claimUrl)}" style="display:inline-block;background:transparent;color:${COLORS.red};border:2px solid ${COLORS.red};padding:11px 22px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;">Claim and edit my listing</a>
+    </p>`
+        : ''
+    }
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">You can check the status of this submission any time here:</p>
+    <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;"><a href="${escape(d.statusUrl)}" style="color:${COLORS.link};">${escape(d.statusUrl)}</a></p>
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">If anything is wrong or missing, just reply to this email — we will fix it.</p>
+  `;
+  const bodyText = [
+    `Your listing is live.`,
+    ``,
+    `We approved your submission for ${d.name} and published it on RinkStop.`,
+    ...(d.liveUrl ? [``, `View your listing: ${d.liveUrl}`] : []),
+    ...(d.claimUrl
+      ? [``, `Want to add your own details, photos or contact information? Claim the listing (free): ${d.claimUrl}`]
+      : []),
+    ``,
+    `Check the status of this submission: ${d.statusUrl}`,
+    ``,
+    `If anything is wrong or missing, just reply to this email — we will fix it.`,
+  ].join('\n');
+  return { html: shell(subject, bodyHtml), text: bodyText + footerText() };
+}
+
+function listingSubmissionRejected(d: TemplateData['listing-submission-rejected']): Rendered {
+  const subject = `About your ${d.listingType} submission to RinkStop`;
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px 0;font-size:22px;color:${COLORS.navy};font-weight:800;">We could not publish this one.</h1>
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Sorry about that — we were not able to publish your submission for <strong>${escape(d.name)}</strong>.</p>
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">This is usually because we need a little more detail to verify the listing. Reply to this email and tell us what you have — a photo, a website, a contact, the exact address — and we will take another look. We would rather fix it than drop it.</p>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">You can check the status of this submission here:</p>
+    <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;"><a href="${escape(d.statusUrl)}" style="color:${COLORS.link};">${escape(d.statusUrl)}</a></p>
+  `;
+  const bodyText = [
+    `We could not publish this one.`,
+    ``,
+    `Sorry about that — we were not able to publish your submission for ${d.name}.`,
+    ``,
+    `This is usually because we need a little more detail to verify the listing.`,
+    `Reply to this email and tell us what you have — a photo, a website, a contact,`,
+    `the exact address — and we will take another look.`,
+    ``,
+    `Check the status: ${d.statusUrl}`,
+  ].join('\n');
+  return { html: shell(subject, bodyHtml), text: bodyText + footerText() };
 }
 
 // --- Dispatcher ------------------------------------------------------------
@@ -277,6 +385,10 @@ export function renderTemplate<T extends TemplateName>(name: T, data: TemplateDa
     case 'team-post': return teamPost(data as TemplateData['team-post']);
     case 'listing-submission-confirmation':
       return listingSubmissionConfirmation(data as TemplateData['listing-submission-confirmation']);
+    case 'listing-submission-approved':
+      return listingSubmissionApproved(data as TemplateData['listing-submission-approved']);
+    case 'listing-submission-rejected':
+      return listingSubmissionRejected(data as TemplateData['listing-submission-rejected']);
     case 'payment-pending':
       return paymentPending(data as TemplateData['payment-pending']);
     case 'notification':

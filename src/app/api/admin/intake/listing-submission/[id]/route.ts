@@ -16,6 +16,7 @@ import {
   createListingFromSubmission,
   parseLinkedListingId,
 } from '@/lib/listing-submission-to-listing';
+import { notifySubmitterOfDecision } from '@/lib/listing-submission-notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,6 +108,13 @@ export async function PATCH(
       reviewed_at: new Date().toISOString(),
       reviewed_by: reviewedBy,
       updated_at: new Date().toISOString(),
+      // 2026-10-30: persist the linked listing id in its own column.
+      // Previously the link only existed inside the free-text `notes`
+      // string, which meant the public status page could not resolve the
+      // live URL without re-parsing prose. `listing_id` is the column for
+      // exactly this. `parseLinkedListingId` handles the legacy
+      // notes-only rows, so this does not break anything already approved.
+      listing_id: listingResult?.listingId || null,
     })
     .eq('id', id)
     .select()
@@ -130,6 +138,21 @@ export async function PATCH(
       notes: body.notes || null,
       listing: listingResult,
     },
+  });
+
+  // 2026-10-30: email the submitter about the decision.
+  //
+  // WHY: before this, NOTHING was emailed when a submission was approved or
+  // rejected. Slough Satans submitted on 2026-10-02, heard nothing, and only
+  // found out their listing was live because we chased them 27 days later.
+  // The silence was half of why the relationship felt broken.
+  //
+  // Fire-and-forget: never block an admin action on an email send.
+  void notifySubmitterOfDecision({
+    submission: data as any,
+    status: body.status,
+    listingUrl: listingResult?.listingUrl || null,
+    listingId: listingResult?.listingId || null,
   });
 
   // If the listing could not be created, surface it — do NOT silently mark
