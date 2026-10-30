@@ -23,7 +23,7 @@
  * Usage:  node scripts/_test-submission-status.mjs
  * Exit 0 = all assertions pass, 1 = a failure.
  */
-import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { randomBytes } from 'node:crypto';
@@ -127,6 +127,27 @@ export const supabaseRead = supabaseAdmin;
   const mod = await import(`${pathToFileURL(outfile).href}?t=${Date.now()}`);
   return mod;
 }
+
+// 2026-10-30: the three temp files above (stub, entry, bundle) were left
+// behind in the working tree after every run, which blocked the pre-push
+// guard with "uncommitted changes present" and littered the repo root.
+// Clean them up. The script ends with process.exit(), so this has to be
+// explicit rather than a finally block.
+const TEMP_FILES = [
+  join(ROOT, 'scripts', '.tmp-submission-status-supabase-stub.ts'),
+  join(ROOT, 'scripts', '.tmp-submission-status-entry.ts'),
+  join(ROOT, '.tmp-submission-status-bundle.mjs'),
+];
+function cleanupTempFiles() {
+  for (const f of TEMP_FILES) {
+    try {
+      rmSync(f, { force: true });
+    } catch {
+      /* best effort */
+    }
+  }
+}
+process.on('exit', cleanupTempFiles);
 
 console.log('Submission status flow — live end-to-end test\n');
 
