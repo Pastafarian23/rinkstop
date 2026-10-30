@@ -38,9 +38,9 @@ const NEXT_STEPS: Record<TierId, string[]> = {
   ],
   // Organization
   org_free: [
-    'Organization Free is live - manage one team with roster, schedule, events and attendance.',
-    'Create your team workspace and invite your coaches.',
-    'Upgrade whenever you need more teams, payments, or reporting.',
+    'Organization Free is live - your team is listed on the RinkStop directory.',
+    'Claim your team listing and update the details, photos, and session times.',
+    'Upgrade to Organization Plus for roster, schedule, events, and attendance management.',
   ],
   org_plus: [
     'Organization Plus is live - up to 3 teams, registrations, payments, and practice plans.',
@@ -221,7 +221,7 @@ export default async function WelcomePage({
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', maxWidth: 480, margin: '0 auto' }}>
           {tier === 'verified_identity' && 'You\'re on Hockey Passport. Your profile claim and unlimited roles under one identity are ready.'}
           {tier === 'identity_plus' && 'You\'re on Hockey Passport Plus. Family Hub, photos, videos, and advanced analytics are now available.'}
-          {tier === 'org_free' && 'You\'re on Organization Free. One team workspace with roster, schedule, events, and attendance is ready to manage.'}
+          {tier === 'org_free' && 'You\'re on Organization Free. Your team is listed on the RinkStop directory — claim it and update the details.'}
           {tier === 'org_plus' && 'You\'re on Organization Plus. Up to 3 teams, registrations, payments, and up to 30 players are live.'}
           {tier === 'org_pro' && 'You\'re on Organization Pro. Up to 10 teams, up to 150 players, financial reporting, and API access are live.'}
           {tier === 'org_elite' && 'You\'re on Organization Elite. Unlimited teams, advanced analytics, and custom branding are unlocked.'}
