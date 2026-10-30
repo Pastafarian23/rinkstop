@@ -95,9 +95,24 @@ PID=$!
 disown "$PID" 2>/dev/null || true
 echo "$PID" > "$PID_FILE"
 
-# Give node a moment to actually start so the PID is valid
+# Give node a moment to actually start so the PID is valid.
+#
+# 2026-10-23 fix: the old check was `sleep 1; kill -0 $PID`. That is a RACE.
+# When there are no candidate highlights the orchestrator prints
+# "No candidate highlights to process." and exits 0 in well under a second,
+# so the spawned PID is already reaped by the time we check it. The wrapper
+# then reported "failed to start" and exited 1, even though the run had
+# completed successfully. Symptom: cron job 1eb7201b showed
+# "command exited with code 1" on every 4-hourly fire while every log file
+# ended with "=== Done ===".
+#
+# Correct check: did the child actually START? The header line
+# "=== Article-from-highlight orchestrator ===" is echoed as the very first
+# thing, so if it is present the spawn worked. The "=== Done ===" trailer
+# tells us it also finished. Only if the header is missing after the grace
+# period did the spawn genuinely fail.
 sleep 1
-if ! kill -0 "$PID" 2>/dev/null; then
+if ! grep -q "^=== Article-from-highlight orchestrator ===" "$LOG_FILE" 2>/dev/null; then
   echo "article-from-highlight failed to start — see $LOG_FILE" >&2
   rm -f "$PID_FILE"
   exit 1
@@ -105,4 +120,7 @@ fi
 
 echo "article-from-highlight started pid=$PID mode=${MODE_FLAG:-dry-run} since-hours=${SINCE_HOURS}"
 echo "log: $LOG_FILE"
+if grep -q "^=== Done ===" "$LOG_FILE" 2>/dev/null; then
+  echo "article-from-highlight already completed (no candidates to process)"
+fi
 exit 0
