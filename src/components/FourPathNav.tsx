@@ -64,8 +64,18 @@ const PATHS: Path[] = [
   {
     title: 'Manage My Club or League',
     blurb: 'Organizations. Add rosters, schedule games, post news, run tryouts, manage your season.',
-    primaryHref: '/claim-your-listing?focus=team',
-    primaryLabel: 'Claim my team or league',
+    // 2026-10-30 (Arnel-flagged): this was `/claim-your-listing?focus=team`.
+    // The claim page never reads `focus` — it reads only `q` and `type` — so
+    // the link was decorative and dropped the visitor on a blank search page
+    // with no reference to their listing. It also said "team or league", but
+    // league is not a self-serve claim_type (POST /api/claims rejects it), so
+    // a league owner would have hit a dead end.
+    //
+    // Teams and rinks now go to the search page with the type pre-selected
+    // (that page DOES read `type`); leagues go to the /add-listing request
+    // path, which the admin queue approves by hand.
+    primaryHref: '/claim-your-listing?type=team',
+    primaryLabel: 'Claim my team',
     secondaryHref: '/pricing?for=team',
     secondaryLabel: 'Compare Club plans',
     accent: '#a78bfa',

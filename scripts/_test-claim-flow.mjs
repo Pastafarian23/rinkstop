@@ -49,8 +49,8 @@
  * Usage:  node scripts/_test-claim-flow.mjs
  * Exit 0 = all assertions pass, 1 = a failure.
  */
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { createRequire } from 'node:module';
 
 const ROOT = process.cwd();
@@ -74,6 +74,19 @@ function envVar(name) {
   }
   return process.env[name];
 }
+
+// Walk src/ so the dead-focus sweep covers EVERY source file, not just the
+// handful this script happens to read.
+function walk(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    if (entry === 'node_modules' || entry === '.next' || entry.startsWith('.')) continue;
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) walk(full, out);
+    else if (/\.(tsx?|jsx?)$/.test(entry)) out.push(full);
+  }
+  return out;
+}
+const files = walk(join(ROOT, 'src'));
 
 const url = envVar('NEXT_PUBLIC_SUPABASE_URL');
 const anonKey = envVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
@@ -325,6 +338,62 @@ check(
 check(
   'the claim nudge has NO inline table mapping left',
   !nudge.includes("entityType === 'team' ? 'teams'"),
+);
+
+// ---------------------------------------------------------------------------
+console.log('\n7. No dead `focus=` deep links remain');
+// ---------------------------------------------------------------------------
+// The claim page used to ignore `focus` entirely, so every
+// `/claim-your-listing?focus=…` link in the codebase was decorative — it
+// opened the RINK tab no matter what was clicked. The page now accepts
+// `focus` as an alias for `type`, and the nudge links straight to the
+// real claim form.
+// Strip line and block comments before checking — a COMMENT explaining the
+// old broken link is fine; a LIVE link is not. A naive substring check would
+// flag the very comment that documents the fix.
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+const claimPageSrc = readFileSync(join(ROOT, 'src/app/claim-your-listing/page.tsx'), 'utf8');
+check(
+  'the claim page READS `focus` (as an alias for `type`)',
+  claimPageSrc.includes('focus') && /rawType\s*=\s*typeParam\s*\|\|\s*focus/.test(claimPageSrc),
+);
+check(
+  'the claim page pre-fills the search from `name`',
+  claimPageSrc.includes('entityNameParam') && claimPageSrc.includes('prefilledQuery'),
+);
+check(
+  'the claim nudge links to the real claim form, not a dead focus= link',
+  !stripComments(nudge).includes('/claim-your-listing?focus='),
+);
+const fourPath = readFileSync(join(ROOT, 'src/components/FourPathNav.tsx'), 'utf8');
+check(
+  'FourPathNav has no dead focus= link',
+  !stripComments(fourPath).includes('/claim-your-listing?focus='),
+);
+check(
+  'FourPathNav does not promise a league self-serve claim',
+  !fourPath.includes('Claim my team or league'),
+);
+
+// Sweep the WHOLE src tree for any remaining live dead focus= link.
+const deadFocusHits = [];
+for (const f of files) {
+  const rel = relative(ROOT, f);
+  if (rel.includes('node_modules') || rel.includes('.next')) continue;
+  const src = stripComments(readFileSync(f, 'utf8'));
+  if (src.includes('/claim-your-listing?focus=')) {
+    deadFocusHits.push(rel);
+  }
+}
+check(
+  'no live source file anywhere still links to /claim-your-listing?focus=',
+  deadFocusHits.length === 0,
+  deadFocusHits.join(', '),
 );
 
 // ---------------------------------------------------------------------------
