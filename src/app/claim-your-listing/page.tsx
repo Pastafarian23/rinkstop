@@ -259,17 +259,38 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
 export default async function ClaimYourListingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; type?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; focus?: string; id?: string; name?: string }>;
 }) {
   // Run as the first per-request step when the hot-patch is active. Lives
   // inside the component body so Next.js's static page-collection phase
   // doesn't evaluate it during `next build`.
 
-  const { q, type: typeParam } = await searchParams;
+  const { q, type: typeParam, focus, id: entityIdParam, name: entityNameParam } = await searchParams;
   const query = (q || '').trim();
+
   // Validate the type param. Default to rink if missing or invalid.
+  //
+  // 2026-10-30 (Arnel-flagged): `focus` is accepted as an ALIAS for `type`.
+  // Many links across the site used `/claim-your-listing?focus=team&id=…`,
+  // but this page only ever read `q` and `type` — so every one of those
+  // links was decorative: it opened the RINK tab regardless of what the
+  // visitor clicked, and ignored the id/name entirely.
+  //
+  // Now `focus` works, AND `id`/`name` pre-fill the search box so the
+  // visitor lands on their actual listing instead of an empty form. The
+  // alias is kept so old links (bookmarks, emails, inbound links) work.
+  const rawType = typeParam || focus;
   const type: ClaimType =
-    typeParam === 'team' || typeParam === 'player' ? typeParam : 'rink';
+    rawType === 'team' || rawType === 'player' ? rawType : 'rink';
+
+  // Pre-fill the search with the listing the visitor came from. Only when
+  // the page has no explicit query — an explicit `q` always wins.
+  const prefilledQuery =
+    query.length >= 2
+      ? query
+      : entityNameParam && entityNameParam.length <= 200
+        ? entityNameParam.trim()
+        : '';
 
   // HOT-PATCH REMOVED 2026-08-11 (claim flow Phase 1).
   // The original redirect to /sign-up was put in place on 2026-08-05 to work
@@ -309,7 +330,7 @@ export default async function ClaimYourListingPage({
 
   const isSignedIn = signedInUserId !== null;
 
-  const results = query.length >= 2 ? await searchEntities(query, type) : [];
+  const results = prefilledQuery.length >= 2 ? await searchEntities(prefilledQuery, type) : [];
 
   // Featured claimable listings — removed 2026-08-11 during Phase 1 cleanup.
   // The previous FeaturedClaimableSection component is unreachable in the JSX
@@ -339,13 +360,13 @@ export default async function ClaimYourListingPage({
       name: 'claim_search_viewed',
       pathname: '/claim-your-listing',
       props: {
-        query_length: query.length,
-        query_hash: query ? simpleHash(query) : null,
+        query_length: prefilledQuery.length,
+        query_hash: prefilledQuery ? simpleHash(prefilledQuery) : null,
         result_count: results.length,
-        had_query: query.length >= 2,
+        had_query: prefilledQuery.length >= 2,
         entity_type: type,
         had_featured: !!featuredClaimable,
-        zero_results: query.length >= 2 && results.length === 0,
+        zero_results: prefilledQuery.length >= 2 && results.length === 0,
         is_signed_in: isSignedIn,
         pending_drafts: pendingDraftCount,
       },
@@ -367,8 +388,8 @@ export default async function ClaimYourListingPage({
             if the user typed a query but didn't click any claim button.
             Pure client component, no UI impact. */}
         <ClaimAbandonTracker
-          queryHash={query ? simpleHash(query) : null}
-          queryLength={query.length}
+          queryHash={prefilledQuery ? simpleHash(prefilledQuery) : null}
+          queryLength={prefilledQuery.length}
           resultCount={results.length}
           entityType={type}
         />
@@ -514,7 +535,7 @@ export default async function ClaimYourListingPage({
             <input
               type="text"
               name="q"
-              defaultValue={query}
+              defaultValue={prefilledQuery}
               placeholder={HEADER_COPY[type].placeholder}
               autoFocus
               style={{
@@ -547,9 +568,9 @@ export default async function ClaimYourListingPage({
         </form>
 
         {/* Results */}
-        {query.length === 0 ? (
+        {prefilledQuery.length === 0 ? (
           <EmptyState type={type} counts={counts} />
-        ) : query.length < 2 ? (
+        ) : prefilledQuery.length < 2 ? (
           <div
             style={{
               background: '#0f0f0f',
@@ -563,14 +584,14 @@ export default async function ClaimYourListingPage({
             Type at least 2 characters to search.
           </div>
         ) : results.length === 0 ? (
-          <NoResults query={query} type={type} />
+          <NoResults query={prefilledQuery} type={type} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
               {results.length} result{results.length === 1 ? '' : 's'} for &ldquo;{query}&rdquo;
             </div>
             {results.map((result) => (
-              <RinkResultCard key={result.id} rink={result} query={query} />
+              <RinkResultCard key={result.id} rink={result} query={prefilledQuery} />
             ))}
           </div>
         )}

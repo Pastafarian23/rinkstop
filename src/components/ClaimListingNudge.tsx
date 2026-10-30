@@ -32,11 +32,27 @@ import { supabaseAdmin } from '@/lib/supabase';
 import ClaimNudgeButtons from './ClaimNudgeButtons';
 import { resolveClaimEntity, type ClaimEntityType } from '@/lib/claim-entity';
 
-const CLAIMABLE_NAV: Record<'rink' | 'team' | 'league' | 'player', string> = {
-  rink: '/claim-your-listing?focus=rink',
-  team: '/claim-your-listing?focus=team',
-  league: '/claim-your-listing?focus=league',
-  player: '/claim-your-listing?focus=player',
+/**
+ * Where the above-the-fold "Claim it free" nudge sends the visitor.
+ *
+ * 2026-10-30 (Arnel-flagged): this used to be
+ * `/claim-your-listing?focus=<type>&id=…&name=…`.
+ *
+ * **The claim page NEVER READS `focus`.** It reads only `q` and `type`. So
+ * every one of those links was decorative — it dropped the visitor on a
+ * blank search page with no reference to the listing they were trying to
+ * claim. (The `id` and `name` were ignored for the same reason.)
+ *
+ * The real claim form is `/dashboard/claims?intent=claim&entity=…&id=…&name=…`
+ * and it DOES pre-fill from those params — see ClaimsForm.
+ *
+ * So the nudge now points straight at the claim form for the listing the
+ * visitor is actually looking at.
+ */
+const CLAIM_FORM_NAV: Record<'rink' | 'team' | 'player', string> = {
+  rink: '/dashboard/claims?intent=claim&entity=rink',
+  team: '/dashboard/claims?intent=claim&entity=team',
+  player: '/dashboard/claims?intent=claim&entity=player',
 };
 
 export default async function ClaimListingNudge({
@@ -77,7 +93,12 @@ export default async function ClaimListingNudge({
   if (resolved && resolved.claimable === false) return null;
 
   const displayName = entityName?.length > 40 ? entityName.slice(0, 40) + '…' : entityName;
-  const focusHref = `${CLAIMABLE_NAV[entityType]}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}`;
+
+  // Leagues are not a self-serve claim_type (POST /api/claims rejects it),
+  // so their CTA routes to the /add-listing request path instead.
+  const focusHref = isLeague
+    ? `/add-listing?type=league&name=${encodeURIComponent(entityName || '')}`
+    : `${CLAIM_FORM_NAV[entityType as 'rink' | 'team' | 'player']}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}`;
   const pricingHref = `/pricing?for=${entityType}`;
 
   return (
