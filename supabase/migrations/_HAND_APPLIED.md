@@ -687,3 +687,64 @@ behaviour ("can anon actually read it?") rather than policy definitions,
 because the two drift. Proven to work: with the bad policy temporarily
 restored the audit failed and reported the leaked address; with it removed the
 audit passed.
+
+## 2026-10-30 — `2026-10-30_listing_submissions_public_token.sql`
+
+**Applied:** 2026-10-30 ~09:4x CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Approval:** Arnel — *"why couldn't user see it pending, even if it's not a live listing? We need to plan this better so it's professional all around."*
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` with
+Management API PAT (via `scripts/query-supabase.py`).
+
+**Why:** A submitter who used `/add-listing` got a dead-end
+"LISTING SUBMITTED" screen and an email containing a Submission ID that was
+not clickable and not usable anywhere. There was no page they could visit to
+see whether their submission was pending, approved, or rejected.
+
+Measured impact:
+| Submission | Submitted | Approved | Actual | Promised |
+|---|---|---|---|---|
+| Slough Satans | 2026-10-02 | 2026-10-29 | 27.3 days | 1–2 business days |
+| GLXY Cup | 2026-10-21 | 2026-10-29 | 8.5 days | 1–2 business days |
+
+**Adds:** `public_token text` (43-char base64url, 256 bits of entropy) and
+`public_token_expires_at timestamptz` (180 days), a partial unique index over
+real tokens, and a backfill so submissions approved BEFORE this change also
+have a working status link.
+
+**SECURITY CONSTRAINT (important):** this MUST stay a token-keyed,
+service-role-backed endpoint. A public RLS read on `listing_submissions`
+would re-open the PII leak closed earlier today by
+`2026-10-30_listing_submissions_pii_lockdown.sql`. The anon role still
+cannot SELECT this table; the status page resolves the token server-side and
+returns only `{name, listing_type, status, submitted_at, reviewed_at,
+live_url, claim_url, age_label, overdue}` — never email, notes, or
+outcome_notes.
+
+**Verified:** anon SELECT → `[]`; anon INSERT → HTTP 201; both existing
+submissions have a 43-char URL-safe token; the live test
+(`scripts/_test-submission-status.mjs`) passes 30/30.
+
+## 2026-10-30 — `2026-10-30_backfill_listing_submission_listing_id.sql`
+
+**Applied:** 2026-10-30 ~09:5x CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Method:** Management API PAT (via `scripts/query-supabase.py`).
+
+**Why:** the approve endpoint now writes `listing_submissions.listing_id`
+directly, but rows approved before that change only had the link inside the
+free-text `notes` column. Without this backfill the status page cannot
+resolve the live URL for them.
+
+**TRAP worth remembering:** the first attempt used a generic regex matching
+the FIRST "table/id" pair in the notes. Slough Satans' notes mention BOTH the
+team and the rink, and the rink id came first — so `listing_id` got the RINK
+id while `listing_type` is `team`. The status page then looked up a rink id
+in `team_workspaces`, found nothing, and silently returned a null `live_url`.
+The live test caught it (`approved submission has a live_url — null`).
+
+**Lesson:** when backfilling a structured field from prose, match the entity
+by the submission's OWN type, not by "the first id that looks like a uuid".
+
+**Result:** Slough Satans → `4383433c-…` (team_workspaces); GLXY Cup →
+`ab404540-…` (rink_events, the event, with the venue as fallback).

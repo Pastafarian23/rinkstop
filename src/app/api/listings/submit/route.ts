@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders } from '@/lib/rateLimit';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
 
 // Env validation deferred to first request: module-scope throws break
 // next build's "Collecting page data" phase.
@@ -203,6 +206,17 @@ export async function POST(request: NextRequest) {
         description: description || null,
         email,
         status: 'pending',
+        // 2026-10-30: give the submitter a trackable status link. Without
+        // this the only feedback they get is a dead-end screen and an
+        // unusable Submission ID — and we were leaving people waiting for
+        // 27 days with no way to check. The token is 256 bits of entropy and
+        // the status endpoint is service-role backed, so this does NOT
+        // re-open the listing_submissions PII leak (the anon role still
+        // cannot SELECT this table).
+        public_token: randomBytes(32).toString('base64url'),
+        public_token_expires_at: new Date(
+          Date.now() + 180 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
       })
       .select()
       .single();
@@ -211,6 +225,8 @@ export async function POST(request: NextRequest) {
       console.error('Supabase insert error:', error);
       return NextResponse.json({ error: 'Failed to submit listing. Please try again.' }, { status: 500 });
     }
+
+    const statusPath = `/listing-status/${data.public_token}`;
 
     // Send notifications in parallel (don't block the response)
     const submission = { listingType, name, city, country, website, description, email, id: data.id };
@@ -226,11 +242,17 @@ export async function POST(request: NextRequest) {
         listingType,
         name,
         submissionId: data.id,
+        statusUrl: `${SITE_URL}${statusPath}`,
       },
       tag: 'listing-confirmation',
     });
 
-    return NextResponse.json({ success: true, id: data.id }, { status: 201 });
+    // Return the status path so the form can show the submitter a live link
+    // instead of a dead end.
+    return NextResponse.json(
+      { success: true, id: data.id, status_path: statusPath },
+      { status: 201 },
+    );
   } catch (err) {
     console.error('Submit listing error:', err);
     return NextResponse.json({ error: 'Server error. Please try again.' }, { status: 500 });

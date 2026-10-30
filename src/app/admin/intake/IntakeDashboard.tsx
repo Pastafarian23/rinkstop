@@ -2,6 +2,18 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import type { ListingSubmission } from './types';
+import { REVIEW_SLA_DAYS } from '@/lib/submission-status';
+
+/**
+ * How many days a submission has been waiting for review.
+ *
+ * 2026-10-30: the admin queue showed no age, so Slough Satans (27 days)
+ * and GLXY Cup (8.5 days) sat unreviewed with nothing flagging them.
+ */
+function daysPending(createdAt: string): number {
+  const ms = Date.now() - new Date(createdAt).getTime();
+  return Math.max(0, Math.floor(ms / 86_400_000));
+}
 
 interface Lead {
   id: string;
@@ -849,7 +861,31 @@ function ListingSubmissionsTable({
               </td>
               <td style={tdStyle}>
                 {s.status === 'pending' && (
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  // 2026-10-30: show how long this has been waiting. Slough
+                  // Satans sat 27 days and GLXY Cup 8.5 days with nothing in
+                  // the admin queue flagging them. The age makes the delay
+                  // impossible to miss, and the red badge marks anything
+                  // past our stated SLA.
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      marginTop: '0.3rem',
+                      color:
+                        daysPending(s.created_at) > REVIEW_SLA_DAYS
+                          ? '#F87171'
+                          : 'rgba(255,255,255,0.5)',
+                      fontWeight:
+                        daysPending(s.created_at) > REVIEW_SLA_DAYS ? 700 : 400,
+                    }}
+                    title={`Submitted ${new Date(s.created_at).toLocaleDateString()}`}
+                  >
+                    ⏳ waiting {daysPending(s.created_at)}d
+                    {daysPending(s.created_at) > REVIEW_SLA_DAYS
+                      ? ` · PAST ${REVIEW_SLA_DAYS}-DAY SLA`
+                      : ''}
+                  </div>
+                )}
+                {s.status !== 'pending' && s.reviewed_at && (                  <div style={{ display: 'flex', gap: '0.4rem' }}>
                     <button
                       type="button"
                       onClick={() => onApprove(s.id)}
