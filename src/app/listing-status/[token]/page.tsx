@@ -242,7 +242,7 @@ export default async function ListingStatusPage({
                   Submitted
                 </dt>
                 <dd style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
-                  {submittedOn} ({view.age_label} ago)
+                  {submittedOn} ({view.age_label})
                 </dd>
               </div>
               {reviewedOn ? (
