@@ -153,14 +153,32 @@ async function resolveAuthorizedTarget(
     throw new Error('target_id is required when target_type is team or league.');
   }
   if (type === 'team') {
-    const { data } = await supabaseAdmin
+    // 2026-10-30 fix: `team_workspaces.claimed_by_user_id` does NOT exist.
+    // Team ownership is derived from an APPROVED row in the `claims`
+    // table (same pattern as api/teams/route.ts and listingTier.ts).
+    // Reading the non-existent column made PostgREST error, which
+    // collapsed to "Team not found." for every team post.
+    const { data: team } = await supabaseAdmin
       .from('team_workspaces')
-      .select('id, claimed_by_user_id')
+      .select('id')
       .eq('id', targetId)
       .maybeSingle();
-    if (!data) throw new Error('Team not found.');
-    if (data.claimed_by_user_id !== userId) throw new Error('You can only post to teams you manage.');
-    return { targetType: 'team', targetId: data.id };
+    if (!team) throw new Error('Team not found.');
+
+    const { data: claim } = await supabaseAdmin
+      .from('claims')
+      .select('user_id')
+      .eq('claim_type', 'team')
+      .eq('entity_id', targetId)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!claim || claim.user_id !== userId) {
+      throw new Error('You can only post to teams you manage.');
+    }
+    return { targetType: 'team', targetId: team.id };
   }
   // league
   const { data } = await supabaseAdmin

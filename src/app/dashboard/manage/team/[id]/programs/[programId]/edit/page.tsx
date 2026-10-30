@@ -35,7 +35,7 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
       .eq('claim_type', 'team')
       .eq('entity_id', id)
       .eq('status', 'approved'),
-    supabaseAdmin.from('team_workspaces').select('id, name, currency, country').eq('id', id).maybeSingle(),
+    supabaseAdmin.from('team_workspaces').select('id, name, currency, home_country').eq('id', id).maybeSingle(),
     supabaseAdmin.from('team_events').select('*').eq('id', programId).eq('team_id', id).maybeSingle(),
     supabaseAdmin.from('rinks').select('id, name').eq('is_active', true).order('name').limit(500),
   ]);
@@ -94,7 +94,7 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
   // local currency, else USD. The form will let the user override.
   const defaultCurrency =
     workspace.currency ||
-    countryToCurrency(workspace.country) ||
+    countryToCurrency(workspace.home_country) ||
     'USD';
 
   return (
@@ -103,7 +103,7 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
       initial={initial}
       rinkOptions={(rinks || []) as Array<{ id: string; name: string }>}
       defaultCurrency={defaultCurrency}
-      teamCountry={workspace.country ?? null}
+      teamCountry={workspace.home_country ?? null}
     />
   );
 }

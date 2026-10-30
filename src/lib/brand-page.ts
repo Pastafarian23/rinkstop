@@ -88,7 +88,7 @@ export const getBrandBySlug = cache(async (slug: string): Promise<{
   try {
     const { data: t, error: terr } = await supabase
       .from('team_workspaces')
-      .select('id, name, city, country, slug')
+      .select('id, name, home_city, home_country, slug')
       .eq('brand_id', data.id)
       .order('name', { ascending: true });
     if (!terr) teams = t || [];

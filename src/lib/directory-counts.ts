@@ -231,14 +231,13 @@ export async function getCountriesForFilter(opts: {
     // Limit 500 since we already filtered to active teams earlier.
     const { data: teams } = await supabase
       .from('team_workspaces')
-      .select('country, country_code, home_country')
+      .select('country_code, home_country')
       .eq('is_active', true)
       .in('league_id', leagueIds)
       .limit(500);
 
-    for (const t of (teams ?? []) as Array<{ country: string | null; country_code: string | null; home_country: string | null }>) {
+    for (const t of (teams ?? []) as Array<{ country_code: string | null; home_country: string | null }>) {
       // Prefer country_code from team_workspaces (ISO 3166-1 alpha-2), fall back to other fields
-      if (t.country) result.add(t.country);
       if (t.country_code) result.add(t.country_code);
       if (t.home_country) result.add(t.home_country);
     }

@@ -143,13 +143,26 @@ async function searchEntityRows(q: string, type: ClaimType): Promise<RowShape[]>
     if (error || !data) return [];
     rows = data as RowShape[];
   } else if (type === 'team') {
+    // 2026-10-30 fix: `team_workspaces` has NO `city`/`country` columns — they
+    // are `home_city` and `country_code`/`home_country`. Selecting the legacy
+    // names made PostgREST error out ("column team_workspaces.city does not
+    // exist"), which the fail-safe wrapper turned into an empty result set —
+    // so EVERY team search on the claim page returned "No teams found".
+    // `country_code` is a CHAR(2) ISO code ('GB'), but `home_country` holds
+    // the full name ('England'), which is what countryToCurrency() expects.
     const { data, error } = await supabaseAdmin
       .from('team_workspaces')
-      .select('id, slug, name, city, country')
-      .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
+      .select('id, slug, name, home_city, home_country')
+      .or(`name.ilike.%${q}%,home_city.ilike.%${q}%,home_country.ilike.%${q}%`)
       .limit(20);
     if (error || !data) return [];
-    rows = data as RowShape[];
+    rows = (data || []).map((t: any): RowShape => ({
+      id: t.id,
+      slug: t.slug,
+      name: t.name,
+      city: t.home_city,
+      country: t.home_country,
+    }));
   } else if (type === 'player') {
     const { data, error } = await supabaseAdmin
       .from('players')

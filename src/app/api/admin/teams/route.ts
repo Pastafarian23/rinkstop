@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('team_workspaces')
-    .select('id, name, city, country, league_id, slug, created_at, updated_at, leagues!teams_league_id_fkey(name, slug)', { count: 'exact' });
+    .select('id, name, home_city, home_country, league_id, slug, created_at, updated_at, leagues!teams_league_id_fkey(name, slug)', { count: 'exact' });
 
   if (search) {
     query = query.ilike('name', `%${search}%`);

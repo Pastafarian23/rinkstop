@@ -157,14 +157,14 @@ export default async function USStatePage({ params }: { params: Promise<{ state:
   if (cityNames.length > 0) {
     const { data: teams } = await supabase
       .from('team_workspaces')
-      .select('city')
-      .eq('country', 'United States')
+      .select('home_city')
+      .eq('home_country', 'United States')
       .eq('is_active', true)
-      .in('city', cityNames);
+      .in('home_city', cityNames);
 
     (teams || []).forEach(t => {
-      if (t.city) {
-        teamCounts.set(t.city, (teamCounts.get(t.city) || 0) + 1);
+      if (t.home_city) {
+        teamCounts.set(t.home_city, (teamCounts.get(t.home_city) || 0) + 1);
       }
     });
   }

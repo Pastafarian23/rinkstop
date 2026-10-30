@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('team_workspaces')
-    .select('id, name, slug, logo_url, city, league_id')
+    .select('id, name, slug, avatar_url, home_city, league_id')
     .in('league_id', leagueIds)
     .order('name');
 

@@ -351,11 +351,11 @@ export async function getCityPageData(opts: {
         .limit(500),
       supabase
         .from('team_workspaces')
-        .select('city')
-        .eq('country', countryName)
+        .select('home_city')
+        .eq('home_country', countryName)
         .or(peerRegionOr)
-        .neq('city', cityName)
-        .not('city', 'is', null)
+        .neq('home_city', cityName)
+        .not('home_city', 'is', null)
         .eq('is_active', true)
         .limit(500),
     ]);
@@ -367,10 +367,10 @@ export async function getCityPageData(opts: {
       counts.set(r.city, entry);
     }
     for (const t of peerTeamsRes.data || []) {
-      if (!t.city) continue;
-      const entry = counts.get(t.city) || { teamCount: 0, rinkCount: 0 };
+      if (!t.home_city) continue;
+      const entry = counts.get(t.home_city) || { teamCount: 0, rinkCount: 0 };
       entry.teamCount += 1;
-      counts.set(t.city, entry);
+      counts.set(t.home_city, entry);
     }
     peerCities = Array.from(counts.entries())
       .map(([name, c]) => {
@@ -401,10 +401,10 @@ export async function getCityPageData(opts: {
         .limit(500),
       supabase
         .from('team_workspaces')
-        .select('city')
-        .eq('country', countryName)
-        .neq('city', cityName)
-        .not('city', 'is', null)
+        .select('home_city')
+        .eq('home_country', countryName)
+        .neq('home_city', cityName)
+        .not('home_city', 'is', null)
         .eq('is_active', true)
         .limit(500),
     ]);
@@ -416,10 +416,10 @@ export async function getCityPageData(opts: {
       counts.set(r.city, entry);
     }
     for (const t of countryTeamsRes.data || []) {
-      if (!t.city) continue;
-      const entry = counts.get(t.city) || { teamCount: 0, rinkCount: 0 };
+      if (!t.home_city) continue;
+      const entry = counts.get(t.home_city) || { teamCount: 0, rinkCount: 0 };
       entry.teamCount += 1;
-      counts.set(t.city, entry);
+      counts.set(t.home_city, entry);
     }
     peerCities = Array.from(counts.entries())
       .map(([name, c]) => {

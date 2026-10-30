@@ -25,8 +25,8 @@ interface Team {
   id: string;
   name: string;
   slug: string;
-  logo_url: string | null;
-  city?: string | null;
+  avatar_url: string | null;
+  home_city?: string | null;
 }
 
 interface ApiResponse {

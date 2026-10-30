@@ -7,8 +7,8 @@ import BulkActionBar from '@/components/admin/BulkActionBar';
 interface Team {
   id: string;
   name: string;
-  city: string | null;
-  country: string | null;
+  home_city: string | null;
+  home_country: string | null;
   league_id: string | null;
   slug: string | null;
   created_at: string;
@@ -71,7 +71,7 @@ export default function TeamsTable({ initialTeams, leagues, initialSearch, initi
       if (leagueId && t.league_id !== leagueId) return false;
       if (search) {
         const s = search.toLowerCase();
-        if (!t.name.toLowerCase().includes(s) && !(t.city || '').toLowerCase().includes(s)) return false;
+        if (!t.name.toLowerCase().includes(s) && !(t.home_city || '').toLowerCase().includes(s)) return false;
       }
       return true;
     });
@@ -190,7 +190,7 @@ export default function TeamsTable({ initialTeams, leagues, initialSearch, initi
                     )}
                   </td>
                   <td className="py-3 px-4 text-slate-400 text-xs">
-                    {[t.city, t.country].filter(Boolean).join(', ') || '—'}
+                    {[t.home_city, t.home_country].filter(Boolean).join(', ') || '—'}
                   </td>
                   <td className="py-3 px-4 text-slate-500 text-xs font-mono">
                     {t.updated_at ? new Date(t.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}

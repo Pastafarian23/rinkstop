@@ -30,7 +30,7 @@ export default async function NewTeamProgramPage({ params }: PageProps) {
 
   // Owner + workspace check in parallel.
   const [{ data: workspace, error: wsErr }, { count: claimCount }] = await Promise.all([
-    supabaseAdmin.from('team_workspaces').select('id, name, currency, country').eq('id', id).maybeSingle(),
+    supabaseAdmin.from('team_workspaces').select('id, name, currency, home_country').eq('id', id).maybeSingle(),
     supabaseAdmin
       .from('claims')
       .select('id', { count: 'exact', head: true })
@@ -74,7 +74,7 @@ export default async function NewTeamProgramPage({ params }: PageProps) {
   // local currency, else USD. The form will let the user override.
   const defaultCurrency =
     workspace.currency ||
-    countryToCurrency(workspace.country) ||
+    countryToCurrency(workspace.home_country) ||
     'USD';
 
   return (
@@ -83,7 +83,7 @@ export default async function NewTeamProgramPage({ params }: PageProps) {
       initial={{}}
       rinkOptions={(rinks || []) as Array<{ id: string; name: string }>}
       defaultCurrency={defaultCurrency}
-      teamCountry={workspace.country ?? null}
+      teamCountry={workspace.home_country ?? null}
     />
   );
 }
