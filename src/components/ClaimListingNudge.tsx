@@ -30,6 +30,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import ClaimNudgeButtons from './ClaimNudgeButtons';
+import { resolveClaimEntity, type ClaimEntityType } from '@/lib/claim-entity';
 
 const CLAIMABLE_NAV: Record<'rink' | 'team' | 'league' | 'player', string> = {
   rink: '/claim-your-listing?focus=rink',
@@ -50,25 +51,22 @@ export default async function ClaimListingNudge({
   const { userId } = await auth();
   if (userId) return null;
 
-  // Look up claimable flag + claim status in one round-trip.
-  // For rinks/leagues the table is `rinks`/`leagues`; for teams/players
-  // we check the team's `claimable` column + an approved claims row.
-  const tableForClaimable =
-    entityType === 'rink' ? 'rinks'
-    : entityType === 'league' ? 'leagues'
-    : entityType === 'team' ? 'teams'
-    : 'players';
+  // Look up claimable flag + claim status.
+  //
+  // 2026-10-30 (Arnel-flagged): this used to select `claimable` from the
+  // legacy `teams` table for teams. The public team directory reads
+  // `team_workspaces`, which has NO `claimable` column -> PostgREST 42703
+  // -> the nudge never rendered for a team that only exists in the
+  // canonical table (e.g. Slough Satans). The shared resolver now owns the
+  // table mapping and the claimability rule.
+  const isLeague = entityType === 'league';
 
-  const [claimableRow, claimRow] = await Promise.all([
-    supabaseAdmin
-      .from(tableForClaimable)
-      .select('claimable')
-      .eq('id', entityId)
-      .maybeSingle(),
+  const [resolved, claimRow] = await Promise.all([
+    isLeague ? Promise.resolve(null) : resolveClaimEntity(entityType as ClaimEntityType, entityId),
     supabaseAdmin
       .from('claims')
       .select('id')
-      .eq('claim_type', entityType)
+      .eq('claim_type', isLeague ? 'team' : entityType)
       .eq('entity_id', entityId)
       .eq('status', 'approved')
       .limit(1)
@@ -76,8 +74,7 @@ export default async function ClaimListingNudge({
   ]);
 
   if (claimRow.data) return null;
-  const claimableFlag = (claimableRow.data as { claimable?: boolean } | null)?.claimable;
-  if (claimableFlag === false) return null;
+  if (resolved && resolved.claimable === false) return null;
 
   const displayName = entityName?.length > 40 ? entityName.slice(0, 40) + '…' : entityName;
   const focusHref = `${CLAIMABLE_NAV[entityType]}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}`;

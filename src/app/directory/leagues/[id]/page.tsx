@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import LeagueDetailClient from './LeagueDetailClient';
 import LeagueSEOCopy from './LeagueSEOCopy';
-import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import LeagueOwnershipRequest from '@/components/LeagueOwnershipRequest';
 import ClaimListingNudge from '@/components/ClaimListingNudge';
 import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import { getFollowersCount } from '@/lib/ownership';
@@ -290,7 +290,17 @@ export default async function LeaguePage({
       {/* WS30 conversion overhaul (Arnel 2026-10-01):
           Above-the-fold claim nudge for unclaimed leagues + owner banner for
           the approved owner. Renders BEFORE LeagueDetailClient so the CTA
-          lands in the first viewport on mobile and desktop. */}
+          lands in the first viewport on mobile and desktop.
+
+          2026-10-30 (Arnel-flagged): the league CLAIM CTA was a dead end.
+          `POST /api/claims` rejects claim_type 'league' with 400 "Invalid
+          claim type" — leagues are not a first-class claim_type — and the
+          claims FORM silently fell `entity=league` back to 'rink', which
+          would have submitted a RINK claim carrying a league's UUID. So the
+          league CTA is replaced with the working path: a league owner
+          requests management through /add-listing, which lands in the admin
+          approval queue (the same queue the submission-status page now
+          surfaces). */}
       <ClaimListingNudge entityType="league" entityId={league.id} entityName={league.name} />
       <ClaimedOwnerBanner entityType="league" entityId={league.id} />
 
@@ -322,9 +332,17 @@ export default async function LeaguePage({
           identical "is a top-tier professional... tracks N teams" passages
           on the same page, which is a quality signal Google penalizes
           (duplicate content). The LeagueSEOCopy version is canonical. */}
-      {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
+      {/* League ownership request — moved below all content per Arnel
+          (2026-07-08).
+
+          2026-10-30: this used to render <ClaimThisListingMount
+          entityType="league"> which produced a "Claim it — it's free" CTA
+          that led to a form which silently submitted a RINK claim, and then
+          a 400 from the API. Leagues cannot be self-serve claimed today.
+          The honest, working path for a league owner is to request
+          management, which the admin queue approves by hand. */}
       <div style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
-        <ClaimThisListingMount entityType="league" entityId={id} />
+        <LeagueOwnershipRequest leagueId={id} leagueName={league.name} />
       </div>
 
       {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). League pages
