@@ -22,7 +22,7 @@ echo "=== pre-push guard: branch=$BRANCH ==="
 cd "$(git rev-parse --show-toplevel)"
 
 # Gate 1: working tree state
-echo "[1/7] checking working tree..."
+echo "[1/8] checking working tree..."
 if [ -n "$(git status --porcelain)" ]; then
   echo "FAIL: working tree has uncommitted changes"
   git status -sb
@@ -30,7 +30,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Gate 2: branch is ahead of main (we're pushing new work)
-echo "[2/7] checking branch is ahead of main..."
+echo "[2/8] checking branch is ahead of main..."
 if [ "$BRANCH" = "main" ]; then
   echo "    main branch - skipping ahead-of-main check"
 else
@@ -45,7 +45,7 @@ fi
 # Gate 3: TypeScript compile
 # 2026-09-17: default 2 GiB Node heap OOMs on this project's full type check
 # (measured 72s with abort, vs 60s clean with 4 GiB). Bump to match Vercel.
-echo "[3/7] running npx tsc --noEmit..."
+echo "[3/8] running npx tsc --noEmit..."
 if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192" npx tsc --noEmit 2>&1 | tail -50; then
   echo "FAIL: TypeScript compile errors"
   exit 1
@@ -58,7 +58,7 @@ fi
 # The original version of this gate checked across all parents at the same
 # depth, which flagged every legitimate shared bracket name as a collision
 # and made every push fail. Fixed 2026-08-11.
-echo "[4/7] checking for dynamic-segment collisions in next-app routes..."
+echo "[4/8] checking for dynamic-segment collisions in next-app routes..."
 TOTAL_BRACKETS=$(find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | wc -l)
 find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | \
   awk -F/ '{
@@ -88,7 +88,7 @@ echo "    no real collisions ($TOTAL_BRACKETS bracket routes checked)"
 # page reported "No teams found" for a team that was live in the DB.
 # tsc cannot catch this (the Supabase client is untyped), and HTTP 200 proves
 # nothing. Only a schema-vs-code diff catches it.
-echo "[5/7] auditing team_workspaces column references against live schema..."
+echo "[5/8] auditing team_workspaces column references against live schema..."
 if ! node scripts/_audit-team-workspace-columns.mjs 2>&1 | tail -40; then
   echo "FAIL: invalid team_workspaces column references (see above)"
   exit 1
@@ -102,7 +102,7 @@ fi
 # third table, so it stayed open for ~4 months. This gate re-runs the audit
 # against the LIVE database and tests BEHAVIOUR (can anon actually read it?)
 # rather than policy definitions, because the two drift.
-echo "[6/7] auditing RLS for publicly-readable submitter PII..."
+echo "[6/8] auditing RLS for publicly-readable submitter PII..."
 if ! node scripts/_audit-rls-pii.mjs 2>&1 | tail -40; then
   echo "FAIL: public read exposes captured submitter contact data (see above)"
   exit 1
@@ -117,9 +117,30 @@ fi
 # Root cause: ENTITY_TO_TIER mapped claims to the PAID tier in two files.
 # This gate checks the tier maps and the CTA labels so the copy cannot drift
 # back into telling people claiming costs money.
-echo "[7/7] auditing claim-funnel pricing copy for 'claiming is free' consistency..."
+echo "[7/8] auditing claim-funnel pricing copy for 'claiming is free' consistency..."
 if ! node scripts/_audit-claim-pricing-copy.mjs 2>&1 | tail -40; then
   echo "FAIL: claim funnel shows a paid price as the cost of claiming (see above)"
+  exit 1
+fi
+
+# Gate 8: claim-flow entity resolution.
+# 2026-10-30 (Arnel-flagged): "I need to make sure the claim flow and
+# functionality are working perfectly for teams, federations, etc. so we can
+# proceed with outreach!" Checking that found FOUR real defects — none caught
+# by tsc, the build, an HTTP 200, or any existing test:
+#   1. POST /api/claims looked teams up in the legacy `teams` table, but the
+#      public directory reads `team_workspaces`. A team listed through the
+#      public directory could NEVER be claimed — the submit 500'd.
+#   2. `team_workspaces` has no `claimable` column (PostgREST 42703).
+#   3. `players` has no `name` column (PostgREST 42703).
+#   4. The league page rendered a "Claim this league" CTA that 400s — and
+#      the claims form silently turned `entity=league` into a RINK claim.
+# This gate exercises the REAL production resolver against the LIVE database
+# and asserts the structural rules no query can catch (league is not a
+# self-serve claim type; federations are invite-only).
+echo "[8/8] testing claim-flow entity resolution against the live database..."
+if ! node scripts/_test-claim-flow.mjs 2>&1 | tail -40; then
+  echo "FAIL: the claim flow cannot complete for one or more entity types (see above)"
   exit 1
 fi
 

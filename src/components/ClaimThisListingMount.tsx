@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import ClaimThisListing, { type ClaimEntityType } from './ClaimThisListing';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getUserTier, getUserOrgTier, getUserApprovedClaimCount, getMaxClaimsForTier } from '@/lib/connections';
+import { resolveClaimEntity, resolveClaimEntityName, type ClaimEntityType as ResolvableEntityType } from '@/lib/claim-entity';
 
 /**
  * Server wrapper for the "Claim this listing" CTA.
@@ -33,37 +34,46 @@ export default async function ClaimThisListingMount({
   // claim CTA on a page where the only correct answer is "this is curated
   // by the league." The public listing page surfaces the existing 'Verified'
   // badge in this case (handled by the parent page, not this component).
-  const claimableTable = entityType === 'player' ? 'players' : entityType === 'team' ? 'teams' : entityType === 'league' ? 'leagues' : 'rinks';
-  // The [id] route param can be a UUID OR a slug (e.g. /directory/players/noel-acciari).
-  // The id column is UUID-typed, so a slug-only param returns nothing on .eq('id').
-  // Try UUID first; fall back to slug. Teams and rinks are also looked up by slug
-  // on their detail pages, so we cover all entity types here.
-  const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entityId);
-  let claimableRow: { id: string; claimable: boolean } | null = null;
-  if (isUuidLike) {
-    const { data } = await supabaseAdmin
-      .from(claimableTable)
-      .select('id, claimable')
-      .eq('id', entityId)
-      .maybeSingle();
-    claimableRow = data;
-  }
-  if (!claimableRow) {
-    const { data } = await supabaseAdmin
-      .from(claimableTable)
-      .select('id, claimable')
-      .eq('slug', entityId)
-      .maybeSingle();
-    claimableRow = data;
-  }
-  if (claimableRow && claimableRow.claimable === false) {
-    return null;
+  // WS25 (2026-08-23): claimable flag gate. Pro profiles (NHL/AHL/KHL/PWHL and
+  // their players) are managed by the league, not user-claimed. Render null
+  // before any other work so we don't waste DB calls and we don't show a
+  // claim CTA on a page where the only correct answer is "this is curated
+  // by the league." The public listing page surfaces the existing 'Verified'
+  // badge in this case (handled by the parent page, not this component).
+  //
+  // 2026-10-30 (Arnel-flagged): this used to pick the table inline —
+  // 'team' -> `teams` (the LEGACY table; the public directory reads
+  // `team_workspaces`) and select `id, claimable` from it (that column does
+  // NOT exist on `team_workspaces` -> PostgREST 42703). The shared resolver
+  // in src/lib/claim-entity.ts now owns that mapping: it searches the
+  // canonical table first and falls back to the legacy one.
+  //
+  // 'league' is skipped: it is not a first-class claim_type (POST /api/claims
+  // rejects it with 400 "Invalid claim type"). A league owner cannot
+  // self-serve claim a league today — league management is gated on a
+  // `league_admin` account type. The league page routes league owners to
+  // /add-listing instead, which lands in the admin approval queue.
+  if (entityType !== 'league') {
+    let resolved = null;
+    try {
+      resolved = await resolveClaimEntity(entityType as ResolvableEntityType, entityId);
+    } catch (e) {
+      // A schema error here is OUR bug, not a missing row. Do NOT swallow it
+      // into "not claimable" — that is the fail-safe-into-empty-state bug
+      // class that hid the team_workspaces rename for weeks.
+      console.error('[claim-cta] entity resolution failed:', e);
+      throw e;
+    }
+    if (resolved && resolved.claimable === false) {
+      return null;
+    }
   }
 
   // === Step 1: is the listing already claimed? ===
-  // Leagues aren't a first-class claim_type today, so we check the underlying
-  // team's claim when entityType is 'league'. For now, if we can't resolve a
-  // claim for a league, we still show the CTA — better to over-ask than hide.
+  // Leagues aren't a first-class claim_type today (POST /api/claims rejects
+  // claim_type 'league'), so there is no league claim to check. A league
+  // owner requests management via /add-listing, which the admin queue
+  // approves.
   if (entityType !== 'league') {
     const { data: existingClaim } = await supabaseAdmin
       .from('claims')
@@ -78,31 +88,6 @@ export default async function ClaimThisListingMount({
       // ClaimedBy is rendering in this slot — don't double up.
       return null;
     }
-  } else {
-    // League: best-effort — look up any approved team-claim for any team in the league.
-    // If we can match a team and it's claimed, hide the CTA. Otherwise show it.
-    const { data: league } = await supabaseAdmin
-      .from('leagues')
-      .select('id')
-      .eq('id', entityId)
-      .single();
-
-    if (league) {
-      const { data: claimedTeam } = await supabaseAdmin
-        .from('claims')
-        .select('id')
-        .eq('claim_type', 'team')
-        .eq('status', 'approved')
-        .limit(1)
-        // We don't have a league_id on claims, so this is intentionally a coarse check.
-        // A future improvement: add a league_id column or join via team→league_id.
-        .maybeSingle();
-
-      if (claimedTeam) {
-        // Heuristic: some team somewhere is claimed. We can't tell if it's in THIS league.
-        // Default to showing the CTA — over-asking is the safer bet for unclaimed pages.
-      }
-    }
   }
 
   // === Step 2: auth state + tier + cap ===
@@ -113,22 +98,19 @@ export default async function ClaimThisListingMount({
   // copy consistent across all five states.
   let displayName = entityName;
   if (!displayName) {
-    const table = entityType === 'player' ? 'players'
-                : entityType === 'team' ? 'teams'
-                : entityType === 'rink' ? 'rinks'
-                : 'leagues';
-    const nameCol = entityType === 'player' ? 'first_name, last_name' : 'name';
-    const { data: row } = await supabaseAdmin
-      .from(table)
-      .select(nameCol)
-      .eq('id', entityId)
-      .maybeSingle();
-    if (row) {
-      displayName = entityType === 'player'
-        ? `${(row as any).first_name ?? ''} ${(row as any).last_name ?? ''}`.trim() || 'this player'
-        : (row as any).name || 'this listing';
+    // 2026-10-30: this used to read `teams` for team names — the legacy
+    // table. The public directory reads `team_workspaces`, so a team that
+    // only exists there rendered as "this listing". Shared resolver now.
+    if (entityType !== 'league') {
+      displayName =
+        (await resolveClaimEntityName(entityType as ResolvableEntityType, entityId)) || 'this listing';
     } else {
-      displayName = 'this listing';
+      const { data: leagueRow } = await supabaseAdmin
+        .from('leagues')
+        .select('name')
+        .eq('id', entityId)
+        .maybeSingle();
+      displayName = (leagueRow as any)?.name || 'this league';
     }
   }
 

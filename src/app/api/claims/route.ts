@@ -4,6 +4,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { getUserTier, getUserOrgTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
+import { resolveClaimEntity, type ClaimEntityType } from '@/lib/claim-entity';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
@@ -49,35 +50,31 @@ export async function POST(request: NextRequest) {
     // BEFORE the tier gate so free and paid users both get the same
     // answer — the entity isn't claimable by anyone via this form.
     //
+    // 2026-10-30 (Arnel-flagged): this lookup used to map claim_type 'team'
+    // to the legacy `teams` table. The PUBLIC team directory reads
+    // `team_workspaces`, and Slough Satans exists ONLY there — so the claim
+    // 500'd with "Could not look up listing". It also selected `name` from
+    // `players`, which has no such column (42703). Both are now handled by
+    // the shared resolver in src/lib/claim-entity.ts, which searches the
+    // canonical table first and falls back to the legacy one.
+    //
     // entity_id may be a UUID OR a slug (deep-links from public pages like
-    // /directory/players/noel-acciari pass the slug). Try UUID first,
-    // then fall back to slug so the gate catches every entry path.
+    // /directory/players/noel-acciari pass the slug).
+    let ent: { id: string; name: string; claimable: boolean } | null = null;
     if (entity_id) {
-      const table = claim_type === 'player' ? 'players' : claim_type === 'team' ? 'teams' : claim_type === 'league' ? 'leagues' : 'rinks';
-      const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(entity_id));
-      let ent: { id: string; claimable: boolean; name: string } | null = null;
-      let entErr: any = null;
-      if (isUuidLike) {
-        const r = await supabaseAdmin
-          .from(table)
-          .select('id, claimable, name')
-          .eq('id', entity_id)
-          .maybeSingle();
-        ent = r.data; entErr = r.error;
-      }
-      if (!ent) {
-        const r = await supabaseAdmin
-          .from(table)
-          .select('id, claimable, name')
-          .eq('slug', entity_id)
-          .maybeSingle();
-        ent = r.data; entErr = r.error;
-      }
-      if (entErr) {
-        console.error('[claims] entity lookup failed', entErr);
+      try {
+        ent = await resolveClaimEntity(claim_type as ClaimEntityType, String(entity_id));
+      } catch (e) {
+        // A throw here means the resolver hit a schema error (a column that
+        // does not exist) — that is OUR bug, not a missing listing. Surface
+        // it as a 500 with the reason, never as "not found".
+        console.error('[claims] entity resolution error:', e);
         return NextResponse.json({ error: 'Could not look up listing.' }, { status: 500 });
       }
-      if (ent && ent.claimable === false) {
+      if (!ent) {
+        return NextResponse.json({ error: 'Could not look up listing.' }, { status: 500 });
+      }
+      if (ent.claimable === false) {
         return NextResponse.json(
           {
             error: 'not_claimable',
