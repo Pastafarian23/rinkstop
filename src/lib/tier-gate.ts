@@ -185,10 +185,10 @@ export function meetsTierGate(
 /**
  * Team admin access check.
  *
- * After the 2026-10-22 consolidation:
+ * After the 2026-10-30 consolidation:
  *   • A personal Hockey Passport Plus holder may manage teams they coach.
- *   • ANY organization tier — including the free `org_free` rung — may
- *     manage up to its team cap (1 team for org_free).
+ *   • Organization Plus (org_plus) or higher unlocks team management.
+ *   • org_free is listing-only — it does NOT grant team admin access.
  *
  * The team-count cap is enforced separately in src/lib/org-limits.ts and by
  * the create_team_workspace RPC. This gate answers "may this account manage
@@ -216,8 +216,11 @@ export async function hasTeamAdminAccess(userId: string): Promise<{
     return { allowed: true, tier: personalTier };
   }
 
-  // Organization track: any org tier (including org_free) allows management.
-  if (tierAtLeastSameTrack(orgTier, 'org_free')) {
+  // Organization track: Organization Plus (org_plus) or higher unlocks
+  // team management. org_free is listing-only and does NOT grant admin
+  // access — this is the deliberate paywall between free listing and
+  // roster/schedule/events management.
+  if (tierAtLeastSameTrack(orgTier, 'org_plus')) {
     return { allowed: true, tier: orgTier };
   }
 
