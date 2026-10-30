@@ -87,7 +87,7 @@ export async function PATCH(
     .from('team_workspaces')
     .update({ currency: normalizedCurrency, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .select('id, currency, country')
+    .select('id, currency, home_country')
     .maybeSingle();
 
   if (error) {
@@ -97,5 +97,5 @@ export async function PATCH(
     return NextResponse.json({ error: 'Team not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true, currency: data.currency, country: data.country });
+  return NextResponse.json({ ok: true, currency: data.currency, country: data.home_country });
 }

@@ -139,14 +139,14 @@ export default async function CanadaProvincePage({
   if (cityNames.length > 0) {
     const { data: teams } = await supabase
       .from('team_workspaces')
-      .select('city, province_state')
-      .eq('country', 'Canada')
-      .eq('province_state', provinceAbbr)
+      .select('home_city, home_state')
+      .eq('home_country', 'Canada')
+      .eq('home_state', provinceAbbr)
       .eq('is_active', true);
 
     (teams || []).forEach(t => {
-      if (t.city) {
-        teamCounts.set(t.city, (teamCounts.get(t.city) || 0) + 1);
+      if (t.home_city) {
+        teamCounts.set(t.home_city, (teamCounts.get(t.home_city) || 0) + 1);
       }
     });
   }

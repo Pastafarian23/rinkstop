@@ -84,7 +84,7 @@ export async function GET(
   if (type === 'team') {
     let query = supabaseAdmin
       .from('team_workspaces')
-      .select('id, name, logo_url, leagues(name)')
+      .select('id, name, avatar_url, leagues(name)')
       .order('name', { ascending: true })
       .limit(limit);
     if (q) {

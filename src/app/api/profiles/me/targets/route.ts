@@ -14,10 +14,13 @@ export async function GET(req: NextRequest) {
   }
 
   const [{ data: teams }, { data: leagues }] = await Promise.all([
+    // 2026-10-30 fix: `team_workspaces.claimed_by_user_id` does NOT exist.
+    // Team ownership comes from APPROVED rows in the `claims` table.
+    // Select the workspaces, then resolve owners via claims.
     supabaseAdmin
       .from('team_workspaces')
-      .select('id, name, slug, visibility, claimed_by_user_id')
-      .eq('claimed_by_user_id', userId)
+      .select('id, name, slug, visibility')
+      .eq('is_active', true)
       .order('name', { ascending: true }),
     supabaseAdmin
       .from('leagues')
@@ -26,7 +29,23 @@ export async function GET(req: NextRequest) {
       .order('name', { ascending: true }),
   ]);
 
-  const managedTeams = (teams ?? []).map((t) => ({
+  // Resolve team owners from approved claims.
+  const teamIds = (teams ?? []).map((t) => t.id as string);
+  let ownedTeamIds = new Set<string>();
+  if (teamIds.length) {
+    const { data: claims } = await supabaseAdmin
+      .from('claims')
+      .select('entity_id, user_id')
+      .eq('claim_type', 'team')
+      .eq('status', 'approved')
+      .eq('user_id', userId)
+      .in('entity_id', teamIds);
+    ownedTeamIds = new Set((claims ?? []).map((c) => c.entity_id as string));
+  }
+
+  const managedTeams = (teams ?? [])
+    .filter((t) => ownedTeamIds.has(t.id as string))
+    .map((t) => ({
     target_type: 'team',
     target_id: t.id,
     name: t.name,

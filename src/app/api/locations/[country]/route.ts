@@ -15,10 +15,10 @@ export async function GET(
   const [{ data: teams }, { data: rinks }, { data: programs }] = await Promise.all([
     supabase
       .from('team_workspaces')
-      .select('city')
-      .eq('country', decodedCountry)
+      .select('home_city')
+      .eq('home_country', decodedCountry)
       .eq('is_active', true)
-      .not('city', 'is', null),
+      .not('home_city', 'is', null),
     supabase
       .from('rinks')
       .select('city')
@@ -36,8 +36,9 @@ export async function GET(
   // Collect distinct cities
   const citySet = new Set<string>();
   [...(teams || []), ...(rinks || []), ...(programs || [])].forEach(
-    (row: { city?: string }) => {
-      if (row.city) citySet.add(row.city);
+    (row: { city?: string; home_city?: string }) => {
+      const city = row.city ?? row.home_city;
+      if (city) citySet.add(city);
     }
   );
 
@@ -57,8 +58,8 @@ export async function GET(
         supabase
           .from('team_workspaces')
           .select('id')
-          .eq('country', decodedCountry)
-          .eq('city', city)
+          .eq('home_country', decodedCountry)
+          .eq('home_city', city)
           .eq('is_active', true),
         supabase
           .from('rinks')

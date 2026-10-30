@@ -41,7 +41,7 @@ export default async function NewBookingPage() {
       .limit(2000),
     supabaseAdmin
       .from('team_workspaces')
-      .select('id, name, slug, home_city, country')
+      .select('id, name, slug, home_city, home_country')
       .eq('is_active', true)
       .order('name')
       .limit(2000),
@@ -69,7 +69,7 @@ export default async function NewBookingPage() {
           name: t.name,
           slug: t.slug,
           home_city: t.home_city,
-          country: t.country,
+          country: t.home_country,
         }))}
       />
     </div>

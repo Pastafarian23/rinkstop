@@ -72,11 +72,11 @@ async function fetchPlayer(id: string): Promise<PageData | null> {
   if ((player as PlayerRow).team_id) {
     const { data: t } = await supabaseAdmin
       .from('team_workspaces')
-      .select('id, name, slug, logo_url, league_id')
+      .select('id, name, slug, avatar_url, league_id')
       .eq('id', (player as PlayerRow).team_id!)
       .maybeSingle();
     if (t) {
-      team = { id: t.id, name: t.name, slug: t.slug, logo_url: t.logo_url };
+      team = { id: t.id, name: t.name, slug: t.slug, logo_url: t.avatar_url };
       if ((t as any).league_id) {
         const { data: l } = await supabaseAdmin
           .from('leagues')

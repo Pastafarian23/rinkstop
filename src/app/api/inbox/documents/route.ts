@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   const teamIds = Array.from(new Set((docs || []).map((d) => d.team_id as string)));
   const { data: teams, error: tErr } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug, name, logo_url')
+    .select('id, slug, name, avatar_url')
     .in('id', teamIds);
   if (tErr) {
     return NextResponse.json({ error: tErr.message }, { status: 500 });

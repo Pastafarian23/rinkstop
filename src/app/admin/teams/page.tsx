@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 interface Team {
   id: string;
   name: string;
-  city: string | null;
-  country: string | null;
+  home_city: string | null;
+  home_country: string | null;
   league_id: string | null;
   slug: string | null;
   created_at: string;
@@ -24,7 +24,7 @@ interface League {
 async function getTeamsData(search?: string, leagueId?: string, wrongLeague?: boolean) {
   let query = supabaseAdmin
     .from('team_workspaces')
-    .select('id, name, city, country, league_id, slug, created_at, updated_at, leagues!teams_league_id_fkey(name, slug)', { count: 'exact' });
+    .select('id, name, home_city, home_country, league_id, slug, created_at, updated_at, leagues!teams_league_id_fkey(name, slug)', { count: 'exact' });
 
   if (search) {
     query = query.ilike('name', `%${search}%`);

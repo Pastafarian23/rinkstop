@@ -510,8 +510,8 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     rink.city
       ? supabase
           .from('team_workspaces')
-          .select('id, name, slug, city, league_id, logo_url')
-          .ilike('city', rink.city)
+          .select('id, name, slug, home_city, league_id, avatar_url')
+          .ilike('home_city', rink.city)
           .limit(12)
       : Promise.resolve({ data: [] as LocalTeam[] }),
     // 2026-10-03 (audit fix #3): leagues are no longer fetched by country.

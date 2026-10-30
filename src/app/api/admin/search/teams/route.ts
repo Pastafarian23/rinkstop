@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('team_workspaces')
-    .select('id, name, slug, city, country')
+    .select('id, name, slug, home_city, home_country')
     .order('name', { ascending: true })
     .limit(limit);
 
