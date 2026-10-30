@@ -643,3 +643,47 @@ ALTER TABLE public.federations
   DROP COLUMN IF EXISTS pending_submitted_at,
   DROP COLUMN IF EXISTS pending_submitted_by;
 ```
+
+## 2026-10-30 — `2026-10-30_listing_submissions_pii_lockdown.sql`
+
+**Applied:** 2026-10-30 05:5x CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Approval:** Discovered and fixed as part of the Slough Satans claim-bug
+investigation (the leak was blocking a professional submission-status flow).
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` with
+Management API PAT (via `scripts/query-supabase.py`).
+
+**Why:** The public Supabase key (`sb_publishable_…`, inlined into the client
+bundle because `NEXT_PUBLIC_SUPABASE_ANON_KEY` is a `NEXT_PUBLIC_` var) could
+SELECT **every row** of `listing_submissions` — including `email` and the
+internal `notes` / `outcome_notes` columns. Verified by direct PostgREST call,
+not by reading policy definitions:
+
+    GET /rest/v1/listing_submissions?select=email,name,notes,outcome_notes
+    -> [{"email":"cup@glxyhockey.com", ...}, {"email":"sloughsatans@gmail.com", ...}]
+
+This is the same leak class that `2026-06-16-critical-rls-fixes.sql` FIX 5/FIX 6
+closed on `contact_submissions` and `newsletter_subscribers` — but
+`listing_submissions_public_read` was never added to that audit, so it stayed
+open for ~4 months. Two real people's email addresses and our internal
+revenue-qualification notes about them were publicly readable.
+
+**Policy shape — gotcha worth remembering:** the deny must NOT be a single
+`FOR ALL ... WITH CHECK (false)` policy. Postgres evaluates `WITH CHECK` on
+INSERT too, so that shape blocks the anonymous insert and breaks the public
+add-listing form with a misleading "new row violates row-level security
+policy" error. The deny is split per-command (SELECT / UPDATE / DELETE);
+INSERT is governed solely by the dedicated `Allow anonymous inserts` policy.
+
+**Verified after applying:**
+- anon SELECT → `[]` (leak closed)
+- anon INSERT → HTTP 201 (public form still works)
+- anon UPDATE / DELETE → 0 rows affected; both rows verified intact
+- service_role SELECT → both rows still visible to the admin intake UI
+
+**Permanent guard:** `scripts/_audit-rls-pii.mjs` re-runs this audit against
+the LIVE database on every push (pre-push guard **Gate 6**). It tests
+behaviour ("can anon actually read it?") rather than policy definitions,
+because the two drift. Proven to work: with the bad policy temporarily
+restored the audit failed and reported the leaked address; with it removed the
+audit passed.
