@@ -1,7 +1,36 @@
 import type { TierName } from '@/lib/pricing';
 import { TIERS, formatTierPricePerYear } from '@/lib/pricing';
 
+/**
+ * Which tier the claim funnels SHOW — NOT which tier is required.
+ *
+ * 2026-10-30 (Arnel-flagged): this map is what produced "Claim a team —
+ * $99, Required" on the sign-up page, while the claim page header said
+ * "Claiming is free". Both were on screen at the same time.
+ *
+ * THE TRUTH: claiming is FREE. `LISTING_CLAIMS_PER_TIER` in src/lib/pricing.ts
+ * grants `free` → 1 claim and `org_free` → 1 claim. A person or a club can
+ * claim one listing with no card on file.
+ *
+ * What the paid tiers buy is TOOLS (photos, lead capture, payments, multiple
+ * team workspaces, reporting) — never the ability to claim.
+ *
+ * So the funnel should show the FREE tier as required, and offer the paid
+ * tier as an optional upgrade. The map below is therefore keyed to the free
+ * tier for every entity type.
+ */
 const ENTITY_TO_TIER: Record<string, TierName> = {
+  rink: 'free',
+  team: 'free',
+  league: 'free',
+  player: 'free',
+};
+
+/**
+ * The optional paid tier offered AFTER the free claim, per entity type.
+ * Shown as "Want more?" — never as "Required".
+ */
+const ENTITY_TO_UPGRADE: Record<string, TierName> = {
   rink: 'org_plus',
   team: 'org_plus',
   league: 'org_plus',
@@ -97,13 +126,13 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
                 fontWeight: 800,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: '#FFB81C',
-                background: 'rgba(255, 184, 28, 0.12)',
+                color: '#14B8A6',
+                background: 'rgba(20, 184, 166, 0.12)',
                 padding: '0.15rem 0.45rem',
                 borderRadius: 4,
               }}
             >
-              Required
+              Free
             </span>
           </div>
           <div
@@ -171,8 +200,9 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
             textAlign: 'center',
           }}
         >
-          Need more? {upgradeT.label} at {formatTierPricePerYear(upgradeTier!)} unlocks more
-          listings and features. You can upgrade any time after sign-up.
+          Optional: {upgradeT.label} at {formatTierPricePerYear(upgradeTier!)} unlocks more
+          listings and features. You can upgrade any time after sign-up — claiming
+          works either way.
         </div>
       ) : null}
 
@@ -185,8 +215,8 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
           lineHeight: 1.4,
         }}
       >
-        Create your free account below &mdash; you&rsquo;ll pay for {label.what} after email
-        verification.
+        Create your free account below. Claiming is free — no card needed, and
+        you&rsquo;ll only pay if you later choose a plan for extra tools.
       </div>
     </div>
   );
@@ -231,11 +261,15 @@ export function parseClaimIntent(
   const tier: TierName =
     requestedTier && requestedTier in TIERS ? (requestedTier as TierName) : ENTITY_TO_TIER[entity];
 
+  // The upgrade tier defaults to the optional paid tier for this entity.
+  // A caller can override it explicitly via `upgrade=`.
   const requestedUpgrade = merged.upgrade;
   const upgradeTier: TierName | null =
     requestedUpgrade && requestedUpgrade in TIERS && requestedUpgrade !== tier
       ? (requestedUpgrade as TierName)
-      : null;
+      : ENTITY_TO_UPGRADE[entity] !== tier
+        ? ENTITY_TO_UPGRADE[entity]
+        : null;
 
   return { entity, entityName, tier, upgradeTier };
 }

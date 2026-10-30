@@ -18,11 +18,23 @@ function fireCtaClick(entityType: 'rink' | 'team' | 'league' | 'player', entityI
 
 // Default tier per entity type (matches /claim-your-listing ClaimButton).
 // Used to display the entry price on the CTA so visitors know what they'll pay.
-const DEFAULT_TIER_BY_ENTITY: Record<ClaimEntityType, 'org_plus' | 'verified_identity'> = {
-  rink: 'org_plus',
-  team: 'org_plus',
-  league: 'org_plus',
-  player: 'verified_identity',
+/**
+ * The tier carried in the claim deep-link.
+ *
+ * 2026-10-30 (Arnel-flagged): this used to be `org_plus` / `verified_identity`
+ * — the PAID tiers. That is what made the sign-up and claims panels say
+ * "Claim a team — $99, Required" while the claim page said "Claiming is
+ * free". Claiming is free (`LISTING_CLAIMS_PER_TIER`: `free` → 1 claim,
+ * `org_free` → 1 claim); the paid tiers buy extra TOOLS, never the claim.
+ *
+ * So the deep-link carries the FREE tier, and the paid tier is offered
+ * separately as an optional upgrade.
+ */
+const DEFAULT_TIER_BY_ENTITY: Record<ClaimEntityType, 'free'> = {
+  rink: 'free',
+  team: 'free',
+  league: 'free',
+  player: 'free',
 };
 
 export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';

@@ -54,7 +54,7 @@ export function ClaimIntentPanel({
   let statusLine: string;
   let statusColor: string;
   if (isFree && freeUserAtCap) {
-    statusLine = `You've used your 1 free claim. Upgrade to ${t.label} to claim more listings.`;
+    statusLine = `You've used your 1 free claim. Upgrade to ${upgradeT ? upgradeT.label : 'a paid plan'} if you want to claim more listings.`;
     statusColor = '#FFB81C';
   } else if (isFree) {
     statusLine = `Claiming is free. Verify your identity (free, ~60 seconds) to add a 'Verified owner' badge to your listing.`;
@@ -66,8 +66,8 @@ export function ClaimIntentPanel({
     statusLine = `Your ${currentTier} tier covers this claim. Confirm to continue.`;
     statusColor = '#14B8A6';
   } else {
-    statusLine = `Confirm to claim. Upgrade to ${t.label} for additional tools.`;
-    statusColor = '#FFB81C';
+    statusLine = `Confirm to claim — this is free. Upgrade to ${upgradeT ? upgradeT.label : 'a paid plan'} if you want extra tools like photos, lead capture and payments.`;
+    statusColor = '#14B8A6';
   }
 
   return (
@@ -143,20 +143,20 @@ export function ClaimIntentPanel({
                 fontWeight: 800,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: '#FFB81C',
-                background: 'rgba(255,184,28,0.12)',
+                color: '#14B8A6',
+                background: 'rgba(20,184,166,0.12)',
                 padding: '0.2rem 0.5rem',
                 borderRadius: 4,
               }}
             >
-              Required
+              Free
             </span>
           </div>
           <div
             style={{
               fontSize: '1.35rem',
               fontWeight: 800,
-              color: '#FFB81C',
+              color: '#14B8A6',
               whiteSpace: 'nowrap',
             }}
           >
@@ -287,7 +287,7 @@ export function ClaimIntentPanel({
               textAlign: 'center',
             }}
           >
-            Compare to {upgradeT.label} — {formatTierPricePerYear(upgradeTier)}
+            Compare to {upgradeT.label} — {formatTierPricePerYear(upgradeTier)} (optional)
           </a>
         ) : null}
       </div>
@@ -362,7 +362,23 @@ export function parseClaimIntentForClaims(
 
   const entity = (sp.entity ?? '').toLowerCase();
   // Match the same entity set as src/app/sign-up/ClaimIntentCard.tsx
+  //
+  // 2026-10-30 (Arnel-flagged): these used to map to `org_plus` ($99) and
+  // `verified_identity` ($24.99), which made the claims panel tell a user that
+  // claiming their team REQUIRES a $99 plan — while the claim page header
+  // said "Claiming is free". Both were on screen at once.
+  //
+  // THE TRUTH: claiming is FREE. `LISTING_CLAIMS_PER_TIER` grants
+  // `free` → 1 claim and `org_free` → 1 claim. Paid tiers buy TOOLS
+  // (photos, lead capture, payments, multiple workspaces), never the ability
+  // to claim.
   const ENTITY_TO_TIER: Record<string, TierName> = {
+    rink: 'free',
+    team: 'free',
+    league: 'free',
+    player: 'free',
+  };
+  const ENTITY_TO_UPGRADE: Record<string, TierName> = {
     rink: 'org_plus',
     team: 'org_plus',
     league: 'org_plus',
@@ -383,7 +399,9 @@ export function parseClaimIntentForClaims(
   const upgradeTier: TierName | null =
     requestedUpgrade && requestedUpgrade in TIERS && requestedUpgrade !== recommendedTier
       ? (requestedUpgrade as TierName)
-      : null;
+      : ENTITY_TO_UPGRADE[entity] !== recommendedTier
+        ? ENTITY_TO_UPGRADE[entity]
+        : null;
 
   return { entity, entityId, entityName, recommendedTier, upgradeTier };
 }
