@@ -77,14 +77,10 @@ export default async function ManageTeamPage({ params }: PageProps) {
   // paid organization rungs unlock the rest. Read profiles.org_tier, not
   // the personal track.
   const orgTier = await getUserOrgTier(userId);
-  // org_free may manage ONE team (basic roster/schedule/events). If this
-  // user is already a team admin here, let them in regardless of plan.
-  const { data: adminRow } = await supabaseAdmin.rpc('is_team_admin', {
-    p_team_id: id,
-    p_user_id: userId,
-  });
-  const isTeamAdmin = adminRow === true;
-  const needsOrgPlan = orgTier === 'org_free' && !isTeamAdmin;
+  // org_free is listing-only (public directory + media storage). Roster,
+  // schedule, events and attendance management require Organization Plus.
+  // The rink page already had this logic — this now matches it.
+  const needsOrgPlan = orgTier === 'org_free';
 
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
