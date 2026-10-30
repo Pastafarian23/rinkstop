@@ -77,8 +77,9 @@ export default async function ManageRinkPage({ params }: PageProps) {
   // pointing unverified owners to the free verification path.
   const ownerVerified = await isIdentityVerified(userId).catch(() => false);
 
-  // Phase 2 (2026-10-22): rink management lives on the ORGANIZATION track.
-  // org_free may claim and manage one rink; paid rungs unlock the rest.
+  // org_free is listing-only (public directory + media storage). Rink
+  // management requires Organization Plus. This was already correct —
+  // the comment below is kept for historical accuracy.
   const orgTier = await getUserOrgTier(userId);
   const needsOrgPlan = orgTier === 'org_free';
 
