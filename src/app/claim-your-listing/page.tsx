@@ -457,7 +457,7 @@ export default async function ClaimYourListingPage({
               <strong style={{ color: '#fff' }}>{HEADER_COPY[type].bannerLabel}: </strong>
               you&rsquo;ll need a RinkStop account and{' '}
               {HEADER_COPY[type].bannerPrice}
-              {' '}to claim. See plans before you search.
+              {' '}to claim. Claiming itself is free — plans are only needed if you want extra tools.
             </div>
             <Link
               href={`/pricing${query ? `?intent=claim&type=${type}` : '?intent=claim'}`}
@@ -599,7 +599,7 @@ export default async function ClaimYourListingPage({
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <BenefitRow icon="📍" text="Appear in search results for your city, state, and country" />
             <BenefitRow icon="📩" text="Receive direct messages from coaches, parents, and players" />
-            <BenefitRow icon="🚀" text="Claim your listing with a Verified Hockey Identity or organization plan" />
+            <BenefitRow icon="🚀" text="Claim your listing free — a RinkStop account is all you need" />
             <BenefitRow icon="✅" text="Verified checkmark builds trust with players and parents" />
           </ul>
           <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #1e1e1e' }}>
@@ -886,11 +886,11 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
         </Link>
         {!alreadyClaimed && !pending && !isSelfManaged && (
           <ClaimButton
-            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?intent=claim&entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}&tier=${rink.type === 'team' ? 'org_plus' : rink.type === 'player' ? 'verified_identity' : 'org_plus'}`)}`}
+            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?intent=claim&entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}&tier=free`)}`}
             rinkId={rink.id}
             rinkSlug={rink.slug}
             query={query}
-            priceTier={rink.type === 'team' ? 'org_plus' : rink.type === 'player' ? 'verified_identity' : 'org_plus'}
+            priceTier={rink.type === 'player' ? 'verified_identity' : 'org_plus'}
           />
         )}
         {isSelfManaged && (

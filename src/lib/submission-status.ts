@@ -30,7 +30,6 @@ export interface SubmissionStatusView {
   /** True once the submission is older than our stated SLA. */
   overdue: boolean;
 }
-
 /** Our stated review SLA. Keep in sync with the copy on the status page. */
 export const REVIEW_SLA_DAYS = 3;
 
@@ -67,42 +66,55 @@ export async function resolveLiveUrl(
   if (type === 'team') {
     const { data } = await supabaseAdmin
       .from('team_workspaces')
-      .select('slug, visibility, is_active')
+      .select('slug, name, visibility, is_active')
       .eq('id', listingId)
       .maybeSingle();
     if (!data || !data.slug) return { live_url: null, claim_url: null };
     const live = `/directory/teams/${data.slug}`;
     return {
       live_url: live,
-      claim_url: `/claim-your-listing?focus=team&id=${listingId}&name=${encodeURIComponent(data.slug)}`,
+      // 2026-10-30: this used to point at `/claim-your-listing?focus=team&id=…`.
+      // That was WRONG — the claim page never read `focus` or `id`, so the
+      // "Claim and edit it" button dumped the submitter back on a blank
+      // search page with no reference to their listing. It also passed the
+      // SLUG as the display name, so the pre-filled form showed "slough-satans"
+      // instead of "Slough Satans".
+      //
+      // The real claim flow is /dashboard/claims?intent=claim&entity=…&id=…&name=…
+      // (see RinkResultCard in claim-your-listing/page.tsx, which builds the
+      // same shape). Point there so the claim form opens PRE-FILLED for this
+      // exact listing. The name is the real display name from the DB.
+      claim_url: `/dashboard/claims?intent=claim&entity=team&id=${listingId}&name=${encodeURIComponent(data.name || data.slug)}`,
     };
   }
 
   if (type === 'rink') {
     const { data } = await supabaseAdmin
       .from('rinks')
-      .select('slug, is_active')
+      .select('slug, name, is_active')
       .eq('id', listingId)
       .maybeSingle();
     if (!data || !data.slug) return { live_url: null, claim_url: null };
     const live = `/directory/rinks/${data.slug}`;
     return {
       live_url: live,
-      claim_url: `/claim-your-listing?focus=rink&id=${listingId}&name=${encodeURIComponent(data.slug)}`,
+      claim_url: `/dashboard/claims?intent=claim&entity=rink&id=${listingId}&name=${encodeURIComponent(data.name || data.slug)}`,
     };
   }
 
   if (type === 'league') {
     const { data } = await supabaseAdmin
       .from('leagues')
-      .select('slug, is_active')
+      .select('slug, name, is_active')
       .eq('id', listingId)
       .maybeSingle();
     if (!data || !data.slug) return { live_url: null, claim_url: null };
-    return {
-      live_url: `/directory/leagues/${data.slug}`,
-      claim_url: `/claim-your-listing?focus=league&id=${listingId}&name=${encodeURIComponent(data.slug)}`,
-    };
+    // NOTE: `league` is NOT a claim_type the public claims API accepts
+    // (it accepts rink | team | player). So there is no self-serve league
+    // claim form — sending a submitter to one would be a dead end. Return
+    // null and the status page shows only the live listing link; league
+    // claims are handled by RinkStop on request.
+    return { live_url: `/directory/leagues/${data.slug}`, claim_url: null };
   }
 
   if (type === 'tournament' || type === 'event') {

@@ -171,6 +171,42 @@ if (!target) {
   check('view status matches', view?.status === target.status, `${view?.status}`);
   check('approved submission has a live_url', !!view?.live_url, `${view?.live_url}`);
   check('approved submission has a claim_url', !!view?.claim_url, `${view?.claim_url}`);
+
+  // 2026-10-30 (Arnel-flagged): the claim_url used to point at
+  // `/claim-your-listing?focus=team&id=…`, but the claim page NEVER READ
+  // `focus` or `id` — so the "Claim and edit it" button dropped the submitter
+  // on a blank search page with no reference to their listing. It also passed
+  // the SLUG as the display name, so the form showed "slough-satans" instead
+  // of "Slough Satans".
+  //
+  // The real claim form is /dashboard/claims?intent=claim&entity=…&id=…&name=…
+  // and it DOES pre-fill from those params. Assert that, and assert the name
+  // is a human-readable display name (not a slug).
+  if (view?.claim_url) {
+    check(
+      'claim_url points at the real claim form (/dashboard/claims?intent=claim)',
+      view.claim_url.startsWith('/dashboard/claims?intent=claim'),
+      `${view.claim_url}`,
+    );
+    check(
+      'claim_url carries entity, id and name so the form pre-fills',
+      view.claim_url.includes('&entity=') &&
+        view.claim_url.includes('&id=') &&
+        view.claim_url.includes('&name='),
+      `${view.claim_url}`,
+    );
+    const nameParam = decodeURIComponent(view.claim_url.match(/&name=([^&]*)/)?.[1] || '');
+    check(
+      'claim_url name is a readable display name, not a slug',
+      !!nameParam && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(nameParam),
+      `${nameParam}`,
+    );
+    check(
+      'claim_url does NOT use the dead focus= param',
+      !view.claim_url.includes('focus='),
+      `${view.claim_url}`,
+    );
+  }
   check('age_label is populated', !!view?.age_label, `${view?.age_label}`);
 }
 
