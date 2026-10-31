@@ -139,11 +139,11 @@ export async function GET(req: NextRequest) {
 
     applyMultiWordSearch(
       supabaseAdmin
-        .from('teams')
-        .select('id, name, slug, city, country, leagues(name)')
+        .from('team_workspaces')
+        .select('id, name, slug, home_city, home_country, leagues(name)')
         .eq('is_active', true),
       q,
-      ['name', 'city', 'country']
+      ['name', 'home_city', 'home_country']
     )
       .order('name', { ascending: true })
       .limit(MAX_PER_TYPE)
@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
             name: r.name,
             slug: r.slug,
             href: `/directory/teams/${r.slug}`,
-            meta: [leagueName, r.city, r.country].filter(Boolean).join(' · '),
+            meta: [leagueName, r.home_city, r.home_country].filter(Boolean).join(' · '),
           };
         })
       ),

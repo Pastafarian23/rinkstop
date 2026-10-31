@@ -210,28 +210,31 @@ export async function GET(req: NextRequest) {
         }))
       ) : [],
 
-    // Teams
+    // Teams — query team_workspaces, the table the public directory reads.
+    // The legacy `teams` table is dead weight for search: 455 active teams
+    // live ONLY in team_workspaces (every directory/claim-added team), so
+    // searching `teams` silently returned nothing for them.
     include('team') ? applyMultiWordSearch(
       supabaseAdmin
-        .from('teams')
-        .select('id, name, slug, city, country, leagues(name)')
+        .from('team_workspaces')
+        .select('id, name, slug, home_city, home_country, leagues(name)')
         .eq('is_active', true),
       q,
-      ['name', 'city', 'country']
+      ['name', 'home_city', 'home_country']
     )
       .limit(3)
       .then(({ data }) =>
         (data ?? []).map((r) => {
           const leagues = r.leagues as { name: string } | { name: string }[] | null;
           const leagueName = Array.isArray(leagues) ? leagues[0]?.name : leagues?.name;
-          const secondary = [leagueName, r.city, r.country].filter(Boolean).join(' ');
+          const secondary = [leagueName, r.home_city, r.home_country].filter(Boolean).join(' ');
           return {
             type: 'team' as const,
             id: r.id,
             name: r.name,
             slug: r.slug,
             href: `/directory/teams/${r.slug}`,
-            meta: [leagueName, r.city, r.country].filter(Boolean).join(' · '),
+            meta: [leagueName, r.home_city, r.home_country].filter(Boolean).join(' · '),
             matchQuality: computeMatchQuality(q, r.name, secondary),
           };
         })
