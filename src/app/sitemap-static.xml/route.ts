@@ -66,6 +66,7 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/directory/international/world-championships`, changeFreq: 'monthly', priority: 0.6 },
   { url: `${baseUrl}/directory/international/olympics`, changeFreq: 'monthly', priority: 0.6 },
   { url: `${baseUrl}/directory/countries`, changeFreq: 'monthly', priority: 0.6 },
+  { url: `${baseUrl}/directory/federations`, changeFreq: 'monthly', priority: 0.6 },
   { url: `${baseUrl}/cookies`, changeFreq: 'yearly', priority: 0.3 },
   { url: `${baseUrl}/partner`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/faq`, changeFreq: 'monthly', priority: 0.6 },
