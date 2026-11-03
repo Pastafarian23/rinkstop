@@ -748,3 +748,17 @@ by the submission's OWN type, not by "the first id that looks like a uuid".
 
 **Result:** Slough Satans → `4383433c-…` (team_workspaces); GLXY Cup →
 `ab404540-…` (rink_events, the event, with the venue as fallback).
+
+---
+
+## 2026-11-03 — team-logos storage bucket (HAND-APPLIED)
+
+**Migration file:** `2026-11-03_team-logos-bucket.sql`
+**Applied by:** KiloClaw (main session, webchat)
+**Method:** Direct SQL via Management API PAT (verified bucket exists in live DB).
+
+**What it does:** Creates the `team-logos` storage bucket (public read, 5 MB limit, JPEG/PNG/WebP only). Files are stored as `{team_id}/{uuid}.{ext}` so ownership is encoded in the path and collisions between teams are impossible.
+
+**Why hand-applied:** the bucket was created directly via the Supabase dashboard / API before the migration file was committed, so the file is now a no-op (`ON CONFLICT DO NOTHING`). Recording it here so future schema audits don't flag it as missing.
+
+**Verified live:** `SELECT id, name, public FROM storage.buckets WHERE name = 'team-logos'` → `{"id":"team-logos","name":"team-logos","public":true}`.

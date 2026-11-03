@@ -11,7 +11,8 @@ interface InitialValues {
   pending_name: string | null;
   pending_short_name: string | null;
   pending_submitted_at: string | null;
-federation_id: string;
+  avatar_url: string | null;
+  federation_id: string;
   organization_id: string;
   league_id: string;
   home_city: string;
@@ -100,6 +101,8 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
   const [federations, setFederations] = useState<{id:string;name:string}[]>([]);
   const [orgs, setOrgs] = useState<{id:string;name:string}[]>([]);
   const [leagues, setLeagues] = useState<{id:string;name:string}[]>([]);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -146,6 +149,33 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
     };
   }
 
+  async function onLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    setLogoError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`/api/team/${encodeURIComponent(slug)}/logo`, {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLogoError(data?.error ?? `Upload failed (${res.status})`);
+        return;
+      }
+      update('avatar_url', data.url);
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setLogoUploading(false);
+      // Reset the file input so the same file can be uploaded again
+      e.target.value = '';
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -177,6 +207,7 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       contact_email: form.contact_email === '' ? null : form.contact_email,
       contact_phone: form.contact_phone === '' ? null : form.contact_phone,
       visibility: form.visibility,
+      avatar_url: form.avatar_url,
     };
 
     try {
@@ -261,6 +292,90 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
             maxLength={80}
             style={inputStyle}
           />
+        </Field>
+        <Field label="Team logo" hint="Optional. Shown on your team hub, listings, and invites. JPEG, PNG, or WebP. Max 5 MB.">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {form.avatar_url ? (
+              <img
+                src={form.avatar_url}
+                alt="Team logo"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 8,
+                  objectFit: 'contain',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 8,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 20,
+                  color: 'rgba(255,255,255,0.3)',
+                }}
+                aria-hidden
+              >
+                🏒
+              </div>
+            )}
+            <label
+              style={{
+                cursor: logoUploading ? 'wait' : 'pointer',
+                opacity: logoUploading ? 0.6 : 1,
+                padding: '0.45rem 0.9rem',
+                background: 'rgba(20,184,166,0.1)',
+                color: '#14B8A6',
+                border: '1px solid rgba(20,184,166,0.3)',
+                borderRadius: 6,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {logoUploading ? 'Uploading…' : form.avatar_url ? 'Replace logo' : 'Upload logo'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={onLogoUpload}
+                disabled={logoUploading}
+                style={{ display: 'none' }}
+              />
+            </label>
+            {form.avatar_url && (
+              <button
+                type="button"
+                onClick={() => {
+                  update('avatar_url', null);
+                  setLogoError(null);
+                }}
+                style={{
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.5)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 6,
+                  padding: '0.45rem 0.9rem',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          {logoError && (
+            <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#FF6B7A' }}>
+              {logoError}
+            </div>
+          )}
         </Field>
         <Field
           label="URL slug"
