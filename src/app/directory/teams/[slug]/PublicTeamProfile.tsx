@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
-import { getChainForSlug } from '@/lib/franchise-name-lookup';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
@@ -36,6 +35,7 @@ interface Team {
   contact_phone: string | null;
   created_at: string;
   founded_on: string | null;
+  avatar_url?: string | null;
 }
 
 interface NewsRow {
@@ -44,7 +44,6 @@ interface NewsRow {
   body: string;
   author_user_id: string;
   published_at: string;
-  slug?: string | null;
 }
 
 interface ResultRow {
@@ -83,24 +82,6 @@ interface SeasonRecord {
   total: number;
 }
 
-// 2026-09-17: public roster. Same shape as PlayerRow in page.tsx —
-// duplicated here to keep this client component self-contained.
-interface RosterPlayer {
-  id: string;
-  first_name: string;
-  last_name: string;
-  position: string | null;
-  jersey_number: number | null;
-  shoots: string | null;
-  catches: string | null;
-  height_cm: number | null;
-  weight_kg: number | null;
-  birth_date: string | null;
-  headshot_url: string | null;
-  primary_position_category: string | null;
-  nationality: string | null;
-}
-
 interface Props {
   team: Team;
   news: NewsRow[];
@@ -115,7 +96,6 @@ interface Props {
   claimantDisplayName?: string | null;
   claimantRole?: string | null;
   teamTimezone?: string;
-  roster?: RosterPlayer[];
   /**
    * PR3 (2026-07-08): other public team_workspaces in the same home_city.
    * Empty array (the default) hides the section entirely. Fires when
@@ -140,42 +120,6 @@ interface Props {
     province_state: string | null;
     country: string | null;
   }>;
-  /**
-   * 2026-09-22 Per Arnel 06:22 CDT: collapsible 'About' section that
-   * sits BELOW the team header card and ABOVE Recent Results.
-   * Each entry is one paragraph. Rendered with <details>/<summary>
-   * + ▸ arrow that rotates 90° on open.
-   */
-  aboutParts?: string[];
-  /**
-   * 2026-09-22 Per Arnel 06:22 CDT: 'There should also be a section
-   * for highlights for the team'. Rendered between About and Recent
-   * Results. Each highlight has title, image, video URL, match date,
-   * home/away team names, league, source.
-   */
-  highlights?: Array<{
-    id: number;
-    title: string;
-    description: string | null;
-    video_url: string | null;
-    embed_url: string | null;
-    image_url: string | null;
-    match_date: string;
-    home_team_name: string | null;
-    away_team_name: string | null;
-    league_name: string | null;
-    source: string | null;
-    channel: string | null;
-  }>;
-  /**
-   * 2026-09-22 per Arnel 10:47 CDT: professional/junior teams should
-   * not show the 'Claim this team' button (it can only be abused —
-   * only amateur/community teams should be claimable by admins). The
-   * level comes from leagues.level (professional | amateur | junior | NULL).
-   * NULL falls through to the old behavior (claimable) so national-team
-   * programmes remain claimable.
-   */
-  teamLeagueLevel?: string | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -293,7 +237,6 @@ function ClaimBadge({
   teamName,
   claimantDisplayName,
   claimantRole,
-  teamLeagueLevel,
 }: {
   claimed: boolean;
   admins: AdminJoin[];
@@ -301,33 +244,7 @@ function ClaimBadge({
   teamName: string;
   claimantDisplayName?: string | null;
   claimantRole?: string | null;
-  teamLeagueLevel?: string | null;
 }) {
-  // 2026-09-22 per Arnel 10:47 CDT: professional + junior teams can't
-  // be claimed (only abuse surface — these are real orgs with staff).
-  // Show a 'Professional Team' badge instead. Amateur + NULL
-  // (national-team programmes) keep the claim button.
-  if (teamLeagueLevel === 'professional' || teamLeagueLevel === 'junior') {
-    const label = teamLeagueLevel === 'professional' ? 'Professional Team' : 'Junior Team';
-    return (
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          background: 'rgba(120,120,140,0.08)',
-          border: '1px solid rgba(120,120,140,0.3)',
-          borderRadius: 6,
-          padding: '0.25rem 0.75rem',
-          fontSize: '0.78rem',
-          fontWeight: 600,
-          color: 'rgba(255,255,255,0.7)',
-        }}
-      >
-        🏆 {label}
-      </div>
-    );
-  }
   if (claimed) {
     // Per Arnel (2026-06-24 14:32): "the badge should show whoever it is claimed by,
     // since they would have a profile with their role on team, or in organization."
@@ -406,10 +323,6 @@ export default function PublicTeamProfile({
   teamTimezone,
   cityTeams = [],
   cityRinks = [],
-  aboutParts = [],
-  highlights = [],
-  teamLeagueLevel = null,
-  roster = [],
 }: Props) {
   const flag = countryFlag(team.country_code);
   const levelLabel = team.level ? (LEVEL_LABELS[team.level] ?? team.level) : null;
@@ -430,43 +343,6 @@ export default function PublicTeamProfile({
   const [newsTitle, setNewsTitle] = useState('');
   const [newsBody, setNewsBody] = useState('');
   const [newsSaving, setNewsSaving] = useState(false);
-
-  // 2026-09-22 per Arnel 07:34 CDT: team-page highlight cards should
-  // open an in-page modal (iframe embed + companion article snippet),
-  // matching the home-page HighlightsGrid UX. Previous behavior linked
-  // straight to YouTube embed URL via target="_blank", which on mobile
-  // shows "Video player configuration error 153" because YouTube
-  // refuses to play an /embed/ URL when navigated to as a top-level page.
-  const [selectedHighlight, setSelectedHighlight] = useState<typeof highlights[number] | null>(null);
-  const [companionArticle, setCompanionArticle] = useState<{
-    slug: string; title: string; excerpt: string; subtitle?: string; og_image_url?: string; reading_time_minutes?: number;
-  } | null>(null);
-  const [companionLoading, setCompanionLoading] = useState(false);
-  useEffect(() => {
-    if (!selectedHighlight) { setCompanionArticle(null); return; }
-    let cancelled = false;
-    setCompanionArticle(null);
-    setCompanionLoading(true);
-    fetch(`/api/blog/posts?highlight_id=${selectedHighlight.id}`)
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        const found = d?.data?.[0] || null;
-        if (found) {
-          setCompanionArticle({
-            slug: found.slug,
-            title: found.title,
-            excerpt: found.subtitle || found.excerpt || '',
-            subtitle: found.subtitle,
-            og_image_url: found.og_image_url,
-            reading_time_minutes: found.reading_time_minutes,
-          });
-        }
-        setCompanionLoading(false);
-      })
-      .catch(() => { if (!cancelled) setCompanionLoading(false); });
-    return () => { cancelled = true; };
-  }, [selectedHighlight]);
 
   async function submitNews(e: React.FormEvent) {
     e.preventDefault();
@@ -575,31 +451,31 @@ export default function PublicTeamProfile({
           />
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <h1
-              className="font-sport"
+          {team.avatar_url && (
+            <img
+              src={team.avatar_url}
+              alt={`${team.name} logo`}
               style={{
-                fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
-                color: '#fff',
-                letterSpacing: '0.03em',
-                margin: 0,
-                lineHeight: 1,
+                width: 64,
+                height: 64,
+                objectFit: 'contain',
+                flexShrink: 0,
+                borderRadius: 8,
               }}
-            >
-              {flag} {team.name}
-            </h1>
-            {/* Formerly known as — only for teams with franchise chains
-                (e.g. Utah Hockey Club was formerly Phoenix Coyotes).
-                Arnel directive 2026-10-05. */}
-            {(() => {
-              const chain = getChainForSlug(team.slug);
-              if (!chain || chain.chain.length < 2) return null;
-              const priorNames = chain.chain.slice(0, -1).map((e: { name: string }) => e.name);
-              return (
-                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.35rem' }}>
-                  Formerly known as {priorNames.join(', ')}
-                </p>
-              );
-            })()}
+            />
+          )}
+          <h1
+            className="font-sport"
+            style={{
+              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              color: '#fff',
+              letterSpacing: '0.03em',
+              margin: 0,
+              lineHeight: 1,
+            }}
+          >
+            {flag} {team.name}
+          </h1>
             <ClaimBadge
               claimed={claimed}
               admins={admins}
@@ -607,7 +483,6 @@ export default function PublicTeamProfile({
               teamName={team.name}
               claimantDisplayName={claimantDisplayName}
               claimantRole={claimantRole}
-              teamLeagueLevel={teamLeagueLevel}
             />
             <ShareButton
               payload={buildTeamShare({
@@ -699,277 +574,8 @@ export default function PublicTeamProfile({
         </div>
       </section>
 
-      {/* 2026-09-22 Per Arnel 06:22 CDT: 'move the expandable about team
-          section under the team section (above recent results)'.
-          Renders the <details>/<summary> block between the hero card
-          and the two-column Recent Results / Upcoming layout. */}
-      {aboutParts.length > 0 && (
-        <section
-          aria-label={`About ${team.name}`}
-          style={{ marginBottom: '1.5rem' }}
-        >
-          <style>{`details.team-about[open] > summary > .about-arrow { transform: rotate(90deg); }`}</style>
-          <details
-            className="team-about"
-            style={{
-              background: 'var(--s2)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '0',
-              overflow: 'hidden',
-            }}
-          >
-            <summary style={{
-              fontFamily: '"Bebas Neue", sans-serif',
-              fontSize: '1.5rem',
-              letterSpacing: '0.04em',
-              color: '#fff',
-              cursor: 'pointer',
-              listStyle: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              userSelect: 'none',
-              padding: '1rem 1.25rem',
-              margin: 0,
-            }}>
-              <span aria-hidden="true" style={{
-                display: 'inline-block',
-                width: '1em',
-                transition: 'transform 150ms ease',
-                color: '#FFB81C',
-                fontWeight: 700,
-              }} className="about-arrow">▸</span>
-              <span>About {team.name}</span>
-            </summary>
-            <div style={{
-              color: 'rgba(255,255,255,0.85)',
-              lineHeight: 1.6,
-              fontSize: '0.9375rem',
-              padding: '0 1.25rem 1rem 1.25rem',
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-            }}>
-              {aboutParts.map((p, i) => (
-                <p key={i} style={{ marginBottom: i < aboutParts.length - 1 ? '0.75rem' : 0, marginTop: i === 0 ? '0.75rem' : 0 }}>{p}</p>
-              ))}
-            </div>
-          </details>
-        </section>
-      )}
-
-      {/* 2026-09-22 Per Arnel 06:22 CDT: 'There should also be a section
-          for highlights for the team'. Renders the 8 most recent
-          video highlights from highlight_backups matched by team name.
-          Grid layout: image + title + match metadata. Click navigates
-          to the highlight page (YouTube/embed URL). Wrapped in a
-          horizontal-scroll container on mobile (cards stay
-          tappable-sized 160px wide). */}
-      {highlights.length > 0 && (
-        <section style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
-              HIGHLIGHTS
-            </h2>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>({highlights.length})</span>
-          </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: '0.75rem',
-          }}>
-            {highlights.map((h) => {
-              const homeTeam = h.home_team_name || 'Home';
-              const awayTeam = h.away_team_name || 'Away';
-              return (
-                <button
-                  key={h.id}
-                  type="button"
-                  onClick={() => setSelectedHighlight(h)}
-                  aria-label={`Play highlight: ${h.title}`}
-                  style={{
-                    background: 'var(--s2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'border-color 150ms ease',
-                    cursor: 'pointer',
-                    padding: 0,
-                    textAlign: 'left',
-                    font: 'inherit',
-                  }}
-                >
-                  <div style={{
-                    background: h.image_url ? `url(${h.image_url}) center/cover no-repeat` : 'rgba(255,255,255,0.05)',
-                    aspectRatio: '16/9',
-                    position: 'relative',
-                  }}>
-                    {h.video_url && (
-                      <div style={{
-                        position: 'absolute', top: '50%', left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 36, height: 36,
-                        borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.6)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#fff', fontSize: '1rem',
-                      }}>▶</div>
-                    )}
-                  </div>
-                  <div style={{ padding: '0.625rem 0.75rem' }}>
-                    <div style={{ fontSize: '0.8125rem', color: '#fff', fontWeight: 600, lineHeight: 1.3, marginBottom: '0.3rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {h.title}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
-                      {awayTeam} @ {homeTeam} · {(h.match_date || '').slice(0, 10)}{(() => {
-                        // 2026-09-22 per Arnel 07:57 CDT: highlight_backups.league_name
-                        // is stored as a JSON object string (e.g. '{"id":49291,"logo":"...","name":"NHL","season":2026}')
-                        // because the sync script wrote the whole match.league object
-                        // instead of just match.league.name. Parse defensively — fall back
-                        // to the raw string if it's not JSON so we don't crash on legacy rows.
-                        const ln = h.league_name;
-                        if (!ln) return '';
-                        try {
-                          const parsed = JSON.parse(ln);
-                          return parsed?.name ? ` · ${parsed.name}` : '';
-                        } catch {
-                          return ` · ${ln}`;
-                        }
-                      })()}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* 2026-09-22 Per Arnel 07:34 CDT: highlight modal matching the
-          home-page HighlightsGrid UX. Iframe embeds the video so mobile
-          users don't see "Video player configuration error 153" (which
-          happens when /embed/ URLs are navigated to as top-level pages).
-          Companion article (when published) shows a snippet + View Full
-          Article link below the video. Close on backdrop click or X. */}
-      {selectedHighlight && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={selectedHighlight.title}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0,0,0,0.9)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '1rem',
-            overflowY: 'auto',
-          }}
-          onClick={() => setSelectedHighlight(null)}
-        >
-          <div
-            style={{ width: '100%', maxWidth: '900px' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
-              <h3 style={{ color: '#fff', fontSize: '1rem', fontWeight: 700, margin: 0 }}>{selectedHighlight.title}</h3>
-              <button
-                type="button"
-                onClick={() => setSelectedHighlight(null)}
-                aria-label="Close"
-                style={{
-                  background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px',
-                  color: '#fff', padding: '0.5rem 1rem', cursor: 'pointer',
-                  fontSize: '0.9rem',
-                }}
-              >
-                Close
-              </button>
-            </div>
-            {selectedHighlight.embed_url ? (
-              <iframe
-                src={selectedHighlight.embed_url}
-                style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', border: 0 }}
-                allowFullScreen
-                title={selectedHighlight.title}
-              />
-            ) : selectedHighlight.video_url ? (
-              <a
-                href={selectedHighlight.video_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block', background: '#C8102E', color: '#fff',
-                  padding: '1rem', borderRadius: '8px', textAlign: 'center',
-                  textDecoration: 'none', fontWeight: 700,
-                }}
-              >
-                Watch on {selectedHighlight.source || 'external site'}
-              </a>
-            ) : (
-              <div style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', padding: '2rem', borderRadius: '8px', textAlign: 'center' }}>
-                Video unavailable. <a href={`/directory/highlights/${selectedHighlight.id}`} style={{ color: '#FFB81C' }}>View highlight page →</a>
-              </div>
-            )}
-
-            {companionArticle && (
-              <div
-                style={{
-                  marginTop: '1.25rem',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '8px',
-                  padding: '1.25rem',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <span style={{
-                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em',
-                    color: '#FFB81C', textTransform: 'uppercase',
-                  }}>MATCH STORY</span>
-                  {companionArticle.reading_time_minutes ? (
-                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
-                      · {companionArticle.reading_time_minutes} min read
-                    </span>
-                  ) : null}
-                </div>
-                <h4 style={{ color: '#fff', fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem', lineHeight: 1.3 }}>
-                  {companionArticle.title}
-                </h4>
-                {companionArticle.excerpt && (
-                  <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
-                    {companionArticle.excerpt}
-                  </p>
-                )}
-                <a
-                  href={`/news/${companionArticle.slug}`}
-                  style={{
-                    display: 'inline-block', marginTop: '0.85rem',
-                    color: '#FFB81C', fontWeight: 700, fontSize: '0.85rem',
-                    textDecoration: 'none', letterSpacing: '0.04em',
-                  }}
-                >
-                  View full article →
-                </a>
-              </div>
-            )}
-            {companionLoading && !companionArticle && (
-              <div style={{ marginTop: '1.25rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-                Checking for match story…
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Two-column layout (stacks on narrow screens) ──────────────────────
-          Per Arnel 2026-09-22 03:27 CDT: 'after clicking Toronto Maple
-          Leafs it goes to proper page, but it is visually unappealing...
-          not optimized for mobile, exceeding margins'. Fix: use
-          auto-fit so the grid stacks below 700px (covers iPhone 14 Pro
-          Max at 430px and tablet portrait at 768px naturally). */}
-      <div className="team-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+      {/* ── Two-column layout ───────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1.5rem', alignItems: 'start' }}>
 
         {/* ── Left column ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -1164,33 +770,6 @@ export default function PublicTeamProfile({
               <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem' }}>No published team updates yet.</p>
             )}
           </section>
-
-          {/* 2026-09-17: Public roster. Groups players by position category
-              (Forwards / Defensemen / Goalies / Unknown) so the reader can
-              scan the section quickly. Falls back to a flat grid when no
-              categories are present. */}
-          {roster.length > 0 && (
-            <section style={{ marginTop: '2rem' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between',
-                  marginBottom: '0.875rem',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                }}
-              >
-                <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
-                  ROSTER — {roster.length} PLAYERS
-                </h2>
-                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                  Click a player to view their profile
-                </span>
-              </div>
-              <RosterGrid roster={roster} />
-            </section>
-          )}
 
           {/* Contact + team info */}
           <section>
@@ -1526,22 +1105,17 @@ function ScheduleCard({ game, timeZone }: { game: ScheduleRow; timeZone?: string
 }
 
 function NewsCard({ item }: { item: NewsRow }) {
-  // 2026-09-22 per Arnel 05:33 CDT: 'all team pages should be well
-  // populated and accurate' — surface published articles as cross-links
-  // when item.slug is present (auto-fallback in page.tsx attaches posts
-  // linked to fixtures where this team is home or away).
-  const cardStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.07)',
-    borderRadius: 8,
-    padding: '0.875rem 1rem',
-    display: 'block',
-    color: 'inherit',
-  };
-  const inner = (
-    <>
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 8,
+        padding: '0.875rem 1rem',
+      }}
+    >
       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.3rem' }}>
-        {formatDate(item.published_at)}{item.slug ? <span style={{ color: '#C8102E', marginLeft: '0.5rem' }}>↗ read</span> : null}
+        {formatDate(item.published_at)}
       </div>
       <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem', lineHeight: 1.3 }}>
         {item.title}
@@ -1559,20 +1133,8 @@ function NewsCard({ item }: { item: NewsRow }) {
       >
         {item.body}
       </div>
-    </>
+    </div>
   );
-  if (item.slug) {
-    return (
-      <Link
-        href={`/news/${item.slug}`}
-        style={{ ...cardStyle, textDecoration: 'none' }}
-        className="news-card-link"
-      >
-        {inner}
-      </Link>
-    );
-  }
-  return <div style={cardStyle}>{inner}</div>;
 }
 
 function InfoRow({ label, value, linkHref, linkLabel }: { label: string; value: React.ReactNode; linkHref?: string | null; linkLabel?: string }) {
@@ -1592,93 +1154,6 @@ function InfoRow({ label, value, linkHref, linkLabel }: { label: string; value: 
       <span style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'right' }}>
         {linkHref ? <Link href={linkHref} style={{ color: '#FFB81C', textDecoration: 'none' }}>{linkLabel ?? value}</Link> : value}
       </span>
-    </div>
-  );
-}
-// 2026-09-17: Roster renderer. Groups by primary_position_category so
-// the user sees Forwards / Defensemen / Goalies separately. Players
-// with no position land in an "Other" bucket.
-function RosterGrid({ roster }: { roster: RosterPlayer[] }) {
-  const groups: { label: string; items: RosterPlayer[] }[] = [
-    { label: 'Goalies', items: [] },
-    { label: 'Defensemen', items: [] },
-    { label: 'Forwards', items: [] },
-    { label: 'Other', items: [] },
-  ];
-  for (const p of roster) {
-    const cat = (p.primary_position_category || '').toLowerCase();
-    if (cat === 'goaltender') groups[0].items.push(p);
-    else if (cat === 'defenseman') groups[1].items.push(p);
-    else if (cat === 'forward') groups[2].items.push(p);
-    else groups[3].items.push(p);
-  }
-  const visibleGroups = groups.filter(g => g.items.length > 0);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {visibleGroups.map(group => (
-        <div key={group.label}>
-          <div
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#C8102E',
-              marginBottom: '0.5rem',
-            }}
-          >
-            {group.label}
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginLeft: '0.5rem' }}>
-              {group.items.length}
-            </span>
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: '0.5rem',
-            }}
-          >
-            {group.items.map(p => (
-              <Link
-                key={p.id}
-                href={`/directory/players/${p.id}`}
-                style={{
-                  background: 'var(--s2)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  padding: '0.75rem 0.875rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  textDecoration: 'none',
-                }}
-              >
-                {p.headshot_url ? (
-                  <img
-                    src={p.headshot_url}
-                    alt={`${p.first_name} ${p.last_name}`}
-                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: '#1a2D45' }}
-                  />
-                ) : (
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a2D45', flexShrink: 0 }} />
-                )}
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.first_name} {p.last_name}
-                  </p>
-                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
-                    {p.position?.replace(/_/g, ' ') ?? '—'}
-                    {p.jersey_number != null ? ` · #${p.jersey_number}` : ''}
-                    {p.shoots ? ` · ${p.shoots === 'L' ? 'L' : p.shoots === 'R' ? 'R' : ''}` : ''}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

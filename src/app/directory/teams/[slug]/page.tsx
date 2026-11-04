@@ -8,11 +8,6 @@ import { isIdentityVerified } from '@/lib/identity-verified';
 import { timezoneForCountry } from '@/lib/team-timezone';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 import { buildTeamFAQs } from '@/lib/team-context';
-import FollowButton from '@/components/FollowButton';
-import PassportStampsBanner from '@/components/PassportStampsBanner';
-import ClaimListingNudge from '@/components/ClaimListingNudge';
-import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
-import TeamStandingsClient from '@/components/TeamStandingsClient';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -80,7 +75,7 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-interface HierarchyRef { id: string; name: string; slug: string | null; level?: string | null }
+interface HierarchyRef { id: string; name: string; slug: string | null }
 
 interface TeamRow {
   id: string;
@@ -112,6 +107,7 @@ interface TeamRow {
   federation: HierarchyRef | null;
   organization: HierarchyRef | null;
   league: HierarchyRef | null;
+  avatar_url: string | null;
 }
 
 interface NewsRow {
@@ -120,25 +116,6 @@ interface NewsRow {
   body: string;
   author_user_id: string;
   published_at: string;
-  slug?: string | null;
-}
-
-// 2026-09-17: Public roster surfaced from the existing players table.
-// We only return fields that are safe to display publicly (no PII).
-interface PlayerRow {
-  id: string;
-  first_name: string;
-  last_name: string;
-  position: string | null;
-  jersey_number: number | null;
-  shoots: string | null;
-  catches: string | null;
-  height_cm: number | null;
-  weight_kg: number | null;
-  birth_date: string | null;
-  headshot_url: string | null;
-  primary_position_category: string | null;
-  nationality: string | null;
 }
 
 interface ResultRow {
@@ -272,10 +249,13 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // this is a server-rendered page that only exposes public-profile fields.)
   const { data: teamData } = await supabaseAdmin
     .from('team_workspaces')
-    .select('*, federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug,level)')
+    .select('*, federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug), avatar_url')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle<TeamRow>();
+
+  // Team logo (uploaded via dashboard settings → POST /api/team/[slug]/logo).
+  // Stored in Supabase `team-logos` bucket; path is team_workspaces.avatar_url.
 
   if (!teamData) notFound();
   const team = teamData as TeamRow;
@@ -285,7 +265,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const seasonStart = new Date();
   seasonStart.setMonth(seasonStart.getMonth() - 18);
 
-  const [newsRes, resultsRes, upcomingEventsRes, adminsRes, playersRes] = await Promise.all([
+  const [newsRes, resultsRes, upcomingEventsRes, adminsRes] = await Promise.all([
     supabase
       .from('team_news')
       .select('id, title, body, author_user_id, published_at')
@@ -317,61 +297,10 @@ export default async function PublicTeamPage({ params }: PageProps) {
       .is('left_at', null)
       .in('role', ['head_coach', 'assistant_coach', 'manager', 'team_staff'])
       .order('joined_at'),
-    // 2026-09-17: public roster. anon-readable, capped at 80 to keep the
-    // page snappy; teams with more players still get the full count from
-    // the `players.length` shown in the heading.
-    supabase
-      .from('players')
-      .select('id, first_name, last_name, position, jersey_number, shoots, catches, height_cm, weight_kg, birth_date, headshot_url, primary_position_category, nationality')
-      .eq('team_id', team.id)
-      .eq('is_active', true)
-      .order('jersey_number', { ascending: true })
-      .limit(80)
-      .returns<PlayerRow[]>(),
   ]);
 
-  let news: NewsRow[] = newsRes.data || [];
-  let results: ResultRow[] = resultsRes.data || [];
-  const roster: PlayerRow[] = playersRes.data || [];
-  // 2026-09-22 per Arnel 05:33 CDT: 'all team pages should be well
-  // populated and accurate'. team_news is user-entered; for leagues
-  // with automated ingest, fall back to published posts linked to
-  // this team's fixtures. Cross-link article titles + bodies.
-  if (news.length === 0) {
-    const { data: teamPosts } = await supabase
-      .from('posts')
-      .select('id, slug, title, subtitle, body, category, reading_time_minutes, author_name, published_at, team_home_id, team_away_id')
-      .or(`team_home_id.eq.${team.id},team_away_id.eq.${team.id}`)
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(10);
-    if (teamPosts && teamPosts.length > 0) {
-      news = teamPosts.map((p: any): NewsRow => ({
-        id: p.id,
-        title: p.title,
-        body: p.body || '',
-        author_user_id: '',
-        published_at: p.published_at,
-        slug: p.slug,
-      }));
-    }
-  }
-
-  // 2026-09-22 Per Arnel 06:22 CDT: 'There should also be a section
-  // for highlights for the team'. highlight_backups.home_team_id /
-  // away_team_id are Highlightly numeric IDs (not our Supabase UUIDs),
-  // so we match by team name OR common aliases (city, abbrev).
-  const teamAliases = [team.name, team.short_name, team.home_city].filter(Boolean).map(s => String(s).replace(/[%_\\]/g, '\\$&'));
-  const orClauses = teamAliases.flatMap(a => [`home_team_name.ilike.%${a}%`, `away_team_name.ilike.%${a}%`]).join(',');
-  // 2026-09-22: use supabaseAdmin (service role) because RLS on
-  // highlight_backups blocks anon reads. The page only exposes
-  // public fields anyway (no auth tokens, no PII).
-  const { data: teamHighlights } = await supabaseAdmin
-    .from('highlight_backups')
-    .select('id, title, description, video_url, embed_url, image_url, match_date, home_team_name, away_team_name, league_name, source, channel')
-    .or(orClauses)
-    .order('match_date', { ascending: false })
-    .limit(8);
+  const news: NewsRow[] = newsRes.data || [];
+  const results: ResultRow[] = resultsRes.data || [];
   // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
   const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
     id: string;
@@ -383,7 +312,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     rink_id?: string | null;
     timezone?: string | null;
   }>;
-  let upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e): ScheduleRow => ({
+  const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e): ScheduleRow => ({
     id: `evt_${e.id}`, // prefix to avoid ID collision with team_schedule rows
     scheduled_at: e.starts_at,
     opponent: e.opposing_team,
@@ -394,106 +323,11 @@ export default async function PublicTeamPage({ params }: PageProps) {
     is_cancelled: false,
     timezone: e.timezone ?? null,
   }));
-
-  // 2026-09-22 per Arnel 05:33 CDT: 'all team pages should be well
-  // populated and accurate'. The team_results + team_events tables
-  // are user-entered (coaches/managers post their own scores). For
-  // leagues with automated data ingest (NHL, KHL, SHL, DEL, etc.),
-  // the real data lives in the `fixtures` table. So if results is
-  // empty, fall back to fixtures (recent completed games) and if
-  // upcomingFromEvents is empty, fall back to fixtures (next 10
-  // scheduled/in-progress games). Direction-agnostic (home OR away).
-  // This is the highest-impact single change for team-page completeness.
-  if (results.length === 0) {
-    const { data: fixtureResults } = await supabaseAdmin
-      .from('fixtures')
-      .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
-      .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
-      .eq('status', 'completed')
-      .order('scheduled_at', { ascending: false })
-      .limit(20);
-    if (fixtureResults && fixtureResults.length > 0) {
-      results = fixtureResults.map((f: any): ResultRow => {
-        const isHome = f.home_team_id === team.id;
-        const ourScore = isHome ? f.home_score : f.away_score;
-        const theirScore = isHome ? f.away_score : f.home_score;
-        const oppTeam = isHome ? f.away_team : f.home_team;
-        let outcome: 'W' | 'L' | 'T' = 'T';
-        if (ourScore != null && theirScore != null) {
-          if (ourScore > theirScore) outcome = 'W';
-          else if (ourScore < theirScore) outcome = 'L';
-        }
-        return {
-          id: f.id,
-          game_date: (f.scheduled_at || '').slice(0, 10),
-          opponent: oppTeam?.name || 'TBD',
-          home_away: isHome ? 'home' : 'away',
-          our_score: ourScore ?? 0,
-          their_score: theirScore ?? 0,
-          outcome,
-          notes: null,
-        };
-      });
-    }
-  }
-
-  if (upcomingFromEvents.length === 0) {
-    const { data: fixtureUpcoming } = await supabaseAdmin
-      .from('fixtures')
-      .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
-      .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
-      .in('status', ['scheduled', 'in_progress'])
-      .order('scheduled_at', { ascending: true })
-      .limit(10);
-    if (fixtureUpcoming && fixtureUpcoming.length > 0) {
-      upcomingFromEvents = fixtureUpcoming.map((f: any): ScheduleRow => {
-        const isHome = f.home_team_id === team.id;
-        const oppTeam = isHome ? f.away_team : f.home_team;
-        return {
-          id: `fx_${f.id}`,
-          scheduled_at: f.scheduled_at,
-          opponent: oppTeam?.name || 'TBD',
-          kind: 'game',
-          venue: null,
-          home_away: isHome ? 'home' : 'away',
-          notes: null,
-          is_cancelled: f.status === 'cancelled',
-        };
-      });
-    }
-  }
-
   // team_events is the canonical source (team_schedule was dropped). Sort by
   // scheduled_at ascending, take top 10.
   const mergedUpcoming: ScheduleRow[] = [...upcomingFromEvents]
     .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
     .slice(0, 10);
-
-  // 2026-10-14 (Phase 4): also pull the most recent 10 completed
-  // fixtures for this team. This complements the manually-entered
-  // team_results table; for top leagues (NHL/AHL/etc.) the auto
-  // ingest is the more accurate source. Renders as a "Recent
-  // results" module on the team page.
-  const { data: fixtureRecentRes } = await supabaseAdmin
-    .from('fixtures')
-    .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug), league:leagues!fixtures_league_id_fkey(id, name, slug)')
-    .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
-    .eq('status', 'completed')
-    .order('scheduled_at', { ascending: false })
-    .limit(10);
-  const fixtureRecent: Array<{
-    id: string; scheduled_at: string; home_score: number | null; away_score: number | null;
-    home_team_id: string; away_team_id: string;
-    home_team: { name: string; slug: string } | null;
-    away_team: { name: string; slug: string } | null;
-    league: { id: string; name: string; slug: string } | null;
-    season: string | null;
-  }> = (fixtureRecentRes as any) || [];
-
-  // Derive current season for standings widget from most recent fixture
-  const currentSeason = fixtureRecent[0]?.season ?? `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}`;
-
-  const nextGameForCountdown = mergedUpcoming[0] || null;
 
   interface AdminJoin {
     user_id: string;
@@ -665,16 +499,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   if (foundedYear) {
     introParts.push(`${team.name} were founded in ${foundedYear}.`);
   }
-  // 2026-09-22 audit fix (bug #9): removed the RinkStop marketing
-  // boilerplate that appeared on every team page. That paragraph
-  // ("RinkStop is the open hockey directory...") was duplicated
-  // content across all 2,600+ team pages — thin SEO + dilutes
-  // team-specific content. Replaced with a team-focused sentence
-  // that varies per team (city + league + level) so each page has
-  // unique copy.
-  if (location && tLeagueName) {
-    introParts.push(`Follow ${team.name} on RinkStop for upcoming games, recent results, and roster updates across the season.`);
-  }
+  introParts.push(`This RinkStop team page shows the full roster, schedule, results, upcoming games, recent news, and venue information. Each section — roster, schedule, results, news — links into the wider hockey directory so visitors can follow the team, league, and city into related teams, rinks, and competitions. RinkStop is the open hockey directory: every team, league, player, and rink on this site has a public profile page.`);
 
   // 2026-09-03 PR #197: build FAQ entries from DB-only data + emit JSON-LD.
   const teamFaqs = buildTeamFAQs({
@@ -728,143 +553,33 @@ export default async function PublicTeamPage({ params }: PageProps) {
   }
   const teamJsonLdString = JSON.stringify(teamJsonLd).replace(/</g, '\\u003c');
 
-  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
-  // page view is the second step in the funnel. Fire listing_viewed.
-  try {
-    const { trackEvent } = await import('@/lib/analytics');
-    await trackEvent({
-      name: 'listing_viewed',
-      pathname: `/directory/teams/${team.slug}`,
-      props: {
-        listing_type: 'team',
-        listing_slug: team.slug,
-        listing_id: team.id,
-        league_id: team.league_id ?? null,
-        city: team.home_city ?? null,
-        country: team.home_country ?? null,
-        is_active: team.is_active ?? true,
-      },
-    });
-  } catch {
-    // never block the page on tracking
-  }
-
   return (
     <>
-      {/* WS30 conversion overhaul (Arnel 2026-10-01):
-          Above-the-fold claim nudge for unclaimed teams + owner banner for
-          the approved owner. Renders BEFORE the PublicTeamProfile client
-          component so it lands in the first viewport on mobile and desktop. */}
-      <ClaimListingNudge entityType="team" entityId={team.id} entityName={team.name} />
-      <ClaimedOwnerBanner entityType="team" entityId={team.id} />
-      {/* 2026-10-14 (Phase 5): 'Follow this team' button. localStorage-
-          backed, no login. State shared with the home 'Your teams' strip. */}
-      <div style={{ maxWidth: '1280px', margin: '0.75rem auto 0', padding: '0 1.5rem' }}>
-        <FollowButton teamSlug={team.slug} teamName={team.name} />
-      </div>
-
       {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: teamJsonLdString }}
       />
-      {/* 2026-09-22 Per Arnel 03:27 CDT: large description block at top
-          pushed actual content below the fold on mobile. Hide all but
-          the first paragraph by default on narrow screens; show full
-          set when 'Show more' is clicked. CSS-only via :target trick
-          would need an anchor; instead use a small inline-script-free
-          approach: collapse the block to a 2-paragraph preview on
-          narrow screens via max-height + overflow:hidden, and let
-          the user tap to expand via a details/summary element. */}
-      <style>{`details[open] > summary > .about-arrow { transform: rotate(90deg); }`}</style>
-      {/* 2026-10-14 (Phase 4): recent results from fixtures + next
-          game countdown + standings link. Each module gates on its
-          own data. The user-facing motivation: teams_results table is
-          manually entered and not always populated; the fixtures
-          ingest gives us the most accurate record for top leagues. */}
-      {(fixtureRecent.length > 0 || nextGameForCountdown) && (
-        <div style={{ maxWidth: '1280px', margin: '1.5rem auto 0', padding: '0 1.5rem' }} data-team-fixtures>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
-            {/* Next game countdown */}
-            {nextGameForCountdown && (() => {
-              const dt = new Date(nextGameForCountdown.scheduled_at);
-              const ms = dt.getTime() - Date.now();
-              if (ms < 0) return null;
-              const days = Math.floor(ms / 86400000);
-              const hours = Math.floor((ms % 86400000) / 3600000);
-              const mins = Math.floor((ms % 3600000) / 60000);
-              const opp = nextGameForCountdown.opponent || 'TBD';
-              const ha = nextGameForCountdown.home_away;
-              const haLabel = ha === 'home' ? 'vs' : 'at';
-              return (
-                <Link
-                  href={`/directory/games/${nextGameForCountdown.id.replace(/^fx_/, '')}`}
-                  style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', textDecoration: 'none', color: 'inherit' }}
-                >
-                  <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>Next game</p>
-                  <p style={{ color: '#fff', fontSize: '1.125rem', fontWeight: 700, margin: '0.25rem 0 0.5rem' }}>{haLabel} {opp}</p>
-                  <p style={{ color: '#FFB81C', fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>
-                    {days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}
-                  </p>
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>until puck drop →</p>
-                </Link>
-              );
-            })()}
-            {/* Standings widget — replaces the static link */}
-            <TeamStandingsClient
-              teamId={team.id}
-              teamSlug={team.slug}
-              teamName={team.name}
-              leagueSlug={team.league?.slug ?? null}
-              season={currentSeason}
-            />
+      <section
+        aria-label={`About ${team.name}`}
+        style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1.5rem' }}
+      >
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1.25rem 1.5rem' }}>
+          <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.75rem' }}>
+            About {team.name}
+          </h2>
+          <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
+            {introParts.map((p, i) => (
+              <p key={i} style={{ marginBottom: i < introParts.length - 1 ? '0.75rem' : 0 }}>{p}</p>
+            ))}
           </div>
-
-          {/* Recent results (from fixtures) */}
-          {fixtureRecent.length > 0 && (
-            <div style={{ marginTop: '0.75rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
-              <h2 style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: '0 0 0.75rem' }}>Recent results</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                {fixtureRecent.map((m) => {
-                  const isHome = m.home_team_id === team.id;
-                  const myScore = isHome ? m.home_score : m.away_score;
-                  const theirScore = isHome ? m.away_score : m.home_score;
-                  const opp = isHome ? m.away_team?.name : m.home_team?.name;
-                  let resultLabel: 'W' | 'L' | 'OTL' | null = null;
-                  if (myScore !== null && theirScore !== null) {
-                    if (myScore > theirScore) resultLabel = 'W';
-                    else if (myScore < theirScore) resultLabel = 'L';
-                  }
-                  return (
-                    <Link key={m.id} href={`/directory/games/${m.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{new Date(m.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {resultLabel && (
-                          <span style={{
-                            display: 'inline-block', width: '1.5rem', height: '1.5rem', lineHeight: '1.5rem',
-                            textAlign: 'center', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700,
-                            background: resultLabel === 'W' ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)',
-                            color: resultLabel === 'W' ? '#34d399' : '#f87171',
-                          }}>{resultLabel}</span>
-                        )}
-                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{isHome ? 'vs' : '@'} {opp || '?'}</span>
-                      </span>
-                      <span style={{ color: '#fff', fontWeight: 700 }}>{myScore ?? '–'}–{theirScore ?? '–'}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
-      )}
-
+      </section>
       <PublicTeamProfile
         team={team}
         news={news}
         results={results}
         upcoming={mergedUpcoming}
-        roster={roster}
         admins={admins}
         claimed={isVerifiedClaim}
         claimedByUserId={claimRow?.user_id ?? null}
@@ -876,17 +591,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
         teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
         cityTeams={cityTeams}
         cityRinks={cityRinks}
-        aboutParts={introParts}
-        highlights={teamHighlights || []}
-        teamLeagueLevel={team.league?.level ?? null}
       />
-
-      {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). Placed
-          below the PublicTeamProfile so visitors scrolling past the team
-          record see a reason to claim their own lifetime hockey record. */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
-        <PassportStampsBanner variant="team" contextName={team.name} />
-      </div>
 
       {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
           Required per MEMORY.md § AdSense-Compliant Content Rules:
