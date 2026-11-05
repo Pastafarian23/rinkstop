@@ -108,6 +108,26 @@ if ! node scripts/_audit-rls-pii.mjs 2>&1 | tail -40; then
   exit 1
 fi
 
+# Gate 6b: RLS-disabled table audit.
+# 2026-11-05 (Arnel forwarded the Supabase 2026-10-31 email): the advisor
+# flagged `rls_disabled_in_public` on public.spatial_ref_sys. Gate 6 above
+# audits a DIFFERENT class (anon-readable submitter PII) and never looked at
+# `relrowsecurity`, so this class of finding had no automated guard. The fix
+# written on 2026-10-10 (2026-10-10_security_advisor_fix.sql) was never
+# actually applied — its REVOKE silently no-opped because the executing role
+# (`postgres`) does not own the table (`supabase_admin` owns it).
+#
+# This gate FAILS until the anon/authenticated grants are revoked in the
+# Supabase Dashboard SQL editor (which runs as supabase_admin). That is
+# intentional: the exposure is real and must not be allowed to ship silently.
+echo "[6b/8] auditing for public tables exposed to anon WITHOUT RLS..."
+if ! node scripts/_audit-rls-disabled.mjs 2>&1 | tail -40; then
+  echo "FAIL: a public table is reachable by the anon role without RLS (see above)."
+  echo "      If it is extension-owned (supabase_admin), run the REVOKE from the"
+  echo "      Supabase Dashboard SQL Editor — the Management API cannot."
+  exit 1
+fi
+
 # Gate 7: claim-funnel pricing-copy consistency.
 # 2026-10-30 (Arnel-flagged): the claim search result card rendered
 # "Claim & Verify — from $99/yr →" directly under a header that said

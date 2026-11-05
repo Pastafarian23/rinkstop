@@ -762,3 +762,38 @@ by the submission's OWN type, not by "the first id that looks like a uuid".
 **Why hand-applied:** the bucket was created directly via the Supabase dashboard / API before the migration file was committed, so the file is now a no-op (`ON CONFLICT DO NOTHING`). Recording it here so future schema audits don't flag it as missing.
 
 **Verified live:** `SELECT id, name, public FROM storage.buckets WHERE name = 'team-logos'` → `{"id":"team-logos","name":"team-logos","public":true}`.
+
+---
+
+## 2026-11-05 — security advisor ERROR fixes (HAND-APPLIED, one statement outstanding)
+
+**Migration file:** `2026-11-05_security_advisor_rls_fix.sql`
+**Applied by:** KiloClaw (main session, webchat)
+**Method:** Direct SQL via Management API PAT (`/v1/projects/{ref}/database/query`), which executes as `postgres`.
+
+**Trigger:** Arnel forwarded a Supabase email dated 2026-10-31 flagging
+`rls_disabled_in_public` on `public.spatial_ref_sys` ("Anyone with your project URL can read, edit, and delete all data in this table because Row-Level Security is not enabled").
+
+**Verified BEFORE acting (this is the part that matters):**
+- Live `pg_class` scan: 185 public tables, exactly **1** with `relrowsecurity = false` — `spatial_ref_sys` (PostGIS internal SRID reference data, ~8,500 rows, no application data).
+- Live probe with the **public anon key**: `SELECT` → HTTP 200, `INSERT` → HTTP 201. A probe row (srid 99999) was created and immediately deleted; later probe (srid 99998) also cleaned up. Both confirmed gone.
+- The existing `scripts/_audit-rls-pii.mjs` (2026-10-30) audits anon-readable submitter PII — it never checked `relrowsecurity`. That is why this class had no guard.
+- The earlier fix `2026-10-10_security_advisor_fix.sql` was **never applied** — it is absent from this file. Its `REVOKE` on `spatial_ref_sys` had silently no-opped: the Management API runs as `postgres`, which is neither a superuser nor a member of `supabase_admin`, and the table is owned by `supabase_admin`. Every alternative was tried and failed with 42501 (`REVOKE`, `ALTER OWNER`, `GRANT supabase_privileged_role`, `SET ROLE`).
+
+**Applied and verified live (HTTP 201):**
+1. 4 `security_definer_view` ERRORs → recreated with `security_invoker = true`: `business_analytics_summary`, `business_analytics_top_listings`, `players_with_country`, `profile_tier_ranks`. A SECURITY DEFINER view runs with the OWNER's privileges and bypasses the underlying tables' RLS; `security_invoker` makes the CALLER's RLS apply.
+2. 7 `function_search_path_mutable` WARNs → `SET search_path = ''`. **Two bodies were rewritten in the same migration** (`get_home_page_data`, `is_game_indexable_batch`) because they had 21 unqualified table references between them — with an empty search_path those would have raised 42P01 "relation does not exist" at runtime. Both were schema-qualified to `public.*` and re-verified working (`get_home_page_data()` returns `rink_count: 1859`; `is_game_indexable_batch()` returns correct `index`/`noindex`).
+3. `b2b_prospects` + `conversion_daily_snapshots` deny-all policies confirmed present.
+
+**Advisor before → after:** ERROR 5 → 1 · WARN 66 → 59 · INFO 6.
+All 4 view errors cleared. All 7 search_path warnings cleared.
+
+**🔴 OUTSTANDING — needs the Dashboard SQL editor (1 statement, 30 seconds):**
+`spatial_ref_sys` is still anon-writable. The Management API cannot revoke on a table owned by `supabase_admin`. Run in **Supabase Dashboard → SQL Editor → New query → Run**:
+```sql
+REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated;
+REVOKE ALL ON TABLE public.spatial_ref_sys FROM PUBLIC;
+```
+**Verified impact of this revoke:** the only other PostGIS object is `venues.location` (geography); `venues` has RLS enabled with 2 policies, 0 rows, and unaffected grants. The app never references `spatial_ref_sys`.
+
+**New permanent guard:** `scripts/_audit-rls-disabled.mjs` (Gate 6b of `scripts/pre-push-guard.sh`) reads the live DB and FAILS the push if any public table is reachable by the anon role without RLS. It currently fails on `spatial_ref_sys` — intentionally, until the revoke above is applied.
