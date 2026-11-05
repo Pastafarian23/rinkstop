@@ -19,11 +19,21 @@ const ORG_TYPES = new Set(['rink', 'club', 'league', 'federation', 'arena', 'oth
 // Canonical organization tiers (2026-10-22 consolidation). Legacy values
 // are still accepted by the DB constraint, but the form only offers these.
 const TIER_OPTIONS = new Set([
+  'org_free',
   'org_plus',
   'org_pro',
   'org_elite',
   'org_enterprise',
 ]);
+
+// 2026-11-05 (Arnel): 'Submit listing shouldn't require paid plan. Let's use
+// this as a funnel to gain user info.'
+// The tier is now OPTIONAL and defaults to 'org_free'. Previously it was
+// required and only offered paid tiers, so submitting the form meant
+// committing to a $99+/year plan — for a page whose actual product is
+// "list your open ice". The DB constraint (fk_tier_interest) has always
+// allowed 'org_free'.
+const DEFAULT_TIER = 'org_free';
 
 function escapeHtml(s: string): string {
   return s
@@ -83,16 +93,17 @@ function thankYouPage(orgName: string, contactName: string): NextResponse {
 <body>
   <div class="wrap">
     <div class="check">✓</div>
-    <h1>Application received</h1>
-    <p>Thanks, ${escapeHtml(contactName)}. We have your application for <strong>${escapeHtml(orgName)}</strong> and will email you within 2 business days with onboarding steps.</p>
+    <h1>Listing request received</h1>
+    <p>Thanks, ${escapeHtml(contactName)}. We have your request for <strong>${escapeHtml(orgName)}</strong> and will email you within 2 business days with next steps. Nothing was charged — this is free to list.</p>
 
     <div class="card">
       <strong>What happens next:</strong>
       <ol>
-        <li>We review your application (usually same day)</li>
-        <li>If accepted, we email you a Stripe Express onboarding link so we can pay you out</li>
-        <li>Once your account is verified, you can start listing open ice from the RinkStop dashboard</li>
-        <li>Your 6-month 0% take-rate window starts when you publish your first listing</li>
+        <li>We review your listing (usually same day)</li>
+        <li>We email you to confirm your details and set up your listing</li>
+        <li>Your listing goes live in the RinkStop directory</li>
+        <li>You start publishing open ice slots from the dashboard</li>
+        <li>Your 6-month 0% take-rate window starts when you publish your first slot</li>
       </ol>
     </div>
 
@@ -145,9 +156,21 @@ export async function POST(request: NextRequest) {
   if (!ORG_TYPES.has(orgType)) return validationError('org_type', 'Please select an organization type.');
   if (!orgCity) return validationError('org_city', 'Please enter your city.');
   if (!orgCountry) return validationError('org_country', 'Please enter your country.');
-  if (!TIER_OPTIONS.has(tierInterest)) {
+  // Optional. If the visitor did not pick one (or sent an empty value),
+  // default to the free tier rather than rejecting the submission.
+  const tier = tierInterest || DEFAULT_TIER;
+  if (!TIER_OPTIONS.has(tier)) {
     return validationError('tier_interest', 'Please select a tier you are interested in.');
   }
+
+  // Funnel fields (2026-11-05). ice_type is a single select; primary_goal is
+  // a multi-checkbox, so form.getAll() returns an array.
+  const iceType = String(form.get('ice_type') || '').trim() || null;
+  const primaryGoals = form
+    .getAll('primary_goal')
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  const primaryGoal = primaryGoals.length ? primaryGoals.join(', ') : null;
 
   const monthlyIceHours = monthlyIceHoursRaw ? parseInt(monthlyIceHoursRaw, 10) : null;
   if (monthlyIceHours !== null && (Number.isNaN(monthlyIceHours) || monthlyIceHours < 0)) {
@@ -170,7 +193,9 @@ export async function POST(request: NextRequest) {
     org_city: orgCity,
     org_state: orgState,
     org_country: orgCountry,
-    tier_interest: tierInterest,
+    tier_interest: tier,
+    ice_type: iceType,
+    primary_goal: primaryGoal,
     monthly_ice_hours_estimate: monthlyIceHours,
     currently_uses_bookingsystem: currentBookingSystem,
     notes,

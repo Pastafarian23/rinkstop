@@ -23,9 +23,13 @@ import type { Metadata } from 'next';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
-  title: 'List Your Ice on RinkStop — Founding Partner Program',
+  // 2026-11-05 (Arnel: 'Submit listing shouldn't require paid plan. Let's use
+  // this as a funnel to gain user info'). Repositioned from a paid-plan
+  // application to a FREE ice-listing request — that is what the page
+  // actually delivers.
+  title: 'List Your Open Ice — Free Ice Marketplace Listing | RinkStop',
   description:
-    'Rinks, clubs, and leagues: list your open ice time on RinkStop and let coaches, parents, and teams find you. Founding partners pay 0% take-rate for the first 6 months.',
+    'Rinks, clubs, and leagues: list your open ice time on RinkStop for free. No plan or card required — we review every listing and you keep 100% of bookings for your first 6 months.',
   alternates: { canonical: 'https://rinkstop.com/launch' },
   robots: { index: true, follow: true },
 };
@@ -40,7 +44,49 @@ const ORG_TYPES = [
 ];
 
 // Canonical organization tiers (2026-10-22 consolidation).
+// 2026-11-05 (Arnel): 'Submit listing shouldn't require paid plan. Let's use
+// this as a funnel to gain user info, since submitted listings require
+// approval anyways.'
+//
+// The DB constraint (fk_tier_interest) has ALWAYS allowed 'org_free' — the
+// form just never offered it and made the field required, so the only way to
+// submit was to pick a paid tier. That blocked the one channel that
+// produces free ice listings while /add-listing advertises "Free to add".
+//
+// org_free is now the DEFAULT and the first option. A rink listing open ice
+// does not need payments, roster management, or API access — it needs a
+// listing. The paid tiers are offered as an upgrade for orgs that want
+// them, not as a toll to enter.
+// Funnel fields (2026-11-05). Arnel: 'Let's use this as a funnel to gain user
+// info'. These capture what we actually need to know to onboard a rink:
+// what kind of ice they have, and what outcome they want — so we can
+// prioritise who to contact first.
+const ICE_TYPES = [
+  'Public / open drop-in ice',
+  'Youth hockey practice slots',
+  'Adult pickup or league slots',
+  'Tournament or tournament-host ice',
+  'Private rental only',
+  'Mixed — several of the above',
+];
+
+const GOAL_OPTIONS = [
+  'Fill empty hours',
+  'Fill specific off-peak times',
+  'Replace a booking system',
+  'Reach new families or players',
+  'Host tournaments or events',
+  'Just want our listing live',
+];
+
 const TIER_OPTIONS = [
+  {
+    value: 'org_free',
+    label: 'Just get listed',
+    price: 'Free',
+    blurb: 'List your ice and get discovered. No plan, no card, no commitment.',
+    popular: false,
+  },
   {
     value: 'org_plus',
     label: 'Organization Plus',
@@ -107,7 +153,7 @@ export default async function LaunchPage() {
             marginBottom: '0.5rem',
           }}
         >
-          Founding Partner Program
+          Free listing · No plan required
         </div>
         <h1
           style={{
@@ -118,7 +164,7 @@ export default async function LaunchPage() {
             letterSpacing: '0.02em',
           }}
         >
-          List your open ice. Get found.
+          List your open ice. Free.
         </h1>
         <p
           style={{
@@ -129,8 +175,22 @@ export default async function LaunchPage() {
             lineHeight: 1.5,
           }}
         >
-          RinkStop is opening a public ice marketplace — every rink, club, and league in the directory can list available
-          ice time. Coaches, parents, and tournament organizers will find you by city, age group, and skill level.
+          RinkStop is opening a public ice marketplace. Every rink, club, and league can list their available ice time
+          for free — no plan, no card, no commitment. Coaches, parents, and tournament organizers find open ice by city,
+          age group, and skill level.
+        </p>
+        <p
+          style={{
+            fontSize: '1rem',
+            color: 'rgba(255,255,255,0.7)',
+            margin: '0 0 2rem',
+            maxWidth: 640,
+            lineHeight: 1.5,
+          }}
+        >
+          Every listing is reviewed by our team before it goes live, so you&apos;ll get a quick confirmation and we&apos;ll
+          help you get set up. If you want more later — payments, rosters, multiple teams, API access — you can upgrade
+          to a paid plan whenever you&apos;re ready.
         </p>
 
         <div
@@ -151,11 +211,12 @@ export default async function LaunchPage() {
               marginBottom: '0.5rem',
             }}
           >
-            Founding partner offer — 0% take-rate for 6 months
+            Free to list — and 0% take-rate for your first 6 months
           </div>
           <p style={{ margin: 0, color: 'rgba(255,255,255,0.9)', fontSize: '0.95rem', lineHeight: 1.5 }}>
-            List your first 6 months of ice for free. We keep 0%. You keep 100% of every booking. After 6 months, the
-            standard 20% take-rate kicks in. In exchange: list at least one slot per week and give us product feedback.
+            Creating your listing is free — no plan required. List your first 6 months of ice at a 0% take-rate: we keep
+            0% and you keep 100% of every booking. After 6 months the standard 20% take-rate applies. In exchange: list
+            at least one slot per week and give us product feedback.
           </p>
         </div>
 
@@ -168,10 +229,11 @@ export default async function LaunchPage() {
             margin: '0 0 1rem',
           }}
         >
-          Sign up below
+          Start your listing
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-          We&apos;ll email you within 2 business days with onboarding steps. No spam, no sales call unless you ask for one.
+          Takes about two minutes. We&apos;ll review your listing and email you within 2 business days with next steps. No
+          spam, no sales call unless you ask for one.
         </p>
 
         <form
@@ -314,8 +376,12 @@ export default async function LaunchPage() {
                 margin: '0.5rem 0 0.5rem',
               }}
             >
-              What are you interested in?
+              Do you want anything beyond a free listing?
             </h3>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+              A free listing is all you need to publish your open ice. Choose a paid plan only if you want roster
+              management, payments, multiple teams, or API access.
+            </p>
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
@@ -339,7 +405,7 @@ export default async function LaunchPage() {
                       id={`tier_${t.value}`}
                       name="tier_interest"
                       value={t.value}
-                      required
+                      defaultChecked={t.value === 'org_free'}
                       style={{ marginTop: 4 }}
                     />
                     <div>
@@ -377,6 +443,20 @@ export default async function LaunchPage() {
           </div>
 
           <div>
+            <label htmlFor="ice_type" style={labelStyle}>
+              What kind of ice do you have open?
+            </label>
+            <select id="ice_type" name="ice_type" style={inputStyle} defaultValue="">
+              <option value="" disabled>Select one...</option>
+              {ICE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label htmlFor="monthly_ice_hours_estimate" style={labelStyle}>
               Open ice hours per month (estimate)
             </label>
@@ -388,6 +468,35 @@ export default async function LaunchPage() {
               style={inputStyle}
               placeholder="40"
             />
+          </div>
+
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label htmlFor="primary_goal" style={labelStyle}>
+              What would make this worth it for you? (optional)
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.5rem' }}>
+              {GOAL_OPTIONS.map((g) => (
+                <label
+                  key={g}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.5rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 6,
+                    padding: '0.6rem 0.75rem',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    color: 'rgba(255,255,255,0.8)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <input type="checkbox" name="primary_goal" value={g} style={{ marginTop: 3 }} />
+                  <span>{g}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
