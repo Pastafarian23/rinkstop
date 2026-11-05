@@ -331,6 +331,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       ['/learn', 'Learn Hockey'],
                       ['/tools', 'Free Tools'],
                       ['/gear-brands', 'Gear Brands'],
+                      // 2026-11-05: /hockey-database was 'Discovered - currently
+                      // not indexed' with zero impressions while being linked from
+                      // exactly ONE place sitewide. The desktop nav menu renders
+                      // only when opened (client-side), so a nav entry alone is
+                      // NOT in the served HTML. The footer IS server-rendered on
+                      // every page, so this is the link a crawler actually sees.
+                      ['/hockey-database', 'Hockey Database'],
                       ['/directory/nhl', 'NHL'],
                       ['/directory/ahl', 'AHL'],
                       ['/directory/khl', 'KHL'],
