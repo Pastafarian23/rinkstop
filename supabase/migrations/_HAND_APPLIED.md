@@ -815,3 +815,23 @@ Practical route: **Supabase Support** (https://supabase.com/support) can execute
 **Verified impact of this revoke:** the only other PostGIS object is `venues.location` (geography); `venues` has RLS enabled with 2 policies, 0 rows, and unaffected grants. The app never references `spatial_ref_sys`.
 
 **New permanent guard:** `scripts/_audit-rls-disabled.mjs` (Gate 6b of `scripts/pre-push-guard.sh`) reads the live DB and FAILS the push if any public table is reachable by the anon role without RLS. It currently fails on `spatial_ref_sys` — intentionally, until the revoke above is applied.
+
+---
+
+## 2026-11-05 — launch funnel fields (HAND-APPLIED)
+
+**Migration file:** `2026-11-05_launch_funnel_fields.sql`
+**Applied by:** KiloClaw (main session, webchat)
+**Method:** Direct SQL via Management API PAT (`/v1/projects/{ref}/database/query`) — HTTP 201.
+
+**What it does:** Adds two nullable text columns to `public.founding_partner_signups`:
+- `ice_type` — what kind of open ice the org has (from the /launch funnel form)
+- `primary_goal` — what outcome the org wants (comma-joined multi-select)
+
+**Why:** Arnel — *"Ice marketplace listing should be optimized. Submit listing shouldn't require paid plan. Let's use this as a funnel to gain user info."* The form captured org contact details and a paid tier but nothing about the ICE, which is the actual product.
+
+**Schema read before write:** `founding_partner_signups` has 21 columns, four CHECK constraints (`fk_contact_email_format`, `fk_org_type`, `fk_status`, `fk_tier_interest`), one BEFORE UPDATE trigger (`founding_partner_signups_updated_at`), RLS enabled with 2 policies, and 4 indexes. Neither new column participates in any constraint, trigger, or index, so the change is purely additive.
+
+**Also learned (no DB change needed):** the `fk_tier_interest` CHECK has ALWAYS allowed `org_free` — the /launch form simply never offered it and made the field required, which forced every submission to choose a paid tier. Fixed in code.
+
+**Verified live:** production POST to `/api/launch-signup` with NO tier selected → HTTP 200, row persisted with `tier_interest='org_free'`, `ice_type`, and `primary_goal`. Test row deleted; table back to 0 rows.
