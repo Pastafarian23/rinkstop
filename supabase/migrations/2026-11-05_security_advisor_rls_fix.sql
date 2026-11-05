@@ -46,39 +46,63 @@ BEGIN;
 --    This is the exact issue Supabase flagged. PostGIS itself does not need
 --    these roles to read the SRID table at runtime.
 --
---    ⚠️ THIS STATEMENT REQUIRES THE `supabase_admin` ROLE AND WAS NOT APPLIED
---    BY THIS MIGRATION. It is left here (commented out) for the record.
+--    ⚠️ NOT APPLIED BY THIS MIGRATION. It requires a session running as
+--    `supabase_admin` (the only superuser role, and the owner+grantor of
+--    this table). See the full analysis below.
 --
---    Why: `public.spatial_ref_sys` is owned by `supabase_admin`, NOT by
---    `postgres`. The Supabase Management API `/database/query` endpoint
---    executes as `postgres`, which is NOT a superuser and is NOT a member of
---    `supabase_admin`. Every attempt failed with 42501:
---      REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated;
---        -> ERROR: permission denied to revoke
---      ALTER TABLE public.spatial_ref_sys OWNER TO postgres;
---        -> ERROR: must be owner of table spatial_ref_sys
---      GRANT supabase_privileged_role TO postgres;
---        -> ERROR: permission denied to grant role
---      SET ROLE supabase_admin;
---        -> ERROR: permission denied to set role
---    The REVOKE therefore SILENTLY NO-OPPED inside the earlier version of this
---    migration (it was inside a transaction that committed), so the grants are
---    STILL IN PLACE. Verified live: anon can still INSERT into this table.
+--    WHY IT COULD NOT BE APPLIED HERE (all verified live 2026-11-05):
+--      The Management API `/database/query` endpoint executes as `postgres`
+--      (rolsuper = false). The Supabase Dashboard SQL editor ALSO connects as
+--      `postgres` — Arnel ran this REVOKE there and the Dashboard reported
+--      "Success. No rows returned", but a live probe with the public anon key
+--      proved the table was still readable AND writable.
 --
---    TO APPLY: run the statement below in the Supabase Dashboard SQL Editor
---    (SQL Editor → new query → Run). That editor executes as `supabase_admin`
---    and can revoke on a table it owns.
+--      The table ACL is:
+--        {supabase_admin=arwdDxtm/supabase_admin, postgres=arwdDxtm/supabase_admin,
+--          anon=arwdDxtm/supabase_admin, authenticated=arwdDxtm/supabase_admin,
+--          service_role=arwdDxtm/supabase_admin, =r/supabase_admin}
+--      Every entry is granted BY `supabase_admin`. Postgres permits a REVOKE
+--      only by the OWNER or the GRANTOR. `postgres` is neither, so the
+--      statement executes WITHOUT ERROR and changes nothing — a silent no-op
+--      inside a committed transaction.
 --
---    -- REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated;
---    -- REVOKE ALL ON TABLE public.spatial_ref_sys FROM PUBLIC;
+--      Attempts that all failed with 42501:
+--        REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated;
+--        ALTER TABLE public.spatial_ref_sys OWNER TO postgres;
+--        ALTER TABLE public.spatial_ref_sys OWNER TO supabase_privileged_role;
+--        GRANT supabase_privileged_role TO postgres;
+--        GRANT supabase_admin TO postgres;   -- "memberships are reserved"
+--        SET ROLE supabase_admin; / SET LOCAL ROLE supabase_admin;
+--        ALTER ROLE postgres SUPERUSER;
+--      Pooler connection with the management PAT as the password:
+--        FATAL: password authentication failed (no DB password in the
+--        credential store or Vercel env).
 --
---    Verified impact of the NOT-YET-APPLIED revoke: the only other PostGIS
---    object is `venues.location` (geography). `venues` has RLS enabled with
---    2 policies and 0 rows, and its own grants are unaffected by this revoke.
---    The application code does not reference `spatial_ref_sys` anywhere.
+--      PROVEN FIX PATH: when the executing role OWNS the table, the REVOKE
+--      works — `has_table_privilege` flips to false (verified on a scratch
+--      table owned by `postgres`). So a superuser session must either run the
+--      REVOKE directly, or first transfer ownership:
+--
+--        -- as supabase_admin:
+--        ALTER TABLE public.spatial_ref_sys OWNER TO postgres;
+--        REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated;
+--        REVOKE ALL ON TABLE public.spatial_ref_sys FROM PUBLIC;
+--
+--      Practical route: Supabase Support (https://supabase.com/support) can
+--      execute as `supabase_admin`. The exact statement is tracked in
+--      OPEN-ITEMS.md → `supabase-rls-spatial-ref-sys-2026-11-05`.
+--
+--    VERIFIED IMPACT of the revoke (none on the app):
+--      - The only other PostGIS object is `venues.location` (geography).
+--        `venues` has RLS enabled with 2 policies and 0 rows; its grants are
+--        unaffected by this revoke.
+--      - The application code never references `spatial_ref_sys`.
+--      - The table holds PostGIS SRID reference data only (srid, auth_name,
+--        auth_srid, srtext, proj4text; ~8,500 rows) — no application data,
+--        no user data, no credentials.
 -- ---------------------------------------------------------------------------
 
--- (statement intentionally not executed here — needs supabase_admin)
+-- (statement intentionally not executed here — needs a supabase_admin session)
 
 -- ---------------------------------------------------------------------------
 -- 3) business_analytics_top_listings — recreate with security_invoker.

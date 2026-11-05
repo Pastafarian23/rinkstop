@@ -788,12 +788,30 @@ by the submission's OWN type, not by "the first id that looks like a uuid".
 **Advisor before → after:** ERROR 5 → 1 · WARN 66 → 59 · INFO 6.
 All 4 view errors cleared. All 7 search_path warnings cleared.
 
-**🔴 OUTSTANDING — needs the Dashboard SQL editor (1 statement, 30 seconds):**
-`spatial_ref_sys` is still anon-writable. The Management API cannot revoke on a table owned by `supabase_admin`. Run in **Supabase Dashboard → SQL Editor → New query → Run**:
+**🔴 OUTSTANDING — needs a `supabase_admin` (superuser) session.**
+
+`spatial_ref_sys` is still anon-readable AND anon-writable. **The Supabase Dashboard SQL editor does NOT work for this** — Arnel ran the REVOKE there on 2026-11-05 03:27, the Dashboard reported "Success. No rows returned", and a live anon-key probe proved the table was still fully accessible. The Dashboard SQL editor connects as `postgres` (`rolsuper = false`), exactly like the Management API.
+
+**Proven root cause** — the ACL is:
+```
+{supabase_admin=arwdDxtm/supabase_admin, postgres=arwdDxtm/supabase_admin,
+ anon=arwdDxtm/supabase_admin, authenticated=arwdDxtm/supabase_admin,
+ service_role=arwdDxtm/supabase_admin, =r/supabase_admin}
+```
+Every entry is granted **BY `supabase_admin`**. Postgres permits a REVOKE only by the owner or the grantor; `postgres` is neither, so the statement executes without error and changes nothing — a silent no-op in a committed transaction.
+
+All attempts, verified live 2026-11-05, all failed with 42501:
+`REVOKE` (no-op) · `ALTER TABLE … OWNER TO postgres` · `ALTER TABLE … OWNER TO supabase_privileged_role` · `GRANT supabase_privileged_role TO postgres` · `GRANT supabase_admin TO postgres` ("memberships are reserved") · `SET ROLE supabase_admin` · `SET LOCAL ROLE supabase_admin` · `ALTER ROLE postgres SUPERUSER`. Pooler connection with the PAT as password → `FATAL: password authentication failed` (no DB password in the credential store or Vercel env).
+
+**Proven fix path:** when the executing role OWNS the table the REVOKE works — `has_table_privilege` flips to false (verified on a scratch table owned by `postgres`). So a superuser session must run:
 ```sql
+-- as supabase_admin (superuser):
 REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated;
 REVOKE ALL ON TABLE public.spatial_ref_sys FROM PUBLIC;
 ```
+Practical route: **Supabase Support** (https://supabase.com/support) can execute as `supabase_admin`. Exact request text is in `OPEN-ITEMS.md` → `supabase-rls-spatial-ref-sys-2026-11-05`.
+
+**Interim risk assessment:** the exposure is PostGIS SRID reference data only (~8,500 rows of srid/auth_name/srtext/proj4text). No application data, no user data, no credentials. Realistic risk is SRID-table pollution, not data theft.
 **Verified impact of this revoke:** the only other PostGIS object is `venues.location` (geography); `venues` has RLS enabled with 2 policies, 0 rows, and unaffected grants. The app never references `spatial_ref_sys`.
 
 **New permanent guard:** `scripts/_audit-rls-disabled.mjs` (Gate 6b of `scripts/pre-push-guard.sh`) reads the live DB and FAILS the push if any public table is reachable by the anon role without RLS. It currently fails on `spatial_ref_sys` — intentionally, until the revoke above is applied.
