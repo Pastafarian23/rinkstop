@@ -29,12 +29,12 @@ export async function GET(
     // them concurrently keeps total request time lower than serial calls.
     const [result, completeness] = await Promise.all([
       computeStandings(league.id, season),
-      getSeasonCompleteness(league.slug, season).catch((err) => ({
+      getSeasonCompleteness(league.slug, season).catch((err): SeasonCompleteness => ({
         isComplete: false,
         isCurrent: false,
         expectedGp: 0,
         observed: null,
-        reason: `season-completeness lookup failed: ${err?.message ?? err}` as SeasonCompleteness['reason'],
+        reason: `season-completeness lookup failed: ${err?.message ?? err}`,
       })),
     ]);
 
