@@ -150,8 +150,24 @@ const GET_LISTED_LINKS: NavItem[] = [
 // "Browse" (entity directories — 11 items) + "Leagues" (12 leagues +
 // regional hubs — 15 items). Both still fit comfortably in the
 // accordion without forcing excessive scroll.
+// 2026-11-05 (Arnel: 'the $499 dataset ranks page-one with 0 clicks, improve
+// the copy'). Live GSC URL Inspection: /hockey-database was
+// "Discovered - currently not indexed" with ZERO impressions, while
+// /dataset-license was "Submitted and indexed" with 4 impressions.
+//
+// Two causes, both fixed here and on the page itself:
+//   1. /hockey-database was linked from ONE place on the whole site
+//      (DirectoryLandingClient). /dataset-license was in the nav. A page with
+//      almost no internal links gets crawled rarely and stays unindexed.
+//   2. The two pages competed for the same "hockey database" intent.
+//
+// Fix: /hockey-database becomes the BROAD SEO entry point (it is in the nav
+// and carries the broad "Hockey Database — Rinks, Teams, Players" title),
+// and /dataset-license targets BUY intent ("Hockey Data for Business").
+// They now complement instead of competing.
 const BROWSE: NavItem[] = [
   { href: '/directory',               label: 'All Directory'   },
+  { href: '/hockey-database',         label: 'Hockey Database' },
   { href: '/directory/teams',         label: 'Teams'           },
   { href: '/directory/players',       label: 'Players'         },
   { href: '/directory/coaches',       label: 'Coaches'         },

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Script from 'next/script';
 import { supabaseAdmin } from '@/lib/supabase';
 import MoneyCtaLink from '@/components/MoneyCtaLink';
 import MoneyPageViewTracker from '@/components/MoneyPageViewTracker';
@@ -64,26 +63,44 @@ export async function generateMetadata() {
 export const revalidate = 3600;
 
 async function getCounts() {
+  // 2026-11-05: these were RAW table counts, so this page advertised 1,920
+  // rinks and 3,249 teams while /dataset-license (same product) advertised
+  // 1,859 and 2,613 via the get_directory_stats RPC. Two pages selling the
+  // same dataset with different numbers is a trust problem, and the raw
+  // counts included inactive/merged rows that are not actually in the
+  // product. Now both pages use active records only — verified against the
+  // live DB: rinks 1,920 total / 1,859 active, teams 3,249 total / 2,613 active.
   const [rinks, teams, players, leagues, federations, games, fixtures] = await Promise.all([
-    supabaseAdmin.from('rinks').select('*', { count: 'exact', head: true }),
-    supabaseAdmin.from('teams').select('*', { count: 'exact', head: true }),
-    supabaseAdmin.from('players').select('*', { count: 'exact', head: true }),
-    supabaseAdmin.from('leagues').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabaseAdmin.from('teams').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
+    supabaseAdmin.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabaseAdmin.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabaseAdmin
       .from('federations')
       .select('*', { count: 'exact', head: true })
       .not('country_code', 'is', null),
-    // games is optional; some installs name it fixtures. Try games first, fall back.
+    // The game rows live in `fixtures` (23,573 rows). A legacy `games` table
+    // also exists but is EMPTY (0 rows).
+    //
+    // 2026-11-05 bug fix: this was `games.count ?? fixtures.count ?? 0`, which
+    // rendered "Games tracked 0" on a page whose entire pitch is how much data
+    // we have. `??` only falls through on null/undefined — `games.count` is 0
+    // (a real number, not null), so the fallback to `fixtures.count` never
+    // fired. Same bug class as the `c.loserScore || c.scoreB` numeric-fallback
+    // incident: a zero is a value, not a missing value.
+    //
+    // Fix: prefer whichever source actually HAS rows, not whichever answers first.
     supabaseAdmin.from('games').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('fixtures').select('*', { count: 'exact', head: true }),
   ]);
+  const gamesCount = Math.max(games.count ?? 0, fixtures.count ?? 0);
   return {
     rinks: rinks.count ?? 0,
     teams: teams.count ?? 0,
     players: players.count ?? 0,
     leagues: leagues.count ?? 0,
     federations: federations.count ?? 0,
-    games: games.count ?? fixtures.count ?? 0,
+    games: gamesCount,
   };
 }
 
@@ -191,8 +208,16 @@ export default async function HockeyDatabasePage() {
 
   return (
     <main className="container" style={{ maxWidth: '880px', margin: '0 auto', padding: '32px 16px' }}>
-      <Script
-        id="hockey-database-faq-schema"
+      {/* 2026-11-05 fix: this used to be next/script's <Script>, which is
+          client-injected. The JSON-LD therefore NEVER appeared as a real
+          <script type="application/ld+json"> tag in the served HTML — it was
+          only visible inside the RSC flight payload. Google saw zero
+          structured data on the page, and GSC URL Inspection had it as
+          "Discovered - currently not indexed" with ZERO impressions.
+          A plain <script> tag is server-rendered into the HTML, which is what
+          crawlers require. /dataset-license already used the plain-tag
+          approach and renders correctly (verified: 1 ld+json script tag). */}
+      <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}

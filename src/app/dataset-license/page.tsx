@@ -14,16 +14,32 @@ import { getDirectoryCountsCached } from '@/lib/directory-counts';
 // rendered body and never drifts.
 export async function generateMetadata(): Promise<Metadata> {
   const counts = await getDirectoryCountsCached();
-  const titleFull = `Hockey Dataset License — ${counts.rinks.toLocaleString()} Rinks, ${counts.teams.toLocaleString()} Teams, ${counts.players.toLocaleString()} Players | RinkStop`;
-  const titleShort = `Hockey Dataset License — ${counts.rinks.toLocaleString()} Rinks, ${counts.teams.toLocaleString()} Teams`;
-  const description = `License RinkStop's complete hockey database — ${counts.rinks.toLocaleString()}+ rinks, ${counts.teams.toLocaleString()}+ teams, ${counts.leagues.toLocaleString()}+ leagues, ${counts.players.toLocaleString()}+ players across ${counts.countries.toLocaleString()} countries. CSV/JSON download with quarterly updates. $499 one-time.`;
+  // 2026-11-05 (Arnel: 'the $499 dataset ranks page-one with 0 clicks, improve the copy').
+  // Live GSC, 90d: /dataset-license had 4 impressions, 0 clicks, position 4.8, and
+  // ZERO query rows — it was not being surfaced for any meaningful term, because
+  // the title led with "License" (a legal noun nobody searches) and the counts
+  // people DO search ("how many ice rinks are there") were pushed into the
+  // description and the body.
+  //
+  // New title targets the actual commercial intent: people looking to BUY
+  // hockey data search "hockey data", "ice rink database", "hockey teams csv".
+  // "License" is demoted to the tail where it belongs — it is a reassurance
+  // signal for a buyer who is already interested, not an acquisition keyword.
+  const titleFull = `Hockey Data for Business — ${counts.rinks.toLocaleString()} Ice Rinks, ${counts.teams.toLocaleString()} Teams, ${counts.players.toLocaleString()} Players | CSV & JSON | RinkStop`;
+  const titleShort = `Hockey Data for Business — ${counts.rinks.toLocaleString()} Ice Rinks, ${counts.teams.toLocaleString()} Teams`;
+  const description = `Buy the RinkStop hockey database: ${counts.rinks.toLocaleString()} ice rinks, ${counts.teams.toLocaleString()} teams, ${counts.leagues.toLocaleString()} leagues and ${counts.players.toLocaleString()} players in ${counts.countries.toLocaleString()} countries. Instant CSV + JSON download, commercial license, quarterly updates. $499 one-time — no scraping, no maintenance.`;
   return {
   title: { absolute: titleFull },
   description: description,
   keywords: [
-    'hockey data', 'hockey database download', 'hockey rink data',
-    'hockey teams csv', 'ice rink dataset', 'sports business data',
-    'hockey analytics data', 'rink database license',
+    // Buy-intent terms — what someone types when they want to license data.
+    'hockey data', 'hockey database', 'hockey database download',
+    'hockey dataset', 'hockey data license', 'buy hockey data',
+    'hockey teams data', 'hockey players data', 'hockey league data',
+    'ice rink data', 'ice rink database', 'ice rink list',
+    'hockey rinks csv', 'hockey teams csv', 'hockey database csv',
+    'sports data api', 'sports business data', 'hockey analytics data',
+    'hockey tourism data', 'sports facility database',
   ],
   alternates: {
     canonical: 'https://rinkstop.com/dataset-license',
@@ -31,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
   openGraph: withDefaultOg({
     title: titleFull,
     description:
-      `License RinkStop's complete hockey database. CSV/JSON download, commercial use, quarterly updates. $499 one-time.`,
+      `Download ${counts.rinks.toLocaleString()} ice rinks, ${counts.teams.toLocaleString()} teams and ${counts.players.toLocaleString()} players as CSV or JSON. Commercial license, quarterly updates. $499 one-time.`,
     url: 'https://rinkstop.com/dataset-license',
     siteName: 'RinkStop',
     type: 'website',
@@ -40,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
     card: 'summary_large_image',
     title: titleShort,
     description:
-      `Bulk hockey data for analytics, scouting, equipment, and research. Commercial-use license, $499.`,
+      `The complete hockey database — rinks, teams, leagues, players. CSV + JSON, commercial use, $499.`,
   },
   };
 }
@@ -106,7 +122,7 @@ export default async function DatasetLicensePage() {
             marginBottom: '1.25rem',
             border: '1px solid rgba(200,16,46,0.3)',
           }}>
-            For Builders, Scouts, Researchers, Equipment Brands
+            Hockey Data · CSV & JSON · Commercial License
           </div>
           <h1 style={{
             fontSize: 'clamp(2.25rem, 6vw, 3.5rem)',
@@ -115,8 +131,11 @@ export default async function DatasetLicensePage() {
             lineHeight: 1.05,
             letterSpacing: '-0.02em',
           }}>
-            The world's hockey data,<br />
-            <span style={{ color: '#C8102E' }}>licensed.</span>
+            Every ice rink, team,<br />
+            <span style={{ color: '#C8102E' }}>league and player.</span><br />
+            <span style={{ fontSize: '0.5em', color: 'rgba(255,255,255,0.65)', display: 'block', marginTop: '0.5rem' }}>
+              One download. Commercial license. $499.
+            </span>
           </h1>
           <p style={{
             fontSize: 'clamp(1.0625rem, 2vw, 1.25rem)',
@@ -129,7 +148,11 @@ export default async function DatasetLicensePage() {
           }}>
             {counts.rinks.toLocaleString()} ice rinks · {counts.teams.toLocaleString()} teams · {counts.leagues.toLocaleString()} leagues · {counts.players.toLocaleString()} players · {counts.countries.toLocaleString()} countries.
             <br />
-            Bulk download, CSV + JSON, commercial-use license.
+            Download as CSV or JSON today. Use commercially. Get quarterly updates for 12 months.
+            <br />
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9em' }}>
+              Address, coordinates, hours, capacity, contact details, rosters, league structure — verified, not scraped from a stale directory.
+            </span>
           </p>
           <MoneyCtaLink
             eventName="dataset_license_purchase_clicked"
@@ -199,7 +222,7 @@ export default async function DatasetLicensePage() {
           fontSize: '1.5rem',
           fontWeight: 800,
           marginBottom: '1.25rem',
-        }}>Who buys this</h2>
+        }}>What teams use it for</h2>
         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '3rem' }}>
           {[
             { t: 'Equipment brands', d: 'Market sizing, retail distribution planning, sales territory mapping.' },
@@ -231,7 +254,10 @@ export default async function DatasetLicensePage() {
         </div>
 
         {/* Format details */}
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>What's in the bundle</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Exactly what you get</h2>
+        <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '1.25rem', fontSize: '0.95rem' }}>
+          Six files, one download, no assembly. Column-level detail, not just names and addresses.
+        </p>
         <div style={{
           background: 'rgba(255,255,255,0.03)',
           border: '1px solid rgba(255,255,255,0.08)',
@@ -250,7 +276,7 @@ export default async function DatasetLicensePage() {
         </div>
 
         {/* Comparison vs alternatives */}
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Why this beats scraping</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Why buying beats scraping</h2>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -290,10 +316,11 @@ export default async function DatasetLicensePage() {
           textAlign: 'center',
         }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem' }}>
-            Ship faster. Skip the scraping.
+            Get the data. Skip the scraping.
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '1.5rem' }}>
-            Commercial-use license. Cite us in your methodology. Quarterly refreshes for 12 months.
+            {counts.rinks.toLocaleString()} ice rinks and {counts.teams.toLocaleString()} teams, delivered as CSV + JSON today.
+            Commercial-use license, cite us in your methodology, quarterly refreshes for 12 months. $499 one-time.
           </p>
           <MoneyCtaLink
             eventName="dataset_license_purchase_clicked"
@@ -409,6 +436,19 @@ export default async function DatasetLicensePage() {
 
         <RelatedProducts
           products={[
+            {
+              // 2026-11-05: /hockey-database was "Discovered - currently not
+              // indexed" with zero impressions while /dataset-license was
+              // indexed. It had only ONE internal link on the whole site. The
+              // two pages were also competing for the same "hockey database"
+              // intent — this link makes them complementary: the free page
+              // for browsing, this one for buying the data.
+              title: 'Browse the database free',
+              description: 'Search every rink, team, league, and player yourself. No account needed.',
+              href: '/hockey-database',
+              cta: 'Open the database',
+              accent: 'gold',
+            },
             {
               title: 'Plans for hockey people',
               description: 'Verified Hockey Passport, team profiles, business listings — eight tiers from $24.99/yr.',
