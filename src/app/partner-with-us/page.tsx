@@ -56,10 +56,10 @@ export default function PartnerPage() {
             icon: '🤝',
           },
         ].map(item => (
-          <div key={item.title} style={{ background: '#f5f5f5', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+          <div key={item.title} style={{ background: 'rgba(255,255,255,0.025)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }}>{item.icon}</div>
             <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.25rem', color: '#C8102E', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>{item.title}</h3>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>{item.desc}</p>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 }}>{item.desc}</p>
           </div>
         ))}
       </div>
