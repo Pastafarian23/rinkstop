@@ -487,12 +487,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
   const [gamesRes, fixturesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, visitUsProgrammingRes] = await Promise.all([
+    // 2026-11-05: the live `games` columns are scheduled_at / rink_id /
+    // home_team_rinkstop_id / away_team_rinkstop_id / home_team_name /
+    // away_team_name / venue_name / status / home_score / away_score.
+    // The old query used `date`, `venue_id`, `home_team_id` and `away_team_id`
+    // — none of which exist — so this query ALWAYS failed with 42703 and the
+    // rink page showed no upcoming games.
     supabase
       .from('games')
-      .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
-      .eq('venue_id', rink.id)
-      .gte('date', new Date().toISOString().split('T')[0])
-      .order('date', { ascending: true })
+      .select('id, scheduled_at, home_team_rinkstop_id, away_team_rinkstop_id, home_team_name, away_team_name, venue_name, status, home_score, away_score')
+      .eq('rink_id', rink.id)
+      .gte('scheduled_at', new Date().toISOString())
+      .order('scheduled_at', { ascending: true })
       .limit(20),
     // 2026-10-16: also pull NHL/fixtures scheduled at this rink via the team's home_rink_id.
     // This is the source of truth for the 32 NHL teams that now have home_rink_id populated.
@@ -614,21 +620,43 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
   // 2026-10-16: merge games (legacy `games` table) with fixtures (new, joined via teams.home_rink_id).
   // The RinkGames component accepts the legacy Game shape, so we map fixtures rows into it.
-  const games = gamesRes.data || [];
+  //
+  // 2026-11-05: the `games` table no longer has `date`/`home_team_id`/
+  // `away_team_id`/`venue_id` — it has `scheduled_at` /
+  // `home_team_rinkstop_id` / `away_team_rinkstop_id` / `rink_id`. The rows
+  // are mapped into the legacy Game shape here so RinkGames keeps working.
+  const games = (gamesRes.data || []).map((g: any) => ({
+    id: g.id,
+    date: g.scheduled_at?.slice(0, 10) ?? '',
+    time: g.scheduled_at?.slice(11, 16) ?? null,
+    home_team_id: g.home_team_rinkstop_id ?? '',
+    away_team_id: g.away_team_rinkstop_id ?? '',
+    home_team_name: g.home_team_name ?? null,
+    away_team_name: g.away_team_name ?? null,
+    venue_id: rink.id,
+    venue_name: g.venue_name ?? rink.name,
+    location: rink.city,
+    status: g.status ?? null,
+    home_score: g.home_score ?? null,
+    away_score: g.away_score ?? null,
+    period: null as string | null,
+    period_time_remaining: null as string | null,
+    broadcast: null as string | null,
+  }));
   const fixtureGames = (fixturesRes.data || []).map((f: any) => ({
     id: f.id,
-    date: f.scheduled_at?.slice(0, 10) ?? null,
+    date: f.scheduled_at?.slice(0, 10) ?? '',
     time: f.scheduled_at?.slice(11, 16) ?? null,
-    home_team_id: f.home_team_id,
-    away_team_id: f.away_team_id,
+    home_team_id: f.home_team_id ?? '',
+    away_team_id: f.away_team_id ?? '',
     home_team_name: f.home_team?.name ?? null,
     away_team_name: f.away_team?.name ?? null,
     venue_id: rink.id,
     venue_name: rink.name,
     location: rink.city,
-    status: f.status,
-    home_score: f.home_score,
-    away_score: f.away_score,
+    status: f.status ?? null,
+    home_score: f.home_score ?? null,
+    away_score: f.away_score ?? null,
     period: null as string | null,
     period_time_remaining: null as string | null,
     broadcast: null as string | null,
@@ -708,7 +736,9 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
   const nextGame = games[0];
   const nextGameOpponent = nextGame
-    ? (nextGame.home_team_id === rink.id ? nextGame.away_team_name : nextGame.home_team_name) || null
+    ? (nextGame.home_team_id === rink.id
+        ? nextGame.away_team_name
+        : nextGame.home_team_name) || null
     : null;
   const blurb = buildRinkBlurb({
     ...rink,

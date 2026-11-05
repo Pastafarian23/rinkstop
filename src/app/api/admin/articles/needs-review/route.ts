@@ -105,16 +105,18 @@ export async function GET(req: NextRequest) {
   // edit per post is enough; group by post_id and take the latest.
   const { data: edits, error: editsErr } = await supabaseAdmin
     .from('post_review_edits')
-    .select('post_id, reviewer_id, created_at, changes')
-    .order('created_at', { ascending: false })
+    .select('post_id, reviewed_by, reviewed_at')
+    .order('reviewed_at', { ascending: false })
     .limit(2000); // enough for the 562-post queue
   if (editsErr) {
     return NextResponse.json({ error: editsErr.message }, { status: 500 });
   }
+  // 2026-11-05: the live columns are `reviewed_by` / `reviewed_at`
+  // (not reviewer_id / created_at).
   const latestEditByPostId = new Map<string, { reviewer_id: string; created_at: string }>();
   for (const e of edits || []) {
     if (!latestEditByPostId.has(e.post_id)) {
-      latestEditByPostId.set(e.post_id, { reviewer_id: e.reviewer_id, created_at: e.created_at });
+      latestEditByPostId.set(e.post_id, { reviewer_id: e.reviewed_by, created_at: e.reviewed_at });
     }
   }
 

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   const [rinkRes, teamRes, leagueRes] = await Promise.all([
     supabaseAdmin.from('rinks').select('id, slug, name, city, country').or(rinkOrClause).eq('is_active', true).limit(limit),
     supabaseAdmin.from('team_workspaces').select('id, slug, name, home_city, country_code').or(teamOrClause).limit(limit),
-    supabaseAdmin.from('leagues').select('id, slug, name, city, country').or(leagueOrClause).limit(limit),
+    supabaseAdmin.from('leagues').select('id, slug, name, country').or(leagueOrClause).limit(limit),
   ]);
 
   const items: (EntityRow & { type: 'rink' | 'team' | 'league' })[] = [];

@@ -79,10 +79,16 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid file type. Only PDF and images are allowed.' }, { status: 400 });
   }
 
-  // Load contract
+  // Load contract.
+  //
+  // 2026-11-05: `rink_contracts` has NO `rink_id` column — a contract hangs
+  // off a CONNECTION, and the connection carries the rink_id. The old select
+  // asked for `rink_id` (via the type) and the ownership check read
+  // `contract.rink_id`, which is undefined. Resolve the rink through the
+  // connection instead.
   const { data: contract, error: contractErr } = await supabaseAdmin
     .from('rink_contracts')
-    .select('id, connection_id, status, rink_id, title')
+    .select('id, connection_id, status, title')
     .eq('id', contractId)
     .single();
 
@@ -94,15 +100,34 @@ export async function POST(
     return NextResponse.json({ error: 'Contracts can only be uploaded when status is "sent".', current_status: contract.status }, { status: 400 });
   }
 
-  // Verify user is a rink owner for this contract's rink
-  const { data: ownerCheck, error: ownerErr } = await supabaseAdmin
-    .from('rink_owners')
-    .select('id')
-    .eq('rink_id', contract.rink_id)
-    .eq('user_id', userId)
-    .single();
+  // Resolve the rink for this contract via its connection.
+  const { data: connection, error: connectionErr } = await supabaseAdmin
+    .from('rink_org_connections')
+    .select('id, rink_id')
+    .eq('id', contract.connection_id)
+    .maybeSingle();
 
-  if (ownerErr || !ownerCheck) {
+  if (connectionErr || !connection?.rink_id) {
+    return NextResponse.json({ error: 'Contract is not linked to a rink.' }, { status: 400 });
+  }
+  const rinkId = connection.rink_id;
+
+  // Verify the user owns this rink.
+  //
+  // 2026-11-05: the canonical rink-ownership record is an APPROVED claim
+  // (public.claims), not `rink_owners` — that table has 0 rows and its
+  // `user_id`/`rink_id` pair is not populated by the claim flow. See
+  // src/lib/owner-auth.ts.
+  const { data: ownerClaim, error: ownerErr } = await supabaseAdmin
+    .from('claims')
+    .select('id')
+    .eq('claim_type', 'rink')
+    .eq('entity_id', rinkId)
+    .eq('status', 'approved')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (ownerErr || !ownerClaim) {
     return NextResponse.json({ error: 'Only rink owners can upload contracts.' }, { status: 403 });
   }
 
@@ -112,7 +137,7 @@ export async function POST(
   // Generate storage path: {rinkId}/{contractId}/{timestamp}-{filename}
   const timestamp = Date.now();
   const sanitizedFilename = fileData.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const storagePath = `${contract.rink_id}/${contractId}/${timestamp}-${sanitizedFilename}`;
+  const storagePath = `${rinkId}/${contractId}/${timestamp}-${sanitizedFilename}`;
 
   // Upload to Supabase Storage
   const { error: uploadErr } = await supabaseAdmin.storage

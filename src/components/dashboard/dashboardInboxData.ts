@@ -111,7 +111,7 @@ export async function loadInboxSummary(userId: string): Promise<InboxSummary> {
     try {
       const { data } = await supabaseAdmin
         .from('messages')
-        .select('thread_id, sender_user_id, read_at')
+        .select('thread_id, sender_id, read_at')
         .in('thread_id', threadIds);
       msgsData = data || [];
     } catch { /* inbox still safe; unread=0 */ }

@@ -215,12 +215,17 @@ export default async function LeaguePage({
   try {
     const { userId } = await auth();
     if (userId && league) {
-      const { data: leagueRow } = await supabaseAdmin
-        .from('leagues')
-        .select('created_by')
-        .eq('id', league.id)
-        .maybeSingle();
-      viewerIsLeagueAdmin = leagueRow?.created_by === userId;
+      // 2026-11-05: `leagues` has no `created_by` column — league
+      // management is NOT owned by a single person. Per src/lib/ownership.ts:
+      // "league: no claims path. The 'owner' is anyone with league_admin
+      // role." So the check is the viewer's ACCOUNT TYPE.
+      const { data: accountTypeRows } = await supabaseAdmin
+        .from('profile_account_types')
+        .select('account_type')
+        .eq('user_id', userId);
+      viewerIsLeagueAdmin = (accountTypeRows || []).some(
+        (r) => (r as { account_type: string }).account_type === 'league_admin',
+      );
     }
   } catch {
     // leave false

@@ -110,12 +110,14 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase();
   const { data: existing } = await supabase
     .from('webhook_events')
-    .select('id, status')
+    .select('')
     .eq('source', 'didit')
     .eq('event_id', eventId)
     .maybeSingle();
 
-  if (existing && existing.status === 'processed') {
+  // 2026-11-05: `webhook_events` has no `status` column (event_id /
+  // received_at / source). Existence of the row IS the dedup signal.
+  if (existing) {
     return NextResponse.json({ ok: true, dedup: true });
   }
 

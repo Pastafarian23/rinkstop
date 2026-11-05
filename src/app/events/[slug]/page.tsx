@@ -114,7 +114,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
   const { data: event, error } = await supabase
     .from('rink_events')
-    .select('id, slug, title, subtitle, description, event_type, starts_at, ends_at, timezone, registration_opens_at, registration_closes_at, venue_name, address, price_cents, currency, early_bird_price_cents, early_bird_until, capacity, spots_remaining, waitlist_enabled, banner_image_url, registration_url, registration_method, hotel_partner_url, hotel_discount_code, status, rink_id, rink:rinks(name, slug, city, province_state, country, cover_photo_url)')
+    .select('id, slug, title, subtitle, description, event_type, starts_at, ends_at, timezone, registration_opens_at, registration_closes_at, venue_name, address, price_cents, currency, early_bird_price_cents, early_bird_until, capacity, spots_remaining, waitlist_enabled, banner_image_url, registration_url, registration_method, hotel_partner_url, hotel_discount_code, status, rink_id, rink:rinks(name, slug, cover_photo_url)')
     .eq('slug', slug)
     .in('status', ['published', 'cancelled', 'completed'])
     .eq('visibility', 'public')

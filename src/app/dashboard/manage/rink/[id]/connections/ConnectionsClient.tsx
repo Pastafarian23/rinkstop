@@ -11,9 +11,10 @@ interface Connection {
   org_type: string;
   role: string;
   status: string;
-  contact_name: string | null;
-  contact_email: string | null;
-  invite_code: string | null;
+  // 2026-11-05: the live columns are `org_contact_name` / `org_contact_email`.
+  // There is no `invite_code` column on rink_org_connections.
+  org_contact_name: string | null;
+  org_contact_email: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -45,7 +46,7 @@ const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
 export default function ConnectionsClient({ rinkId, initialConnections }: Props) {
   const [connections, setConnections] = useState<Connection[]>(initialConnections);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ org_name: '', org_type: 'team', role: 'client', contact_name: '', contact_email: '' });
+  const [form, setForm] = useState({ org_name: '', org_type: 'team', role: 'client', org_contact_name: '', org_contact_email: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -63,8 +64,8 @@ export default function ConnectionsClient({ rinkId, initialConnections }: Props)
           org_name: form.org_name,
           org_type: form.org_type,
           role: form.role,
-          contact_name: form.contact_name || null,
-          contact_email: form.contact_email || null,
+          org_contact_name: form.org_contact_name || null,
+          org_contact_email: form.org_contact_email || null,
         }),
       });
       const json = await res.json();
@@ -73,7 +74,7 @@ export default function ConnectionsClient({ rinkId, initialConnections }: Props)
       const listJson = await listRes.json();
       setConnections(listJson.connections || []);
       setShowAdd(false);
-      setForm({ org_name: '', org_type: 'team', role: 'client', contact_name: '', contact_email: '' });
+      setForm({ org_name: '', org_type: 'team', role: 'client', org_contact_name: '', org_contact_email: '' });
       setSuccess('Connection added.');
     } catch {
       setError('Network error. Please try again.');
@@ -118,7 +119,7 @@ export default function ConnectionsClient({ rinkId, initialConnections }: Props)
                 <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>{conn.org_name}</div>
                 <div style={{ color: '#94A3B8', fontSize: '0.8rem', marginTop: '0.125rem' }}>
                   {TYPE_LABELS[conn.org_type] || conn.org_type} · {conn.role}
-                  {conn.contact_email ? ` · ${conn.contact_email}` : ''}
+                  {conn.org_contact_email ? ` · ${conn.org_contact_email}` : ''}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
@@ -134,7 +135,7 @@ export default function ConnectionsClient({ rinkId, initialConnections }: Props)
 }
 
 function AddForm({ form, setForm, onSubmit, saving, onCancel, error }: {
-  form: { org_name: string; org_type: string; role: string; contact_name: string; contact_email: string };
+  form: { org_name: string; org_type: string; role: string; org_contact_name: string; org_contact_email: string };
   setForm: React.Dispatch<React.SetStateAction<typeof form>>;
   onSubmit: (e: React.FormEvent) => void;
   saving: boolean;
@@ -163,11 +164,11 @@ function AddForm({ form, setForm, onSubmit, saving, onCancel, error }: {
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '0.25rem' }}>Contact name</label>
-          <input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', padding: '0.5rem 0.75rem', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+          <input value={form.org_contact_name} onChange={e => setForm(f => ({ ...f, org_contact_name: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', padding: '0.5rem 0.75rem', fontSize: '0.875rem', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '0.25rem' }}>Contact email</label>
-          <input type="email" value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', padding: '0.5rem 0.75rem', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+          <input type="email" value={form.org_contact_email} onChange={e => setForm(f => ({ ...f, org_contact_email: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', padding: '0.5rem 0.75rem', fontSize: '0.875rem', boxSizing: 'border-box' }} />
         </div>
         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
           <button type="button" onClick={onCancel} style={{ background: 'rgba(255,255,255,0.05)', color: '#94A3B8', border: 'none', padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>

@@ -42,7 +42,7 @@ export default async function EventsByTypePage({ params }: { params: Promise<{ t
 
   const { data } = await supabase
     .from('rink_events')
-    .select('id, slug, title, event_type, starts_at, ends_at, price_cents, currency, capacity, spots_remaining, banner_image_url, registration_url, rink:rinks(name, slug, city, province_state, country)')
+    .select('id, slug, title, event_type, starts_at, ends_at, price_cents, currency, capacity, spots_remaining, banner_image_url, registration_url, rink:rinks(name, slug, country)')
     .eq('event_type', type)
     .eq('status', 'published')
     .eq('visibility', 'public')

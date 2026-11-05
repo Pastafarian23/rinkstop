@@ -74,20 +74,73 @@ for (const file of walk(SRC)) {
   while ((m = CALL_RE.exec(text)) !== null) {
     const [, table, cols] = m;
     if (!cols || cols === '*') continue;
-    const colList = cols
-      .split(',')
-      .map((c) => c.trim())
-      .filter(Boolean)
-      // `alias:column` and bare `column` both need the column part
-      .map((c) => (c.includes(':') ? c.split(':').pop() : c))
-      .filter((c) => /^[a-z_][a-z0-9_]*$/.test(c));
-    if (!colList.length) continue;
-    calls.push({
-      file: file.replace(ROOT + '/', ''),
-      table,
-      cols: colList,
-      line: text.slice(0, m.index).split('\n').length,
-    });
+
+    // A select can EMBED another table's columns, e.g.
+    //   .select('team_id, team:team_workspaces(id, name, slug)')
+    // The embedded columns belong to `team_workspaces`, NOT to `team_members`.
+    // Attributing them to the outer table produces false positives (it would
+    // claim team_members has no `name`).
+    //
+    // So: split the select into the outer table's own columns and any
+    // embedded resource specs, and check each against ITS OWN table.
+    const own = [];
+    const embeds = [];
+    const ownCols = [];
+
+    // Walk the select string respecting nested parentheses.
+    let depth = 0;
+    let buf = '';
+    for (const ch of cols) {
+      if (ch === '(') {
+        depth++;
+        buf += ch;
+      } else if (ch === ')') {
+        depth--;
+        buf += ch;
+      } else if (ch === ',' && depth === 0) {
+        own.push(buf.trim());
+        buf = '';
+      } else {
+        buf += ch;
+      }
+    }
+    if (buf.trim()) own.push(buf.trim());
+
+    for (const part of own) {
+      const embedMatch = part.match(/^([a-z_][a-z0-9_]*):([a-z_][a-z0-9_]*)\((.*)\)$/);
+      if (embedMatch) {
+        const [, , embedTable, embedCols] = embedMatch;
+        const embedColList = embedCols
+          .split(',')
+          .map((c) => c.trim())
+          .filter(Boolean)
+          .map((c) => (c.includes(':') ? c.split(':').pop() : c))
+          .filter((c) => /^[a-z_][a-z0-9_]*$/.test(c));
+        if (embedColList.length) {
+          embeds.push({
+            file: file.replace(ROOT + '/', ''),
+            table: embedTable,
+            cols: embedColList,
+            line: text.slice(0, m.index).split('\n').length,
+            embedded: true,
+          });
+        }
+        continue;
+      }
+      const col = part.includes(':') ? part.split(':').pop() : part;
+      if (/^[a-z_][a-z0-9_]*$/.test(col)) ownCols.push(col);
+    }
+
+    const ownColList = ownCols;
+    if (ownColList.length) {
+      calls.push({
+        file: file.replace(ROOT + '/', ''),
+        table,
+        cols: ownColList,
+        line: text.slice(0, m.index).split('\n').length,
+      });
+    }
+    calls.push(...embeds);
   }
 }
 
@@ -110,43 +163,65 @@ if (!url || !key) {
 }
 const sb = createClient(url, key);
 
-const schemaCache = new Map();
+// Read the FULL schema from information_schema via the Management API.
+//
+// Why not PostgREST's OpenAPI doc: it only exposes tables the ANON role can
+// see, so 17 tables (team_members, listings, managed_profiles,
+// equipment_rentals, team_name_review, ...) were reported as "not exposed"
+// and SKIPPED — exactly the tables with broken selects. RLS hides them from
+// the public schema, not from the database.
+//
+// The Management API PAT runs as a privileged role, so information_schema
+// sees every table.
+const PAT =
+  process.env.SUPABASE_PAT ||
+  (() => {
+    try {
+      const c = JSON.parse(
+        readFileSync('/root/.openclaw/credentials/supabase.json', 'utf8'),
+      );
+      return c.pat || null;
+    } catch {
+      return null;
+    }
+  })();
 
-async function columnsFor(table) {
-  if (schemaCache.has(table)) return schemaCache.get(table);
-  let cols = null;
-  // PostgREST exposes the schema at /rest/v1/ (NOT the bare host root —
-  // that returns 404).
-  const res = await fetch(`${url.replace(/\/$/, '')}/rest/v1/`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-  });
-  if (res.ok) {
-    const body = await res.json();
-    const def = body.definitions?.find((d) => d.name === table);
-    if (def?.properties) cols = new Set(Object.keys(def.properties));
-  }
-  schemaCache.set(table, cols);
-  return cols;
-}
-
-// Fetch the OpenAPI schema ONCE (it is ~1.5MB) and reuse it for every table.
-const schemaRes = await fetch(`${url.replace(/\/$/, '')}/rest/v1/`, {
-  headers: { apikey: key, Authorization: `Bearer ${key}` },
-});
-if (!schemaRes.ok) {
+if (!PAT) {
   console.error(
-    `Could not fetch the live schema from ${url}/rest/v1/ (HTTP ${schemaRes.status}).`,
+    'Missing SUPABASE_PAT (management API token) — needed to read the full schema.',
   );
   process.exit(1);
 }
-const schemaBody = await schemaRes.json();
-// `definitions` is an OBJECT keyed by table name in PostgREST's OpenAPI doc.
-const defs = schemaBody.definitions || {};
-const liveSchema = new Map(
-  Object.entries(defs)
-    .filter(([, d]) => d && d.properties)
-    .map(([name, d]) => [name, new Set(Object.keys(d.properties))]),
+
+const PROJECT_REF = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+if (!PROJECT_REF) {
+  console.error(`Could not derive the project ref from ${url}`);
+  process.exit(1);
+}
+
+const schemaRes = await fetch(
+  `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
+  {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${PAT}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `select table_name, column_name from information_schema.columns
+              where table_schema = 'public'`,
+    }),
+  },
 );
+if (!schemaRes.ok) {
+  console.error(
+    `Could not read the schema from the Management API (HTTP ${schemaRes.status}).`,
+  );
+  process.exit(1);
+}
+const schemaRows = await schemaRes.json();
+const liveSchema = new Map();
+for (const r of schemaRows) {
+  if (!liveSchema.has(r.table_name)) liveSchema.set(r.table_name, new Set());
+  liveSchema.get(r.table_name).add(r.column_name);
+}
 
 const problems = [];
 let checkedTables = 0;
@@ -156,7 +231,7 @@ for (const [table, sites] of byTable) {
   if (!cols) {
     // Table not in the public schema — could be a private schema, a view
     // PostgREST does not expose, or a typo.
-    console.log(`  · ${table}: not exposed by PostgREST (${sites.length} select(s)) — skipped`);
+    console.log(`  · ${table}: table not found in the public schema (${sites.length} select(s)) — skipped`);
     continue;
   }
   checkedTables++;

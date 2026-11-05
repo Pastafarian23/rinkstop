@@ -17,7 +17,11 @@ export interface PartnerListing {
   logo_url: string | null;
   photos: string[];
   hours: Record<string, string> | null;
-  tier: string;
+  // 2026-11-05: `listings` has no `tier` column — a listing's tier lives on
+  // `profiles.tier` (the owner's tier). The select asked for a column that
+  // never existed, so this whole listing query was failing with 42703 and
+  // the partners page rendered empty. Removed from the select + type; the
+  // partner card does not display a tier.
   is_published: boolean;
   is_featured?: boolean;
   featured_until?: string | null;

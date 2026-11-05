@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
   if (leagueIds.length > 0) {
     const { data } = await supabaseAdmin
       .from('leagues')
-      .select('id, slug, name, city, country')
+      .select('id, slug, name, country')
       .in('id', leagueIds);
     for (const r of (data || []) as EntityRow[]) {
       results.push({ ...r, type: 'league' as const });

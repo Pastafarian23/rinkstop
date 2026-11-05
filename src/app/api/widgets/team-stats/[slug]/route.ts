@@ -40,7 +40,7 @@ export async function GET(
 
   const { data: team } = await supabaseAdmin
     .from('teams')
-    .select('id, name, city, country, league_name, logo_url')
+    .select('id, name, city, country, logo_url')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -52,7 +52,7 @@ export async function GET(
 
   const { data: games } = await supabaseAdmin
     .from('games')
-    .select('game_date, home_team_score, away_team_score, status, home_team_id, away_team_id')
+    .select('scheduled_at, home_score, away_score, status, home_team_rinkstop_id, away_team_rinkstop_id')
     .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
     .order('game_date', { ascending: false })
     .limit(5);
@@ -108,7 +108,7 @@ footer a { color: #FFB81C; text-decoration: none; }
   ${team.logo_url ? `<img class="team-logo" src="${esc(team.logo_url)}" alt="${esc(team.name)} logo">` : ''}
   <div class="team-info">
     <h2>${esc(team.name)}</h2>
-    <p>${esc(team.league_name || '')} · ${esc(team.city || '')}, ${esc(team.country || '')}</p>
+    <p>${esc(team.city ? '' : '')}${esc(team.city || '')}, ${esc(team.country || '')}</p>
   </div>
 </div>
 <div class="record">

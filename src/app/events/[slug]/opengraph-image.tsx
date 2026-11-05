@@ -9,7 +9,7 @@ export const contentType = 'image/png';
 export default async function Image({ params }: { params: { slug: string } }) {
   const { data: event } = await supabase
     .from('rink_events')
-    .select('title, starts_at, ends_at, banner_image_url, rink:rinks(name, city, province_state, country)')
+    .select('title, starts_at, ends_at, banner_image_url, rink:rinks(name, country)')
     .eq('slug', params.slug)
     .in('status', ['published', 'cancelled', 'completed'])
     .eq('visibility', 'public')

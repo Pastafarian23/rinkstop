@@ -34,7 +34,7 @@ export class PassportAdapter implements PassportAdapterLike {
     // 1. Profile (base identity)
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, account_type, avatar_url')
+      .select('user_id, avatar_url')
       .eq('user_id', internalUserId)
       .maybeSingle();
 

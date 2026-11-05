@@ -139,12 +139,12 @@ export async function POST(request: NextRequest) {
     // Resolve rink owner user IDs + rink name + requester name in parallel
     const [ownersResult, requesterResult, rinkResult] = await Promise.all([
       supabaseAdmin.from('rink_owners').select('user_id').eq('rink_id', body.rink_id as string),
-      supabaseAdmin.from('profiles').select('full_name').eq('user_id', userId).single(),
+      supabaseAdmin.from('profiles').select('display_name').eq('user_id', userId).single(),
       supabaseAdmin.from('rinks').select('name').eq('id', body.rink_id as string).single(),
     ]);
 
     const ownerIds = (ownersResult.data ?? []).map((o: any) => o.user_id).filter(Boolean);
-    const requesterName = (requesterResult.data as any)?.full_name ?? 'A customer';
+    const requesterName = (requesterResult.data as any)?.display_name ?? 'A customer';
     const rinkName = (rinkResult.data as any)?.name ?? 'this rink';
 
     if (ownerIds.length > 0) {

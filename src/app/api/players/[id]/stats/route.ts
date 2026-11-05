@@ -44,7 +44,7 @@ export async function GET(
 
     const { data: playerData } = await supabaseAdmin
       .from('players')
-      .select('id, first_name, last_name, highlightly_id, badge_tier, subscription_status')
+      .select('id, first_name, last_name, highlightly_id')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle();
 

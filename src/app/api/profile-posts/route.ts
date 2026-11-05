@@ -183,11 +183,21 @@ async function resolveAuthorizedTarget(
   // league
   const { data } = await supabaseAdmin
     .from('leagues')
-    .select('id, created_by')
+    .select('id')
     .eq('id', targetId)
     .maybeSingle();
   if (!data) throw new Error('League not found.');
-  if (data.created_by !== userId) throw new Error('You can only post to leagues you manage.');
+  // 2026-11-05: `leagues` has no user_id column — league management is not
+  // owned by a single person. Per src/lib/ownership.ts, a league admin is
+  // anyone with the `league_admin` ACCOUNT TYPE.
+  const { data: accountTypes } = await supabaseAdmin
+    .from('profile_account_types')
+    .select('account_type')
+    .eq('user_id', userId);
+  const isLeagueAdmin = (accountTypes || []).some(
+    (r) => (r as { account_type: string }).account_type === 'league_admin',
+  );
+  if (!isLeagueAdmin) throw new Error('You can only post to leagues you manage.');
   return { targetType: 'league', targetId: data.id };
 }
 

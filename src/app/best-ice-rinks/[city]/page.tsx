@@ -41,7 +41,7 @@ export default async function BestIceRinksPage({ params }: Props) {
   const escapedCity = cityName.replace(/[%_]/g, '\\$&');
   const { data: rinks } = await supabaseAdmin
     .from('rinks')
-    .select('id, name, slug, address, city, province, country, description, phone, website')
+    .select('id, name, slug, address, city, province_state, country, phone, website_url, notes')
     .ilike('city', `*${escapedCity}*`)
     .not('slug', 'is', null)
     .order('name')
@@ -101,7 +101,7 @@ export default async function BestIceRinksPage({ params }: Props) {
                     <Link href={`/rinks/${slugify(cityName)}/${rink.slug}`} style={{ color: '#fff', textDecoration: 'none' }}>{rink.name}</Link>
                   </h3>
                   {rink.address && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>📍 {rink.address}</p>}
-                  {rink.description && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>{rink.description}</p>}
+                  {rink.notes && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>{rink.notes}</p>}
                   <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <Link href={`/rinks/${slugify(cityName)}/${rink.slug}`} style={{ padding: '0.375rem 0.875rem', background: '#C8102E', color: '#fff', borderRadius: '4px', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none' }}>View Details</Link>
                     <Link href="/directory/youth-hockey/learn-to-play" style={{ padding: '0.375rem 0.875rem', background: 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: '4px', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none' }}>Learn to Play</Link>

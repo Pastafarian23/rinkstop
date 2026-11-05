@@ -236,18 +236,31 @@ export class StampService {
    *   - tournament_organizer→player: deferred (same reason)
    */
   async resolveActorType(actorUserId: string): Promise<StampActorType | null> {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('account_type')
+    // 2026-11-05: account_type does NOT live on `profiles` — it lives in
+    // `profile_account_types` (one row per account type per user). The old
+    // select asked for profiles.account_type, which has never existed on the
+    // live schema, so PostgREST returned 42703 and this method ALWAYS
+    // returned null — every passport stamp was recorded with no actor type.
+    // See src/lib/wizardState.ts and src/lib/passport/14-authorization.ts for
+    // the canonical read pattern.
+    const { data: accountTypeRows } = await supabaseAdmin
+      .from('profile_account_types')
+      .select('account_type, is_primary')
       .eq('user_id', actorUserId)
-      .maybeSingle();
+      .limit(10);
 
-    if (!profile) return null;
+    const accountTypeRowsTyped = (accountTypeRows || []) as Array<{
+      account_type: string;
+      is_primary: boolean;
+    }>;
+    if (accountTypeRowsTyped.length === 0) return null;
 
-    // Map profile.account_type → stamp actor_type. account_type is the
+    const primary = accountTypeRowsTyped.find((r) => r.is_primary);
+    const accountType = primary?.account_type ?? accountTypeRowsTyped[0].account_type;
+
+    // Map account_type → stamp actor_type. account_type is the
     // user-account persona (parent/coach/player/official/operator/generic).
-    // See 2026-06-12_profiles_account_type.sql.
-    switch (profile.account_type) {
+    switch (accountType) {
       case 'player':
         return 'player';
       case 'parent':
@@ -371,14 +384,18 @@ export class StampService {
     if (ownPassport) {
       const { data: ownProfile } = await supabaseAdmin
         .from('profiles')
-        .select('display_name, first_name, last_name, date_of_birth')
+        .select('display_name')
         .eq('user_id', userId)
         .maybeSingle();
-      const displayName =
-        ownProfile?.display_name ||
-        `${ownProfile?.first_name ?? ''} ${ownProfile?.last_name ?? ''}`.trim() ||
-        'You';
-      const ageYears = this.ageFromDob(ownProfile?.date_of_birth as string | null);
+      // 2026-11-05: `profiles` has no first_name/last_name/date_of_birth
+      // columns (the name column is display_name). The old expression
+      // referenced columns that do not exist, so it always produced 'You'
+      // and ageYears was always null.
+      const displayName = ownProfile?.display_name || 'You';
+      // `profiles` has no date_of_birth column, so age cannot be derived
+      // from the profile row. Left null rather than reading a column that
+      // does not exist.
+      const ageYears: number | null = null;
       out.push({
         passportId: ownPassport.passport_id as string,
         internalUserId: ownPassport.internal_user_id as string,
@@ -437,17 +454,16 @@ export class StampService {
           // table has user_id but not those columns in v1).
           const { data: kidProfiles } = await supabaseAdmin
             .from('profiles')
-            .select('user_id, display_name, first_name, last_name, date_of_birth')
+            .select('user_id, display_name')
             .in('user_id', userIds);
           const kidProfileByUser = new Map<string, { displayName: string; dateOfBirth: string | null }>();
           for (const kp of kidProfiles ?? []) {
-            const displayName =
-              kp.display_name ||
-              `${kp.first_name ?? ''} ${kp.last_name ?? ''}`.trim() ||
-              'Linked player';
+            // 2026-11-05: `profiles` has no first_name/last_name/
+            // date_of_birth columns — the name column is `display_name`.
+            const displayName = kp.display_name || 'Linked player';
             kidProfileByUser.set(kp.user_id as string, {
               displayName,
-              dateOfBirth: (kp.date_of_birth as string | null) ?? null,
+              dateOfBirth: null,
             });
           }
           for (const link of links) {

@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('rinks')
-    .select('id, name, city, state, country, slug, latitude, longitude, created_at, updated_at', { count: 'exact' });
+    .select('id, name, city, province_state, country, slug, latitude, longitude, created_at, updated_at', { count: 'exact' });
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   // Distinct states for the filter dropdown
   const { data: stateRows } = await supabaseAdmin
     .from('rinks')
-    .select('state')
+    .select('province_state')
     .not('state', 'is', null)
     .neq('state', '');
   const stateSet = new Set<string>((stateRows || []).map((r: any) => r.state).filter(Boolean));

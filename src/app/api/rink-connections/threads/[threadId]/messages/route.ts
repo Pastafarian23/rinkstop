@@ -104,10 +104,10 @@ export async function POST(
   // Recipient = connection creator if they are not the sender, else rink owners
   const senderProfile = await supabaseAdmin
     .from('profiles')
-    .select('full_name')
+    .select('display_name')
     .eq('user_id', userId)
     .single();
-  const senderName = (senderProfile.data as any)?.full_name ?? 'Someone';
+  const senderName = (senderProfile.data as any)?.display_name ?? 'Someone';
   const preview = ((data as any)?.content as string ?? '').slice(0, 80);
 
   // Determine recipients: the other party in the thread

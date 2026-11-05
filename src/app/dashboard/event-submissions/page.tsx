@@ -60,7 +60,7 @@ export default async function MyEventSubmissionsPage() {
 
   const { data: submissions } = await supabaseAdmin
     .from('event_submissions')
-    .select('*, rinks(name, slug, city)')
+    .select('*, rinks(name, city)')
     .eq('submitter_email', email)
     .order('created_at', { ascending: false })
     .limit(100);

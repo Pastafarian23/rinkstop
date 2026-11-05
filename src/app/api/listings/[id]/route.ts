@@ -41,7 +41,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data, error } = await supabaseAdmin
     .from('listings')
-    .select('id, owner_user_id, listing_type, business_name, category, description, location, latitude, longitude, service_radius_km, contact_email, contact_phone, website, logo_url, photos, hours, is_published, tier, created_at, updated_at')
+    .select('id, owner_user_id, listing_type, business_name, category, description, location, latitude, longitude, service_radius_km, contact_email, contact_phone, website, logo_url, photos, hours, is_published, created_at, updated_at')
     .eq('id', id)
     .single();
   if (error) {
@@ -137,7 +137,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .from('listings')
     .update(update)
     .eq('id', id)
-    .select('id, owner_user_id, listing_type, business_name, category, description, location, latitude, longitude, service_radius_km, contact_email, contact_phone, website, logo_url, photos, hours, is_published, tier, created_at, updated_at')
+    .select('id, owner_user_id, listing_type, business_name, category, description, location, latitude, longitude, service_radius_km, contact_email, contact_phone, website, logo_url, photos, hours, is_published, created_at, updated_at')
     .single();
 
   if (error) {

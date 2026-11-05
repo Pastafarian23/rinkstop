@@ -28,7 +28,7 @@ async function getTeam(id: string) {
 
   const { data: fixtures } = await supabaseAdmin
     .from('fixtures')
-    .select('id, game_date, status, home_team_id, away_team_id, home_score, away_score')
+    .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score')
     .or(`home_team_id.eq.${id},away_team_id.eq.${id}`)
     .order('game_date', { ascending: false })
     .limit(10);

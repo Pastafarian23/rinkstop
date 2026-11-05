@@ -13,7 +13,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 export interface ProfileSummary {
   user_id: string;
   email: string | null;
-  full_name: string | null;
+  // 2026-11-05: `full_name` does not exist on `profiles` — the column is
+  // `display_name`. The old select asked for a column that was never there,
+  // so every call returned PostgREST 42703 and this helper always returned
+  // null. Renamed to match the live schema.
+  display_name: string | null;
   username: string | null;
 }
 
@@ -21,7 +25,7 @@ export async function getProfileByUserId(userId: string): Promise<ProfileSummary
   if (!userId) return null;
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('user_id, email, full_name, username')
+    .select('user_id, email, display_name, username')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {

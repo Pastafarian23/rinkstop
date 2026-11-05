@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       .order('name', { ascending: true }),
     supabaseAdmin
       .from('leagues')
-      .select('id, name, slug, created_by')
+      .select('id, name, slug')
       .eq('created_by', userId)
       .order('name', { ascending: true }),
   ]);

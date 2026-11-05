@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const playerId = searchParams.get('playerId');
   const teamId = searchParams.get('teamId');
 
-  let query = supabase.from('player_stats').select('*, players(first_name,last_name,headshot_url)');
+  let query = supabase.from('player_stats').select('*, players(first_name, headshot_url)');
   if (playerId) query = query.eq('player_id', playerId);
   if (teamId) {
     const { data: players } = await supabase.from('players').select('id').eq('team_id', teamId);

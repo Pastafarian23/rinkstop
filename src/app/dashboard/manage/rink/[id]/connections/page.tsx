@@ -63,7 +63,7 @@ export default async function ConnectionsPage({ params }: PageProps) {
 
   const { data: connections, error } = await supabaseAdmin
     .from('rink_org_connections')
-    .select('id, org_name, org_type, role, status, contact_name, contact_email, invite_code, created_at, updated_at')
+    .select('id, org_name, org_type, role, status, org_contact_name, org_contact_email, created_at, updated_at')
     .eq('rink_id', id)
     .order('created_at', { ascending: false });
 

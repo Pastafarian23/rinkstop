@@ -44,7 +44,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
   const { id } = await params;
   const { data, error } = await supabaseAdmin
     .from('listings')
-    .select('id, owner_user_id, business_name, category, description, location, contact_email, contact_phone, website, logo_url, photos, hours, tier, is_published, created_at, updated_at')
+    .select('id, owner_user_id, business_name, category, description, location, contact_email, contact_phone, website, logo_url, photos, hours, is_published, created_at, updated_at')
     .eq('id', id)
     .eq('is_published', true)
     .maybeSingle();
@@ -239,7 +239,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
         }}
       >
         <div>
-          Listed on RinkStop · {safeCategory.replace('_', ' ')}{data.tier !== 'free' ? ` · ${data.tier} tier` : ''}
+          Listed on RinkStop · {safeCategory.replace('_', ' ')}
         </div>
         <Link
           href={`/partners/${data.id}/passport`}

@@ -83,14 +83,14 @@ export default async function StampPage({ params, searchParams }: PageProps) {
     await import('@/lib/supabase')
     ).supabaseAdmin
       .from('profiles')
-      .select('display_name, first_name, last_name')
+      .select('display_name')
       .eq('user_id', subject)
       .maybeSingle();
     if (profile) {
-      subjectName =
-        profile.display_name ||
-        `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() ||
-        'player';
+      // 2026-11-05: `profiles` has no first_name/last_name columns — the
+      // name column is `display_name`. The old expression referenced
+      // columns that do not exist, so it always fell through to 'player'.
+      subjectName = profile.display_name || 'player';
     }
   }
 

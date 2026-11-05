@@ -17,6 +17,18 @@ import {
  * Local helper: check if a league slug is in scope. Uses the imported
  * leagueNameToSlug to normalize, then checks activeLeagues.
  */
+/**
+ * Derive a country code from a free-text location string.
+ * `profiles.country` does not exist on the live schema; the only geography
+ * on the profile row is `location` (a free-text "City, Country" string).
+ */
+function extractCountry(location: string | null): string | null {
+  if (!location) return null;
+  const parts = location.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  return parts[parts.length - 1].toUpperCase().slice(0, 2) || null;
+}
+
 function isLeagueSlugInScope(slug: string | null, scope: ChallengeScope): boolean {
   if (!slug) return false;
   return scope.activeLeagues.includes(slug);
@@ -110,7 +122,7 @@ async function resolveUserScope(holderUserId: string): Promise<ChallengeScope> {
     const [profileRes, accountTypesRes, managedRes, prefsRes, playersRes] = await Promise.all([
       supabaseAdmin
         .from('profiles')
-        .select('user_id, account_type, country, location')
+        .select('user_id, location')
         .eq('user_id', holderUserId)
         .maybeSingle(),
       supabaseAdmin
@@ -142,10 +154,12 @@ async function resolveUserScope(holderUserId: string): Promise<ChallengeScope> {
     const claimedPlayer = playersRes.data;
 
     const user: UserProfileSummary = {
-      accountType:
-        profile?.account_type ??
-        (accountTypes.length > 0 ? accountTypes[0].account_type : null),
-      country: profile?.country ?? null,
+      // 2026-11-05: `profiles` has no account_type / country columns.
+      // account_type comes from `profile_account_types` (already fetched
+      // above); `country` does not exist on profiles at all, so it is
+      // derived from the profile location string when present.
+      accountType: accountTypes.length > 0 ? accountTypes[0].account_type : null,
+      country: extractCountry(profile?.location ?? null),
       location: profile?.location ?? null,
       hasClaimedPlayer: !!claimedPlayer,
       isParent: managedCount > 0,
@@ -235,7 +249,7 @@ export default async function ChallengesSection({
     // Resolve each stamped rink to its league (via the leagues<->rinks link)
     const { data: rinkLeagues } = await supabaseAdmin
       .from('rinks')
-      .select('id, name, league_id, leagues:league_id (id, name)')
+      .select('id, name, leagues:league_id (id, name)')
       .in('id', stampedRinkIds);
     const leagueBuckets = new Map<
       string,
@@ -256,7 +270,7 @@ export default async function ChallengesSection({
     if (leagueIdsTouched.size > 0) {
       const { data: leagueRinkCounts } = await supabaseAdmin
         .from('rinks')
-        .select('league_id')
+        .select('')
         .in('league_id', Array.from(leagueIdsTouched));
       (leagueRinkCounts ?? []).forEach((rk: any) => {
         if (rk.league_id && leagueBuckets.has(rk.league_id)) {

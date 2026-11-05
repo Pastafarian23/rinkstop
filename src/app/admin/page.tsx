@@ -126,7 +126,7 @@ async function getActivityFeed(): Promise<ActivityEvent[]> {
       .limit(10),
     supabaseAdmin
       .from('team_news')
-      .select('id, team_id, headline, published_at')
+      .select('id, team_id, title, published_at')
       .eq('is_published', true)
       .not('published_at', 'is', null)
       .gte('published_at', since)
@@ -141,9 +141,9 @@ async function getActivityFeed(): Promise<ActivityEvent[]> {
       .limit(10),
     supabaseAdmin
       .from('team_results')
-      .select('id, team_id, opponent_name, result_date, score_for, score_against')
-      .gte('result_date', since)
-      .order('result_date', { ascending: false })
+      .select('id, team_id, game_date, our_score, their_score, opponent')
+      .gte('game_date', since)
+      .order('game_date', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('team_invites')
@@ -194,7 +194,8 @@ async function getActivityFeed(): Promise<ActivityEvent[]> {
         occurred_at: n.published_at || '',
         type: 'news_published',
         icon: '📰',
-        title: n.headline,
+        // 2026-11-05: `team_news` column is `title` (not `headline`).
+        title: n.title,
         detail: 'News article published to public profile',
         tone: 'info',
       });
@@ -221,10 +222,10 @@ async function getActivityFeed(): Promise<ActivityEvent[]> {
     for (const r of resRes.value.data || []) {
       events.push({
         id: r.id,
-        occurred_at: r.result_date,
+        occurred_at: r.game_date,
         type: 'result_added',
         icon: '🏆',
-        title: `Result: ${r.score_for ?? '?'}-${r.score_against ?? '?'} vs ${r.opponent_name || 'opponent'}`,
+        title: `Result: ${r.our_score ?? '?'}-${r.their_score ?? '?'} vs ${r.opponent || 'opponent'}`,
         detail: 'Game result posted',
         tone: 'success',
       });
