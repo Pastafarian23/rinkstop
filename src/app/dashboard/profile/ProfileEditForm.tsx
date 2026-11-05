@@ -87,8 +87,6 @@ export default function ProfileEditForm({
           {username ? (
             <a
               href={`/profile/${username}`}
-              target="_blank"
-              rel="noopener"
               data-testid="profile-edit-form-view-public"
               style={{ color: '#FFB81C', textDecoration: 'none' }}
             >

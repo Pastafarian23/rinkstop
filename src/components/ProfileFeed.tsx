@@ -33,6 +33,13 @@ interface Post {
   sport?: string | null;
 }
 
+// The sport values the POST endpoint accepts (mirrors ALLOWED_SPORTS in
+// src/app/api/profile-posts/route.ts).
+const SPORTS = [
+  'hockey', 'figure_skating', 'speed_skating',
+  'basketball', 'soccer', 'baseball', 'other',
+] as const;
+
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm|mov)(\?.*)?$/i.test(url) || url.includes('/post-media/');
 }
@@ -69,6 +76,16 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
   // Post that's been confirmed for deletion but the DELETE request is
   // still in flight. We render a faded state so the user sees feedback.
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
+  // Edit-post state (2026-11-05, Arnel: "can only delete not edit so add
+  // edit functionality"). `editingPostId` is the post being edited (null =
+  // not editing), `editBody` is the draft text, `editSport` the sport picker
+  // value, `editSaving` the in-flight flag.
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editBody, setEditBody] = useState('');
+  const [editSport, setEditSport] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   // Fetch posts for this profile.
   useEffect(() => {
@@ -125,6 +142,56 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
       }
     } catch {
       setDeletingPostId(null);
+    }
+  }
+
+  function startEdit(post: Post) {
+    setMenuPostId(null);
+    setEditingPostId(post.id);
+    setEditBody(post.body ?? '');
+    setEditSport(post.sport ?? null);
+    setEditError('');
+  }
+
+  function cancelEdit() {
+    setEditingPostId(null);
+    setEditBody('');
+    setEditSport(null);
+    setEditError('');
+  }
+
+  async function saveEdit(postId: string) {
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const r = await fetch(`/api/profile-posts/${postId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: editBody, sport: editSport }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        setEditError(j.error || 'Could not save the post.');
+        setEditSaving(false);
+        return;
+      }
+      const j = await r.json().catch(() => ({}));
+      const updated = j.post;
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                body: updated?.body ?? editBody,
+                sport: updated?.sport ?? editSport,
+              }
+            : p,
+        ),
+      );
+      cancelEdit();
+    } catch {
+      setEditError('Could not save the post. Check your connection and try again.');
+      setEditSaving(false);
     }
   }
 
@@ -221,7 +288,98 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
         <div className={styles.postList}>
           {posts.map((post) => (
             <article key={post.id} className={styles.postCard}>
-              <p className={styles.postBody}>{post.body}</p>
+              {editingPostId === post.id ? (
+                // Inline editor (2026-11-05). Editing happens in place rather
+                // than in a modal so the post stays in context, and the
+                // character count mirrors the 1,000-char limit the POST
+                // endpoint enforces.
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <textarea
+                    value={editBody}
+                    onChange={(e) => setEditBody(e.target.value)}
+                    maxLength={1000}
+                    autoFocus
+                    aria-label="Edit post text"
+                    style={{
+                      width: '100%',
+                      minHeight: '5.5rem',
+                      resize: 'vertical',
+                      padding: '0.75rem',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      background: 'rgba(0,0,0,0.3)',
+                      color: '#fff',
+                      fontSize: '0.95rem',
+                      lineHeight: 1.5,
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <select
+                      value={editSport ?? ''}
+                      onChange={(e) => setEditSport(e.target.value || null)}
+                      aria-label="Sport"
+                      style={{
+                        padding: '0.4rem 0.55rem',
+                        borderRadius: 6,
+                        border: '1px solid rgba(255,255,255,0.18)',
+                        background: 'rgba(0,0,0,0.3)',
+                        color: '#fff',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      <option value="">No sport</option>
+                      {SPORTS.map((sp) => (
+                        <option key={sp} value={sp}>
+                          {sp.replace(/_/g, ' ')}
+                        </option>
+                      ))}
+                    </select>
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
+                      {editBody.length}/1000
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(post.id)}
+                      disabled={editSaving || !editBody.trim()}
+                      style={{
+                        padding: '0.4rem 0.85rem',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: editSaving || !editBody.trim() ? 'rgba(255,255,255,0.15)' : '#C8102E',
+                        color: '#fff',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        cursor: editSaving || !editBody.trim() ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {editSaving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      style={{
+                        padding: '0.4rem 0.7rem',
+                        borderRadius: 6,
+                        border: '1px solid rgba(255,255,255,0.18)',
+                        background: 'transparent',
+                        color: 'rgba(255,255,255,0.7)',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {editError ? (
+                    <p role="alert" style={{ margin: 0, fontSize: '0.8rem', color: '#FF6B6B' }}>
+                      {editError}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className={styles.postBody}>{post.body}</p>
+              )}
               {post.media_url && (
                 postMediaKind(post.media_url) === 'video' ? (
                   // Videos must render as <video>, not <img>. An <img> pointed
@@ -281,6 +439,14 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
                   role="menu"
                   data-post-menu
                 >
+                  <button
+                    type="button"
+                    className={styles.postMenuItem}
+                    onClick={() => startEdit(post)}
+                    role="menuitem"
+                  >
+                    Edit post
+                  </button>
                   <button
                     type="button"
                     className={`${styles.postMenuItem} ${styles.postMenuItemDanger}`}

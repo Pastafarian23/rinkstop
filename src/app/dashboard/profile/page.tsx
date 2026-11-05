@@ -259,12 +259,16 @@ export default async function ProfilePage() {
           had to manually type /profile/{username} to see their public
           card. Now there's a clear "View public profile →" affordance
           right under the header card. Disabled with a hint if no
-          username is set yet. */}
+          username is set yet.
+
+          2026-11-05 (Arnel: "view my profile shouldn't open new page from
+          dashboard"): removed target="_blank" — it opened a new tab instead
+          of navigating in place, which is the behaviour Arnel asked to
+          change. The link text keeps the "↗" affordance so it still reads
+          as "go to your public page". */}
       {profile?.username ? (
         <a
           href={`/profile/${profile.username}`}
-          target="_blank"
-          rel="noopener"
           data-testid="dashboard-profile-view-public"
           style={{
             display: 'flex',

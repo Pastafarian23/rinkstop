@@ -739,10 +739,22 @@ export default function PostComposer() {
 
   return (
     <>
-      {/* FAB */}
-      <button className={styles.fab} onClick={openComposer} aria-label="Open actions" title="Actions" type="button">
-        +
-      </button>
+      {/* FAB
+          2026-11-05 (Arnel: "Sometimes when I'm not logged in I still see the
+          blue plus for post functionality"): the FAB rendered UNCONDITIONALLY.
+          `isSignedIn` was read from useUser() but never used to gate it, so a
+          logged-out visitor saw a post button that could only fail later —
+          the composer opened and the error surfaced on submit.
+
+          Now the FAB is hidden until Clerk has loaded AND reports a signed-in
+          user. `isLoaded` matters as much as `isSignedIn`: during the auth
+          hydration window `isSignedIn` is false, and rendering the button
+          then hiding it would flash it for signed-in users. */}
+      {isLoaded && isSignedIn && (
+        <button className={styles.fab} onClick={openComposer} aria-label="Open actions" title="Actions" type="button">
+          +
+        </button>
+      )}
 
       {open && (
         <div className={styles.modalBackdrop} onClick={closeComposer}>

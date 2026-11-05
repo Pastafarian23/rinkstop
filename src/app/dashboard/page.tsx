@@ -474,8 +474,17 @@ async function renderDashboard(userId: string) {
           ) : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* 2026-11-05 (Arnel: "view my profile shouldn't open new page from
+              dashboard"). Two fixes here:
+                1. This button pointed at /dashboard/profile, which is the
+                   EDIT page — not the profile. It now goes to the PUBLIC
+                   profile (/profile/<username>), and falls back to the edit
+                   page only when no username is set yet.
+                2. It is a plain <Link> (same tab). The separate
+                   "View public profile" link on /dashboard/profile also
+                   had target="_blank", which is what opened a new tab. */}
           <Link
-            href="/dashboard/profile"
+            href={profile?.username ? `/profile/${profile.username}` : '/dashboard/profile'}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '0.55rem 1rem', borderRadius: 6,

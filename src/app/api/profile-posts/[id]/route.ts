@@ -3,6 +3,13 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { assetRefFromPublicUrl, releaseAssetRef } from '@/lib/media-ledger';
 
+// Matches the limits enforced by POST /api/profile-posts.
+const MAX_BODY_LENGTH = 1000;
+const ALLOWED_SPORTS = new Set([
+  'hockey', 'figure_skating', 'speed_skating',
+  'basketball', 'soccer', 'baseball', 'other',
+]);
+
 // DELETE /api/profile-posts/[id]
 // Soft-deletes a post. Only the owner can delete their own post.
 //
@@ -92,4 +99,128 @@ export async function DELETE(
   console.log('[profile-posts DELETE]', { postId: id, userId, mediaReleased });
 
   return NextResponse.json({ success: true, mediaReleased });
+}
+
+// PATCH /api/profile-posts/[id]
+// Edits a post's text, sport, and/or link. Only the owner can edit.
+//
+// 2026-11-05 (Arnel: "Fix posting from profile, can only delete not edit so
+// add edit functionality"). Posts could be deleted but never corrected —
+// a typo or a wrong sport was permanent.
+//
+// SCOPE: text-only edits. Media replacement is deliberately NOT supported:
+// swapping a photo would have to release the old media reference from the
+// quota ledger and attach the new one, and getting that wrong would either
+// leak quota or destroy an asset another page still renders. That is a
+// separate change with its own ledger bookkeeping.
+//
+// The `profile_posts_owner_crud` RLS policy already allows the owner to
+// update their own rows, and the explicit ownership check here makes the
+// rule explicit at the route level too.
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  let payload: { body?: unknown; sport?: unknown; link_url?: unknown };
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  }
+
+  const updates: Record<string, string | null> = {};
+
+  if (payload.body !== undefined) {
+    if (typeof payload.body !== 'string') {
+      return NextResponse.json({ error: 'body must be a string.' }, { status: 400 });
+    }
+    const body = payload.body.trim();
+    if (!body) {
+      return NextResponse.json(
+        { error: 'Post text cannot be empty. Delete the post instead.' },
+        { status: 400 },
+      );
+    }
+    if (body.length > MAX_BODY_LENGTH) {
+      return NextResponse.json(
+        { error: `Post text is too long (max ${MAX_BODY_LENGTH} characters).` },
+        { status: 400 },
+      );
+    }
+    updates.body = body;
+  }
+
+  if (payload.sport !== undefined) {
+    const sport = payload.sport === null ? null : String(payload.sport).trim();
+    if (sport && !ALLOWED_SPORTS.has(sport)) {
+      return NextResponse.json({ error: 'Invalid sport.' }, { status: 400 });
+    }
+    updates.sport = sport || null;
+  }
+
+  if (payload.link_url !== undefined) {
+    const link = payload.link_url === null ? null : String(payload.link_url).trim();
+    if (link) {
+      let parsed: URL | null = null;
+      try {
+        parsed = new URL(link);
+      } catch {
+        return NextResponse.json(
+          { error: 'That does not look like a valid link.' },
+          { status: 400 },
+        );
+      }
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return NextResponse.json(
+          { error: 'Links must start with http:// or https://' },
+          { status: 400 },
+        );
+      }
+    }
+    // A link post stores the URL in `media_url` (see POST — "If link_url was
+    // passed, prefer it as media_url"). Only editable when the post has no
+    // uploaded media of its own, so an edit can never orphan a stored file.
+    updates.media_url = link || null;
+  }
+
+  if (!Object.keys(updates).length) {
+    return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 });
+  }
+
+  // Ownership check — only the author may edit.
+  const { data: post } = await supabaseAdmin
+    .from('profile_posts')
+    .select('id, user_id, deleted_at')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!post || post.deleted_at) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (post.user_id !== userId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const { data: updated, error } = await supabaseAdmin
+    .from('profile_posts')
+    .update(updates)
+    .eq('id', id)
+    .select('id, body, sport, media_url, media_thumb, target_type, target_id, created_at, updated_at')
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  console.log('[profile-posts PATCH]', { postId: id, userId, fields: Object.keys(updates) });
+
+  return NextResponse.json({ success: true, post: updated });
 }
