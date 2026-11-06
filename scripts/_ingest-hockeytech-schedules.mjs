@@ -315,6 +315,7 @@ async function main() {
     let written = 0;
     let unresolved = 0;
     let skipped = 0;
+    let downgraded = 0;
 
     // League ids for cross-league markers (e.g. QMJHL feed lists OHL teams).
     const altLeagueIds = {};
@@ -378,6 +379,37 @@ async function main() {
         .from('fixtures')
         .upsert(record, { onConflict: 'league_id,scheduled_at,home_team_id,away_team_id', ignoreDuplicates: false });
       if (error) {
+        // The `fixtures_reject_completed_downgrade` trigger blocks an upsert
+        // that changes a row from status='completed' back to 'scheduled'.
+        // That happens when an older import (e.g. 'hockeytech-statview')
+        // wrote future games as completed with 0-0 scores. The trigger
+        // blocks the update, so we correct the source row's status FIRST
+        // and then re-apply.
+        //
+        // 2026-11-06: 2,282 such rows existed (2,225 of them FUTURE games
+        // marked completed with 0-0 — the site was displaying fake final
+        // scores for games that had not been played).
+        if (/downgrade/i.test(error.message)) {
+          const { error: fixErr } = await supabase
+            .from('fixtures')
+            .update({ status: 'scheduled', home_score: null, away_score: null })
+            .eq('league_id', league.id)
+            .eq('scheduled_at', scheduledAt)
+            .eq('home_team_id', homeId)
+            .eq('away_team_id', awayId)
+            .eq('status', 'completed');
+          if (!fixErr) {
+            const { error: retryErr } = await supabase
+              .from('fixtures')
+              .upsert(record, { onConflict: 'league_id,scheduled_at,home_team_id,away_team_id', ignoreDuplicates: false });
+            if (!retryErr) {
+              downgraded++;
+              written++;
+              continue;
+            }
+            error = retryErr;
+          }
+        }
         skipped++;
         if (skipped <= 3) console.log(`  ! upsert error: ${error.message}`);
         continue;
@@ -387,14 +419,14 @@ async function main() {
 
     totalWritten += written;
     totalUnresolved += unresolved;
-    results[key] = { written, unresolved, skipped, feedGames: schedule.length };
-    console.log(`[${key}] wrote=${written} unresolvedTeams=${unresolved} errors=${skipped}`);
+    results[key] = { written, unresolved, skipped, downgraded, feedGames: schedule.length };
+    console.log(`[${key}] wrote=${written} unresolvedTeams=${unresolved} errors=${skipped} downgraded=${downgraded}`);
   }
 
   console.log('');
   console.log('=== Summary ===');
   for (const [k, v] of Object.entries(results)) {
-    console.log(`  ${k.padEnd(8)} feed=${v.feedGames} written=${v.written} unresolved=${v.unresolved} errors=${v.skipped}`);
+    console.log(`  ${k.padEnd(8)} feed=${v.feedGames} written=${v.written} unresolved=${v.unresolved} errors=${v.skipped} downgraded=${v.downgraded || 0}`);
   }
   console.log(`  TOTAL written=${totalWritten} unresolvedTeams=${totalUnresolved}`);
   if (DRY_RUN) console.log('  (dry run — nothing written)');

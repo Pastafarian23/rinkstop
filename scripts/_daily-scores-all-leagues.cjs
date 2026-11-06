@@ -441,6 +441,44 @@ async function main() {
     await sleep(100);
   }
 
+  // HockeyTech fallback for the Canadian junior leagues.
+  // 2026-11-06: the Highlightly subscription died (HTTP 403 "not subscribed"),
+  // so OHL/WHL/QMJHL went stale (0 upcoming games; QMJHL 5+ months behind).
+  // The HockeyTech modulekit feed is a separate, key-based source that still
+  // works — it was previously mislabeled "DEAD" because the feed RATE LIMITS
+  // and a rate-limited response looks exactly like an invalid key.
+  //
+  // Run it only for leagues whose Highlightly pass produced nothing (i.e.
+  // Highlightly is dead for that league), so we don't double-write when
+  // both sources are healthy.
+  const HOCKEYTECH_FALLBACK = { qmjhl: 'Quebec Major Junior Hockey League', ohl: 'Ontario Hockey League', whl: 'Western Hockey League' };
+  const htResults = {};
+  for (const [key, leagueName] of Object.entries(HOCKEYTECH_FALLBACK)) {
+    if (ONLY.length > 0 && !ONLY.includes(key)) continue;
+    if ((results[key] || 0) > 0) {
+      console.log(`[HT ${leagueName}] skipped — Highlightly already supplied ${results[key]} games`);
+      continue;
+    }
+    try {
+      const { execFileSync } = require('child_process');
+      const out = execFileSync('node', ['scripts/_ingest-hockeytech-schedules.mjs', `--only=${key}`], {
+        cwd: __dirname,
+        encoding: 'utf8',
+        timeout: 20 * 60 * 1000,
+        env: { ...process.env },
+      });
+      const m = out.match(/TOTAL written=(\d+) unresolvedTeams=(\d+)/);
+      const written = m ? parseInt(m[1], 10) : 0;
+      htResults[key] = written;
+      console.log(`[HT ${leagueName}] ${written} games upserted via HockeyTech`);
+      results[key] = written;
+    } catch (e) {
+      const msg = e && e.message ? e.message : String(e);
+      console.log(`[HT ${leagueName}] fallback error: ${msg}`);
+      htResults[key] = 0;
+    }
+  }
+
   // Write JSON report for cron delivery
   const totalUpserts = Object.values(results).reduce((s, n) => s + n, 0);
   const report = {
@@ -448,6 +486,7 @@ async function main() {
     dry_run: DRY_RUN,
     days: DAYS,
     results,
+    hockeytech_fallback: htResults,
     total_upserts: totalUpserts,
   };
   require('fs').writeFileSync('/tmp/daily-scores-all-leagues-result.json', JSON.stringify(report, null, 2));
