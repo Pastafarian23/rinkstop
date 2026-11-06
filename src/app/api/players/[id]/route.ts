@@ -69,7 +69,7 @@ export async function GET(
   if (isUuid) {
     const { data, error } = await supabase
       .from('players')
-      .select('*, team_workspaces(name, slug, headshot_url, leagues(name, slug))')
+      .select('*, team_workspaces(name, slug, headshot_url:avatar_url, leagues(name, slug))')
       .eq('id', id)
       .limit(1)
       .maybeSingle();
@@ -116,7 +116,7 @@ export async function GET(
   const cleanSlug = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
   const { data: rsData, error: rsErr } = await supabase
     .from('players')
-    .select('*, team_workspaces(name, slug, headshot_url, leagues(name, slug))')
+    .select('*, team_workspaces(name, slug, headshot_url:avatar_url, leagues(name, slug))')
     .or(`slug.ilike.${cleanSlug}-%,slug.eq.${cleanSlug}`)
     .limit(1)
     .maybeSingle();

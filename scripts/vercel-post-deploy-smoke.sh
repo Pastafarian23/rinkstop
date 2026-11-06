@@ -103,6 +103,50 @@ for check in "${CHECKS[@]}"; do
   rm -f "$out"
 done
 
+# --- API checks -------------------------------------------------------------
+# The HTML smoke test above only inspects pages (and requires >10KB), so it
+# cannot catch a JSON route returning HTTP 500. That happened on 2026-11-06:
+# repointing the team FKs broke the embedded relations in /api/players,
+# /api/scores, /api/fixtures and /api/game/[id], and every page smoke test
+# still passed because the HTML pages were fine.
+#
+# Each entry: path|expected code|required substring
+declare -a API_CHECKS=(
+  "/api/players?limit=2|200|data"
+  "/api/scores?limit=2|200|data"
+  "/api/fixtures?limit=2|200|home_team"
+  "/api/fixtures/ticker|200|homeCode"
+  "/api/games/ticker|200|homeCode"
+  "/api/search/suggest?q=hockey|200|results"
+  "/api/counts|200|teams"
+)
+
+echo ""
+echo "--- API checks ---"
+for check in "${API_CHECKS[@]}"; do
+  path=$(echo "$check" | cut -d'|' -f1)
+  expected_code=$(echo "$check" | cut -d'|' -f2)
+  needle=$(echo "$check" | cut -d'|' -f3)
+
+  out=$(mktemp)
+  code=$(curl -s -o "$out" -w "%{http_code}" --max-time 20 "$SITE$path" 2>/dev/null || echo "000")
+  body=$(head -c 4000 "$out" 2>/dev/null)
+
+  if [ "$code" != "$expected_code" ]; then
+    printf "  x %-34s HTTP=%s expected %s\n" "$path" "$code" "$expected_code"
+    FAIL=$((FAIL+1))
+    FAILED_PATHS+=("$path:HTTP=$code")
+  elif ! printf '%s' "$body" | grep -q "$needle"; then
+    printf "  x %-34s HTTP=%s but body missing '%s'\n" "$path" "$code" "$needle"
+    FAIL=$((FAIL+1))
+    FAILED_PATHS+=("$path:missing=$needle")
+  else
+    printf "  + %-34s HTTP=%s\n" "$path" "$code"
+    PASS=$((PASS+1))
+  fi
+  rm -f "$out"
+done
+
 echo ""
 echo "Summary: $PASS passed, $FAIL failed"
 

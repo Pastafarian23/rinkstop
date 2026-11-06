@@ -8,7 +8,11 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     const { data, error } = await supabase
-      .from('games')
+      // 2026-11-06: the legacy `games` table is empty and has no FK
+      // constraints to team_workspaces, so the embed could never resolve.
+      // The games live in `fixtures`; /api/fixtures/ticker is the same
+      // route. Point this one at `fixtures` too so the URL keeps working.
+      .from('fixtures')
       .select(`
         id,
         scheduled_at,
@@ -60,7 +64,7 @@ export async function GET() {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : (typeof e === 'object' ? JSON.stringify(e) : String(e));
-    console.error('games ticker error', msg);
+    console.error('games ticker error (fixtures):', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
