@@ -94,8 +94,9 @@ interface TeamRow {
   level: string | null;
   season_label: string | null;
   description: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
+  // 2026-11-06: contact_email / contact_phone are INTERNAL and deliberately
+  // NOT part of the public TeamRow — they are not selected and not serialized
+  // into the page payload.
   visibility: string;
   is_active: boolean;
   created_at: string;
@@ -249,7 +250,24 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // this is a server-rendered page that only exposes public-profile fields.)
   const { data: teamData } = await supabaseAdmin
     .from('team_workspaces')
-    .select('*, federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug), avatar_url')
+    // 2026-11-06 (Arnel): team contact_email / contact_phone are INTERNAL
+    // (for our own marketing) and must not be published. This select used to
+    // be select('*'), which pulled them into the team object — and that
+    // object is passed to PublicTeamProfile as a prop, so Next.js serialized
+    // the contact details into the RSC flight payload embedded in the page
+    // source, where anyone could read them even though the visible HTML had
+    // no mailto link.
+    //
+    // Fix: select the columns we actually render, explicitly. The contact
+    // columns are excluded here AND revoked from anon/authenticated at the
+    // database level (migration
+    // 2026-11-06_keep_team_federation_contacts_internal.sql).
+    .select(
+      'id, slug, name, short_name, country_code, home_city, home_country, timezone, age_category, ' +
+      'age_label, age_min, age_max, level, season_label, description, visibility, is_active, ' +
+      'created_at, updated_at, founded_on, federation_id, organization_id, league_id, avatar_url, ' +
+      'federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug)'
+    )
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle<TeamRow>();

@@ -25,14 +25,15 @@ interface Team {
   level: string | null;
   season_label: string | null;
   description: string | null;
-  contact_email: string | null;
+  // 2026-11-06 (Arnel): contact_email / contact_phone are INTERNAL — kept for
+  // our own marketing, not published. They are deliberately absent from this
+  // public type so they cannot be passed in and serialized into the page.
   federation_id?: string | null;
   organization_id?: string | null;
   league_id?: string | null;
   federation?: HierarchyRef | null;
   organization?: HierarchyRef | null;
   league?: HierarchyRef | null;
-  contact_phone: string | null;
   created_at: string;
   founded_on: string | null;
   avatar_url?: string | null;

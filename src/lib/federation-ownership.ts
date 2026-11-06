@@ -293,8 +293,10 @@ export interface FederationRow {
   logo_url: string | null;
   website_url: string | null;
   description: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
+  // 2026-11-06: contact_email / contact_phone are internal and are no longer
+  // selected into the public federation row.
+  contact_email?: string | null;
+  contact_phone?: string | null;
   owner_user_id: string | null;
   is_active: boolean | null;
   kind: string | null;
@@ -302,8 +304,18 @@ export interface FederationRow {
   claimable: boolean | null;
 }
 
+// 2026-11-06 (Arnel): federation contact_email / contact_phone are INTERNAL
+// (for our own marketing), not published. They are excluded from this
+// select so they never reach the public federation page — including the
+// Next.js RSC flight payload, which serializes the row into the page
+// source even when the visible HTML shows no mailto link.
+//
+// The data is still stored and still readable via `supabaseAdmin` for the
+// admin consoles and claim flows; anon/authenticated also lost SELECT on
+// those columns at the DB level (migration
+// 2026-11-06_keep_team_federation_contacts_internal.sql).
 const FEDERATION_ROW_FIELDS =
-  'id, slug, name, country_code, logo_url, website_url, description, contact_email, contact_phone, owner_user_id, is_active, kind, category, claimable';
+  'id, slug, name, country_code, logo_url, website_url, description, owner_user_id, is_active, kind, category, claimable';
 
 /** Look up the DB federation row for an ISO-2 country code. */
 export async function getFederationByCountryCode(
