@@ -462,7 +462,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league, qr_identifier, qr_revoked_at')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league, qr_identifier, qr_revoked_at, claimable')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -1703,6 +1703,15 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           natural conversion moment — after the visitor has read the rink's
             info. Single CTA, brand-red, high contrast, not a sticky floater
             (sticky floats often hide user content on mobile). */}
+        {/* 2026-11-06 (Arnel: "major rinks should NOT show an own-this-rink
+            claim message"): the claim CTA is shown only for rinks that are
+            actually claimable. `rinks.claimable` is false for the 32 arenas
+            that are the home rink of an NHL/AHL/KHL/PWHL team — those are
+            franchise-operated and already indexed, so soliciting a public
+            claim form for them is wrong. Independent rinks keep the CTA —
+            it is a real conversion path for them.
+            Backfill: supabase/migrations/2026-11-06_mark_pro_arena_rinks_unclaimable.sql */}
+        {(rink as { claimable?: boolean }).claimable !== false && (
         <section
           data-claim-cta
           style={{
@@ -1767,6 +1776,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             </Link>
           </div>
         </section>
+        )}
 
       </div>
     </>
