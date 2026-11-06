@@ -803,32 +803,14 @@ export default function PublicTeamProfile({
               {team.home_country && team.home_country !== team.home_city && (
                 <InfoRow label="Country" value={`${countryFlag(team.country_code)} ${team.home_country}`} />
               )}
-              {team.contact_email && (
-                <InfoRow
-                  label="Contact"
-                  value={
-                    <a
-                      href={`mailto:${team.contact_email}`}
-                      style={{ color: '#14B8A6', textDecoration: 'none', fontSize: '0.875rem' }}
-                    >
-                      {team.contact_email}
-                    </a>
-                  }
-                />
-              )}
-              {team.contact_phone && (
-                <InfoRow
-                  label="Phone"
-                  value={
-                    <a
-                      href={`tel:${team.contact_phone.replace(/\s+/g, '')}`}
-                      style={{ color: '#14B8A6', textDecoration: 'none', fontSize: '0.875rem' }}
-                    >
-                      {team.contact_phone}
-                    </a>
-                  }
-                />
-              )}
+              {/* 2026-11-06 (Arnel): team contact email and phone are INTERNAL —
+                  kept for our own marketing outreach, not for public display.
+                  The anon/authenticated roles also lost SELECT on these columns
+                  at the DB level (migration
+                  2026-11-06_keep_team_federation_contacts_internal.sql), so
+                  this block is now a belt-and-braces guard on top of that.
+                  Visitors reach a club through its listing, its league and its
+                  arena — not by scraping private contact details off a page. */}
 
               {admins.length > 0 && (
                 <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>

@@ -153,8 +153,8 @@ export default async function FederationPage({ params }: PageProps) {
   const description = dbFed?.description?.trim() || '';
   const logoUrl = dbFed?.logo_url?.trim() || '';
   const websiteUrl = dbFed?.website_url?.trim() || fed.federationUrl;
-  const contactEmail = dbFed?.contact_email?.trim() || '';
-  const contactPhone = dbFed?.contact_phone?.trim() || '';
+  // 2026-11-06: contactEmail / contactPhone intentionally NOT read for public
+  // rendering — federation contact details are internal (see the note below).
   const isClaimed = Boolean(dbFed?.owner_user_id);
 
   return (
@@ -257,21 +257,16 @@ export default async function FederationPage({ params }: PageProps) {
               </a>
             </dd>
           </div>
-          {contactEmail ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '1rem', alignItems: 'baseline' }}>
-              <dt style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                Contact
-              </dt>
-              <dd style={{ margin: 0, color: '#fff', fontSize: '0.9375rem' }}>
-                <a href={`mailto:${contactEmail}`} style={{ color: '#C8102E', textDecoration: 'none' }}>
-                  {contactEmail}
-                </a>
-                {contactPhone ? (
-                  <span style={{ color: 'rgba(255,255,255,0.55)' }}> · {contactPhone}</span>
-                ) : null}
-              </dd>
-            </div>
-          ) : null}
+          {/* 2026-11-06 (Arnel): federation contact email and phone are INTERNAL —
+              kept for our own marketing outreach, not for public display. The
+              anon/authenticated roles also lost SELECT on these columns at the
+              DB level (migration
+              2026-11-06_keep_team_federation_contacts_internal.sql), so this
+              block is now a belt-and-braces guard on top of that.
+              Visitors reach a governing body through its federation page and
+              its member leagues and clubs — not by scraping private contact
+              details off a page. */}
+
           <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '1rem', alignItems: 'baseline' }}>
             <dt style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               Governing Body
