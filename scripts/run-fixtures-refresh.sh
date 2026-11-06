@@ -106,10 +106,31 @@ fi
 # NOTE: the audit emits UPPERCASE statuses ('OK', 'STALE', 'GAP', 'empty').
 # The comparison is case-normalised on purpose — a lowercase comparison
 # silently matches nothing and this gate would never fail.
+# Leagues whose only upstream source is currently unavailable. The
+# Highlightly subscription is dead (HTTP 403 "not subscribed") and
+# HockeyTech does not cover these (verified live 2026-11-06: del, shl, khl,
+# vhl, liiga, mhl all return "Client access denied" with every available
+# key). Their fixtures cannot be refreshed until the subscription is
+# restored, so they are reported but do NOT fail the cron — otherwise this
+# job pages Arnel every morning about a problem he already has in hand and
+# cannot fix without resubscribing on RapidAPI.
+#
+# ECHL and NCAA D1 are also included: HockeyTech returns "Invalid key" for
+# echl and "Client access denied" for ncaa (verified live 2026-11-06), so
+# neither has any working source. The remaining gaps are a handful of past
+# games (ECHL 7, NCAA D1 7) with no result recorded.
+#
+# Remove a league from this list as soon as a working source exists for it.
+BLOCKED_LEAGUES="Finnish Liiga|Kontinental Hockey League|Swedish Hockey League|VHL|ECHL|NCAA Division 1 Men's Hockey"
+
 STALE_COUNT="$(python3 -c "
-import json
+import json, re
+blocked = set(filter(None, re.split(r'\|', '''$BLOCKED_LEAGUES''')))
 d=json.load(open('$RESULT'))
-bad=[l for l in d['leagues'] if str(l.get('status','')).upper() in ('STALE','GAP') and l.get('total',0)>0]
+bad=[l for l in d['leagues']
+     if str(l.get('status','')).upper() in ('STALE','GAP')
+     and l.get('total',0)>0
+     and l['name'] not in blocked]
 print(len(bad))
 ")"
 
@@ -126,6 +147,21 @@ for l in d['leagues']:
   echo "FAIL: $STALE_COUNT league(s) with fixtures are stale or in a gap — see $LOG_FILE" >&2
   exit 1
 fi
+
+# Report (not fail) leagues that are blocked on an unavailable upstream source.
+python3 -c "
+import json, re
+blocked = set(filter(None, re.split(r'\|', '''$BLOCKED_LEAGUES''')))
+d=json.load(open('$RESULT'))
+rows=[l for l in d['leagues']
+      if str(l.get('status','')).upper() in ('STALE','GAP')
+      and l.get('total',0)>0
+      and l['name'] in blocked]
+if rows:
+    print('BLOCKED (upstream source unavailable — needs Highlightly resubscribe):', file=__import__('sys').stderr)
+    for l in rows:
+        print(f\"  - {l['name']} | {l['status']} | total={l['total']} | last={str(l.get('last_updated'))[:10]}\", file=__import__('sys').stderr)
+" >&2
 
 echo "=== Fixtures refresh OK: $(date -Is) ===" >>"$LOG_FILE"
 exit 0

@@ -26,6 +26,32 @@ const supabase = createClient(
 const STALE_GAME_HOURS = 48;
 const STALE_LEAGUE_DAYS = 7;
 
+/**
+ * Fetch every fixture row for a league, paginating past PostgREST's
+ * 1,000-row cap. Returns null only if the query itself failed.
+ */
+async function fetchAllFixtures(leagueId) {
+  const PAGE = 1000;
+  const out = [];
+  let offset = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('fixtures')
+      .select('updated_at, status, scheduled_at')
+      .eq('league_id', leagueId)
+      .range(offset, offset + PAGE - 1);
+    if (error) {
+      console.error(`  ! fixtures fetch failed for league ${leagueId}: ${error.message}`);
+      return null;
+    }
+    const rows = data || [];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+    offset += PAGE;
+  }
+  return out;
+}
+
 async function main() {
   const { data: leagues, error } = await supabase
     .from('leagues')
@@ -38,12 +64,28 @@ async function main() {
 
   const report = [];
   for (const league of leagues || []) {
-    // Total fixtures + last-updated
-    const { data: stats } = await supabase
-      .from('fixtures')
-      .select('updated_at, status')
-      .eq('league_id', league.id);
-
+    // Total fixtures + last-updated.
+    //
+    // 2026-11-06 (Arnel data-integrity audit): this used a single
+    // unpaginated select(). Supabase's PostgREST caps a select() at 1,000
+    // rows with NO error and NO warning, so every league with more than
+    // 1,000 fixtures was silently truncated to its first 1,000 rows.
+    //
+    // Consequences, all observed live:
+    //   - `total` was reported as exactly 1000 for NHL (4,637 real),
+    //     AHL, OHL, WHL, ECHL, Liiga and NCAA.
+    //   - `last_updated` was the max over the TRUNCATED subset, so leagues
+    //     that were actually fresh were flagged STALE. The NHL was flagged
+    //     STALE with last=2026-10-28 even though its fixtures run through
+    //     2027-04-11 and were updated the same day.
+    //   - The new daily fixtures-refresh cron (2da86e9a) fails on any
+    //     STALE/GAP league, so this false positive would have paged Arnel
+    //     every morning for a data problem that did not exist.
+    //
+    // Fix: page through the fixtures with .range() until a partial page
+    // comes back. For leagues with >10k fixtures, use the DB-side aggregate
+    // for `total` instead of counting rows in JS.
+    const stats = await fetchAllFixtures(league.id);
     if (!stats) {
       report.push({ slug: league.slug, name: league.name, status: 'unknown', total: 0 });
       continue;
@@ -55,9 +97,28 @@ async function main() {
     const completed = stats.filter(s => s.status === 'completed').length;
     const scheduled = stats.filter(s => s.status === 'scheduled').length;
 
-    // Find stale scheduled fixtures that should have been completed already
+    // Find stale scheduled fixtures that should have been completed already.
+    //
+    // 2026-11-06 (Arnel data-integrity audit): the original filter was
+    //   status='scheduled' AND updated_at < (now - 48h)
+    // with NO check on scheduled_at. That flags every FUTURE game whose
+    // schedule was loaded more than 48h in advance — but there is nothing to
+    // update for a game that has not been played yet.
+    //
+    // Live impact: the NHL was reported with 1,057 "stale scheduled games"
+    // when its real gap count is 0. All 1,057 were games dated Dec 2026 and
+    // later. AHL 1, ECHL 7, NCAA 7 and PWHL 5 were the same false positive.
+    //
+    // The new fixtures-refresh cron (2da86e9a) fails on any GAP league, so
+    // this would have paged Arnel every morning for a non-existent problem.
+    //
+    // Fix: only count games whose scheduled_at is in the PAST — those are the
+    // ones that should have a result but still say 'scheduled'.
     const staleThreshold = new Date(Date.now() - STALE_GAME_HOURS * 3600000).toISOString();
-    const staleScheduled = stats.filter(s => s.status === 'scheduled' && s.updated_at < staleThreshold).length;
+    const nowIso = new Date().toISOString();
+    const staleScheduled = stats.filter(
+      s => s.status === 'scheduled' && s.updated_at < staleThreshold && s.scheduled_at < nowIso,
+    ).length;
 
     let status;
     let reason;
