@@ -53,7 +53,7 @@ const ENTITY_TABLES = {
   // canonical team count (2,633) that every marketing page advertises.
   // Previously this served is_active only, which included 7 private-visibility
   // team workspaces — non-public listings leaked into a paid $499 dataset.
-  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', extraFilter: "visibility = 'public'", pageSize: 1000 },
+  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', extraFilters: ['visibility|public'], pageSize: 1000 },
   leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   players: { table: 'players', select: 'id, first_name, last_name, slug, position, primary_position_category, team_id, nationality, birth_date, height_cm, weight_kg, shoots, catches, jersey_number, headshot_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   federations: { table: 'federations', select: 'id, name, slug, country_code, kind, category, website_url, logo_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
@@ -72,9 +72,16 @@ async function fetchEntity(entity: EntityKey): Promise<any[]> {
   // Supabase REST caps at pageSize per request; paginate until empty page
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const baseQuery: any = client.from(config.table).select(config.select).range(offset, offset + pageSize - 1);
-    let filteredQuery: any = config.filter === 'is_active' ? baseQuery.eq('is_active', true) : baseQuery;
-    if (config.extraFilter) filteredQuery = filteredQuery.filter(config.extraFilter);
+    let filteredQuery: any = client.from(config.table).select(config.select);
+    if (config.filter === 'is_active') filteredQuery = filteredQuery.eq('is_active', true);
+    // 2026-11-06: extraFilters are applied as real column predicates BEFORE
+    // .range(). Calling .filter() after .range() produced a PostgREST query
+    // that matched 0 rows (the export silently returned total_records: 0).
+    for (const f of config.extraFilters || []) {
+      const [col, op, val] = f.split('|');
+      filteredQuery = filteredQuery.eq(col, val);
+    }
+    filteredQuery = filteredQuery.range(offset, offset + pageSize - 1);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = await filteredQuery;
     if (result?.error) {

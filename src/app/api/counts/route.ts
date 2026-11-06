@@ -41,7 +41,7 @@ export async function GET(_request: NextRequest) {
   }
 
   // Parallel count queries. Use count:'exact' head:true to avoid pulling rows.
-  const [rinksH, rinksGeo, rinksWithCap, teamsH, playersH, leaguesH, citiesH, countriesH] = await Promise.all([
+  const [rinksH, rinksGeo, rinksWithCap, teamsH, playersH, leaguesH, statsRpc] = await Promise.all([
     supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('rinks').select('id', { count: 'exact', head: true })
       .eq('is_active', true).not('latitude', 'is', null).not('longitude', 'is', null),
@@ -56,18 +56,19 @@ export async function GET(_request: NextRequest) {
     // 2026-11-06: filter to active leagues only. Previously returned 298
     // (all rows) while get_directory_stats and the export both serve 294.
     supabase.from('leagues').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    // 2026-11-06: cities/countries now count the same canonical source as
-    // get_directory_stats (the legacy `teams` table) so every marketing
-    // surface shows the same number. Previously this unioned rinks + teams
-    // and returned 837 cities / 82 countries while the RPC said 687 / 85.
-    supabase.from('teams').select('city').eq('is_active', true).not('city', 'is', null),
-    supabase.from('teams').select('country').eq('is_active', true).not('country', 'is', null),
+    // 2026-11-06: cities + countries now come from get_directory_stats, the
+    // canonical RPC. The previous implementation pulled `teams.city` /
+    // `teams.country` rows and de-duplicated them in JS — but Supabase's
+    // PostgREST caps a select() at 1,000 rows with no error, so the Sets
+    // were built from a TRUNCATED pull and reported 837 cities / 81
+    // countries instead of the true 687 / 85. Same bug class as the
+    // team_workspaces vs teams two-table trap.
+    supabase.rpc('get_directory_stats'),
   ]);
 
-  const citySet = new Set<string>();
-  for (const r of citiesH.data || []) if (r.city) citySet.add(r.city.trim().toLowerCase());
-  const countrySet = new Set<string>();
-  for (const r of countriesH.data || []) if (r.country) countrySet.add(r.country);
+  const s = (statsRpc.data || {}) as {
+    city_count?: number; country_count?: number;
+  };
 
   const data = {
     rinks: rinksH.count || 0,
@@ -76,8 +77,8 @@ export async function GET(_request: NextRequest) {
     teams: teamsH.count || 0,
     players: playersH.count || 0,
     leagues: leaguesH.count || 0,
-    cities: citySet.size,
-    countries: countrySet.size,
+    cities: s.city_count ?? 0,
+    countries: s.country_count ?? 0,
     asOf: new Date().toISOString(),
   };
 

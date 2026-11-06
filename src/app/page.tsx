@@ -65,8 +65,7 @@ async function getDirectoryStatsForMeta(): Promise<{ rinks: number; teams: numbe
       { count: teams },
       { count: players },
       { count: leagues },
-      { data: citiesRows },
-      { data: countriesRows },
+      statsRpc,
     ] = await Promise.all([
       supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
       // 2026-11-06: count active + public team_workspaces, matching the
@@ -74,18 +73,20 @@ async function getDirectoryStatsForMeta(): Promise<{ rinks: number; teams: numbe
       supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).eq('visibility', 'public'),
       supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
-      supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
+      // 2026-11-06: cities/countries come from the canonical RPC. The old
+      // fallback pulled `rinks.city` / `rinks.country` rows and de-duplicated
+      // in JS, but PostgREST caps select() at 1,000 rows silently — 1,859
+      // active rinks were truncated to 1,000, so the numbers were wrong.
+      supabase.rpc('get_directory_stats'),
     ]);
-    const cities = new Set((citiesRows || []).map((r: any) => (r.city || '').toLowerCase().trim()).filter(Boolean));
-    const countries = new Set((countriesRows || []).map((r: any) => r.country).filter(Boolean));
+    const st = (statsRpc.data || {}) as { city_count?: number; country_count?: number };
     return {
       rinks: rinks || 0,
       teams: teams || 0,
       players: players || 0,
       leagues: leagues || 0,
-      cities: cities.size,
-      countries: countries.size,
+      cities: st.city_count || 0,
+      countries: st.country_count || 0,
     };
   } catch {
     return { rinks: 0, teams: 0, players: 0, leagues: 0, cities: 0, countries: 0 };
