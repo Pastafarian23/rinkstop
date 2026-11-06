@@ -53,7 +53,7 @@ const ENTITY_TABLES = {
   // canonical team count (2,633) that every marketing page advertises.
   // Previously this served is_active only, which included 7 private-visibility
   // team workspaces — non-public listings leaked into a paid $499 dataset.
-  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', extraFilters: ['visibility|public'], pageSize: 1000 },
+  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', extraFilters: [{ column: 'visibility', op: 'eq', value: 'public' }], pageSize: 1000 },
   leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   players: { table: 'players', select: 'id, first_name, last_name, slug, position, primary_position_category, team_id, nationality, birth_date, height_cm, weight_kg, shoots, catches, jersey_number, headshot_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   federations: { table: 'federations', select: 'id, name, slug, country_code, kind, category, website_url, logo_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
@@ -77,16 +77,41 @@ async function fetchEntity(entity: EntityKey): Promise<any[]> {
     // 2026-11-06: extraFilters are applied as real column predicates BEFORE
     // .range(). Calling .filter() after .range() produced a PostgREST query
     // that matched 0 rows (the export silently returned total_records: 0).
+    //
+    // 2026-11-06 BUG FIX: the filter format was the 2-segment string
+    // 'visibility|public', but this loop destructured THREE parts:
+    //   const [col, op, val] = 'visibility|public'.split('|')
+    //   -> col='visibility', op='public', val=undefined
+    // -> the query became `visibility=eq.undefined`, which matches ZERO rows.
+    // The $499 teams.csv export silently served an empty file (HTTP 200,
+    // total_records: 0) for ~30 minutes after deploy.
+    //
+    // Filters are now explicit { column, op, value } objects with an
+    // operator whitelist, so a malformed filter throws instead of silently
+    // producing an empty dataset.
     for (const f of config.extraFilters || []) {
-      const [col, op, val] = f.split('|');
-      filteredQuery = filteredQuery.eq(col, val);
+      if (!f || typeof f.column !== 'string' || !f.column) {
+        throw new Error(`Invalid extraFilter for entity "${entity}": missing column`);
+      }
+      if (f.op !== 'eq') {
+        throw new Error(`Invalid extraFilter for entity "${entity}": unsupported op "${f.op}"`);
+      }
+      if (f.value === undefined || f.value === null) {
+        throw new Error(`Invalid extraFilter for entity "${entity}": missing value for column "${f.column}"`);
+      }
+      filteredQuery = filteredQuery.eq(f.column, f.value);
     }
     filteredQuery = filteredQuery.range(offset, offset + pageSize - 1);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = await filteredQuery;
     if (result?.error) {
+      // 2026-11-06: this used to `return allRows` (partial/empty data) and
+      // still respond HTTP 200. A buyer downloading teams.csv got a valid-
+      // looking empty file with no error. Fail loudly instead: the route
+      // catches this and returns HTTP 500, so a broken export is visible
+      // rather than silently shipped.
       console.error(`Failed to fetch ${entity}:`, result.error.message);
-      return allRows;
+      throw new Error(`Failed to fetch ${entity}: ${result.error.message}`);
     }
     const rows: any[] = (result?.data as any[]) || [];
     allRows.push(...rows);
@@ -231,13 +256,27 @@ export async function GET(request: NextRequest) {
 
   const data: Record<string, any[]> = {};
   let totalCount = 0;
-  for (const e of entities) {
-    const rows = await fetchEntity(e);
-    data[e] = rows;
-    totalCount += rows.length;
-    if (rows.length === 0) {
-      console.warn(`[data/dataset] ${e} returned 0 rows`);
+  try {
+    for (const e of entities) {
+      const rows = await fetchEntity(e);
+      data[e] = rows;
+      totalCount += rows.length;
+      if (rows.length === 0) {
+        // 2026-11-06: a 0-row result is treated as a failure, not an empty
+        // dataset. The paid export served an empty teams.csv with HTTP 200
+        // for ~30 minutes and nobody noticed. These tables are never
+        // legitimately empty in production, so an empty result means the
+        // query silently matched nothing.
+        console.error(`[data/dataset] ${e} returned 0 rows — treating as an error`);
+        throw new Error(`Entity "${e}" returned 0 rows`);
+      }
     }
+  } catch (err) {
+    console.error('[data/dataset] export failed:', err);
+    return NextResponse.json(
+      { error: 'Dataset export failed', detail: err instanceof Error ? err.message : 'unknown error' },
+      { status: 500 },
+    );
   }
 
   // WS29 — fire GA4 + custom analytics events for dataset endpoint hits.
