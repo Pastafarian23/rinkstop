@@ -114,6 +114,27 @@ export default async function ManageTeamPage({ params }: PageProps) {
         isVerified={ownerVerified}
       />
 
+      <Link
+        href={`/dashboard/manage/team/${id}/roster`}
+        style={{
+          display: 'block',
+          padding: '0.875rem 1.125rem',
+          background: '#0f0f0f',
+          border: '1px solid #1e1e1e',
+          borderRadius: 8,
+          color: '#fff',
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          textDecoration: 'none',
+        }}
+      >
+        🏒 Manage roster →
+        <span style={{ display: 'block', color: 'rgba(255,255,255,0.45)', fontWeight: 400, fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          Add players and members, set jersey numbers and positions, and mark stints as coach
+          verified.
+        </span>
+      </Link>
+
       <ProgramsCard teamId={id} />
 
       <CurrencySettingsCard

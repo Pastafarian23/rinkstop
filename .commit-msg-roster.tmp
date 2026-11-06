@@ -1,0 +1,60 @@
+feat(roster): team admin roster editor + role/tier-gated roster API
+
+Phase 2 of the roster build (Arnel: "Federations should be able to
+update. Coaches and admins should be able to manage and accept payments.
+Players should be able to manage their own passport.").
+
+The roster API is the write path behind everything the public roster
+shows. A bug there silently corrupts a club's roster, and the public
+page has no way to report it — it renders whatever is in the database.
+
+AUTHORIZATION — one rule, shared by the page and the API, in
+src/lib/team-authority.ts so the UI can never offer an action the server
+would refuse. Authority is ROLE-SCOPED PER TEAM, not per user (a person
+may coach team A and be a parent rep on team B), and roster rights are
+additionally TIER-GATED on the organization track:
+
+  org_free + no role     -> cannot view          (no-claim)
+  org_plus + head_coach  -> can view and manage
+  org_free + head_coach  -> can view, not manage  (org-plan-required)
+
+The org tier is read through the existing getUserOrgTier(), so the roster
+gate and every other org-tier gate cannot disagree. (organizations has no
+tier column — the tier lives on profiles.org_tier, with expiry and
+cancellation handled by that helper.)
+
+API — /api/manage/team/[id]/roster with GET (read), POST (add), PATCH
+(update), DELETE (remove). Two kinds of roster row, because a club's
+roster is both things:
+  members — people with a RinkStop account, carrying a team ROLE
+            (head_coach, player, parent_rep, ...), jersey, position,
+            shoots, DOB, and a guardian link for minors
+  players — player records linked for a stint, with jersey, position,
+            role and a verification source
+
+Rows added here are coach_verified by definition — the team entered them,
+so they are not a self-reported claim. That is what makes the public
+roster's COACH VERIFIED marker mean something.
+
+Guards added while building it (each caught a real failure):
+  - position is validated against
+    hockey_player_team_history_position_check (forward|defense|goalie)
+  - role is validated against
+    hockey_player_team_history_role_check
+    (player|captain|alternate_captain|goalie|other)
+  - jersey number is validated against the 0-99 CHECK
+  - team_name_snapshot is NOT NULL and is populated from the team row —
+    it records the team name at the time of the stint so history stays
+    readable if the team is later renamed or deactivated
+  - a minor cannot be added without a guardian (parent_user_id)
+  - duplicate rows return 409 rather than silently duplicating
+  - a row must belong to THIS team before it can be updated or deleted
+
+UI — /dashboard/manage/team/[id]/roster, linked from the team settings
+page. Members and players are listed separately, each with an editable
+role/jersey/position, and a remove button.
+
+New gate: scripts/_test-roster-api.mjs (pre-push Gate 15). Proves against
+the live DB that the authorization gate discriminates as above, that the
+write path round-trips, and that the database CHECK constraints reject
+invalid roles and positions. Everything it creates is rolled back.

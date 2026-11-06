@@ -22,7 +22,7 @@ echo "=== pre-push guard: branch=$BRANCH ==="
 cd "$(git rev-parse --show-toplevel)"
 
 # Gate 1: working tree state
-echo "[1/14] checking working tree..."
+echo "[1/15] checking working tree..."
 if [ -n "$(git status --porcelain)" ]; then
   echo "FAIL: working tree has uncommitted changes"
   git status -sb
@@ -30,7 +30,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Gate 2: branch is ahead of main (we're pushing new work)
-echo "[2/14] checking branch is ahead of main..."
+echo "[2/15] checking branch is ahead of main..."
 if [ "$BRANCH" = "main" ]; then
   echo "    main branch - skipping ahead-of-main check"
 else
@@ -45,7 +45,7 @@ fi
 # Gate 3: TypeScript compile
 # 2026-09-17: default 2 GiB Node heap OOMs on this project's full type check
 # (measured 72s with abort, vs 60s clean with 4 GiB). Bump to match Vercel.
-echo "[3/14] running npx tsc --noEmit..."
+echo "[3/15] running npx tsc --noEmit..."
 if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192" npx tsc --noEmit 2>&1 | tail -50; then
   echo "FAIL: TypeScript compile errors"
   exit 1
@@ -58,7 +58,7 @@ fi
 # The original version of this gate checked across all parents at the same
 # depth, which flagged every legitimate shared bracket name as a collision
 # and made every push fail. Fixed 2026-08-11.
-echo "[4/14] checking for dynamic-segment collisions in next-app routes..."
+echo "[4/15] checking for dynamic-segment collisions in next-app routes..."
 TOTAL_BRACKETS=$(find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | wc -l)
 find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | \
   awk -F/ '{
@@ -88,7 +88,7 @@ echo "    no real collisions ($TOTAL_BRACKETS bracket routes checked)"
 # page reported "No teams found" for a team that was live in the DB.
 # tsc cannot catch this (the Supabase client is untyped), and HTTP 200 proves
 # nothing. Only a schema-vs-code diff catches it.
-echo "[5/14] auditing team_workspaces column references against live schema..."
+echo "[5/15] auditing team_workspaces column references against live schema..."
 if ! node scripts/_audit-team-workspace-columns.mjs 2>&1 | tail -40; then
   echo "FAIL: invalid team_workspaces column references (see above)"
   exit 1
@@ -103,7 +103,7 @@ fi
 #
 # This generalises it to every table: all explicit column selects in src/
 # are checked against the live PostgREST schema.
-echo "[6/14] auditing every column select against the live schema..."
+echo "[6/15] auditing every column select against the live schema..."
 if ! node scripts/_audit-select-columns.mjs 2>&1 | tail -30; then
   echo "FAIL: code selects columns that do not exist in the live database."
   echo "      PostgREST returns 42703 for these; the route usually swallows it"
@@ -119,7 +119,7 @@ fi
 # third table, so it stayed open for ~4 months. This gate re-runs the audit
 # against the LIVE database and tests BEHAVIOUR (can anon actually read it?)
 # rather than policy definitions, because the two drift.
-echo "[7/14] auditing RLS for publicly-readable submitter PII..."
+echo "[7/15] auditing RLS for publicly-readable submitter PII..."
 if ! node scripts/_audit-rls-pii.mjs 2>&1 | tail -40; then
   echo "FAIL: public read exposes captured submitter contact data (see above)"
   exit 1
@@ -137,7 +137,7 @@ fi
 # This gate FAILS until the anon/authenticated grants are revoked in the
 # Supabase Dashboard SQL editor (which runs as supabase_admin). That is
 # intentional: the exposure is real and must not be allowed to ship silently.
-echo "[8/14] auditing for public tables exposed to anon WITHOUT RLS..."
+echo "[8/15] auditing for public tables exposed to anon WITHOUT RLS..."
 if ! node scripts/_audit-rls-disabled.mjs 2>&1 | tail -40; then
   echo "FAIL: a public table is reachable by the anon role without RLS (see above)."
   echo "      If it is extension-owned (supabase_admin), run the REVOKE from the"
@@ -154,7 +154,7 @@ fi
 # Root cause: ENTITY_TO_TIER mapped claims to the PAID tier in two files.
 # This gate checks the tier maps and the CTA labels so the copy cannot drift
 # back into telling people claiming costs money.
-echo "[9/14] auditing claim-funnel pricing copy for 'claiming is free' consistency..."
+echo "[9/15] auditing claim-funnel pricing copy for 'claiming is free' consistency..."
 if ! node scripts/_audit-claim-pricing-copy.mjs 2>&1 | tail -40; then
   echo "FAIL: claim funnel shows a paid price as the cost of claiming (see above)"
   exit 1
@@ -175,7 +175,7 @@ fi
 # This gate exercises the REAL production resolver against the LIVE database
 # and asserts the structural rules no query can catch (league is not a
 # self-serve claim type; federations are invite-only).
-echo "[10/14] testing claim-flow entity resolution against the live database..."
+echo "[10/15] testing claim-flow entity resolution against the live database..."
 if ! node scripts/_test-claim-flow.mjs 2>&1 | tail -40; then
   echo "FAIL: the claim flow cannot complete for one or more entity types (see above)"
   exit 1
@@ -191,7 +191,7 @@ fi
 # This gate asserts: export row counts equal the marketing counts, no
 # private-visibility rows leak into the paid dataset, and sampled exported
 # team slugs resolve on the public directory.
-echo "[11/14] auditing the paid dataset export for count/privacy/404 defects..."
+echo "[11/15] auditing the paid dataset export for count/privacy/404 defects..."
 if ! node scripts/_audit-dataset-export.mjs 2>&1 | tail -40; then
   echo "FAIL: the paid dataset export does not match the advertised counts (see above)"
   exit 1
@@ -205,7 +205,7 @@ fi
 # kept running and reported success; the per-game errors scrolled past and
 # NHL fixtures silently stopped refreshing. A stale UUID in a hardcoded map
 # is invisible to tsc and to the build — only a live-DB check catches it.
-echo "[12/14] auditing the NHL abbrev->team-id map against the live database..."
+echo "[12/15] auditing the NHL abbrev->team-id map against the live database..."
 if ! node scripts/_audit-nhl-abbrev-map.mjs 2>&1 | tail -30; then
   echo "FAIL: a mapped NHL team id does not exist in the teams table (see above)"
   exit 1
@@ -220,7 +220,7 @@ fi
 # Also fails if a stored team id stops resolving, or if a legacy lifecycle
 # row (deactivated / merged / unclaimable) loses its team_workspaces
 # counterpart, which would silently lose ownership state.
-echo "[13/14] auditing team FK canonicality (every team id resolves to team_workspaces)..."
+echo "[13/15] auditing team FK canonicality (every team id resolves to team_workspaces)..."
 if ! node scripts/_audit-team-fk-canonical.mjs 2>&1 | tail -30; then
   echo "FAIL: team FKs are not canonical, or a stored team id does not resolve (see above)"
   exit 1
@@ -240,9 +240,30 @@ fi
 # validates the relation and its columns at runtime. This gate extracts
 # every embedded relation out of the app source and asks the live database
 # to resolve it.
-echo "[14/14] auditing embedded relation columns against the live schema..."
+echo "[14/15] auditing embedded relation columns against the live schema..."
 if ! node scripts/_audit-embed-columns.mjs 2>&1 | tail -30; then
   echo "FAIL: an embedded relation does not resolve against the live schema (see above)"
+  exit 1
+fi
+
+# Gate 15: roster API + authorization.
+# 2026-11-06 (roster system, Phase 2): the roster API is the write path
+# behind everything the public roster shows. A bug there silently corrupts
+# a club's roster and the public page has no way to report it — it renders
+# whatever is in the database.
+#
+# This test proves, against the live DB:
+#   - an anonymous or unrelated user has no authority
+#   - the gate is BOTH role-scoped per team AND tier-gated:
+#       org_free + no role       -> cannot view
+#       org_plus + head_coach    -> can view and manage
+#       org_free + head_coach    -> can view, cannot manage
+#   - the roster write path round-trips (insert / read / update / delete)
+#   - the database CHECK constraints reject invalid roles and positions
+# Everything it creates is rolled back.
+echo "[15/15] testing the roster API and its role + tier authorization..."
+if ! npx tsx scripts/_test-roster-api.mjs 2>&1 | tail -30; then
+  echo "FAIL: the roster API or its authorization failed (see above)"
   exit 1
 fi
 
