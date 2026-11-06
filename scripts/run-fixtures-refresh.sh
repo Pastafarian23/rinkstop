@@ -36,6 +36,7 @@ SCRIPT_DIR="/root/.openclaw/workspace/rinkstop-platform"
 LOG_DIR="/root/.openclaw/workspace/logs"
 LOG_FILE="$LOG_DIR/fixtures-refresh.log"
 PID_FILE="/tmp/fixtures-refresh.pid"
+RUN_ID="$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "$LOG_DIR"
 
@@ -59,7 +60,11 @@ bash scripts/run-daily-scores-all-leagues.sh >>"$LOG_FILE" 2>&1
 # --- 2. HockeyTech ingest for the Canadian junior leagues (detached) ------
 # The HockeyTech feed is the ONLY working source for these now that
 # Highlightly is dead. Without this the schedules go stale again.
-HT_LOG="$LOG_DIR/hockeytech-ingest.log"
+# PER-RUN LOG: each run gets its own file. A shared cumulative log makes
+# the error check below count errors from PREVIOUS runs — so one bad
+# historical run would fail every future run forever, even after the
+# underlying bug was fixed. That is a gate that can never go green.
+HT_LOG="$LOG_DIR/hockeytech-ingest-$RUN_ID.log"
 setsid nohup bash -c "set -a; source .env; set +a; node scripts/_ingest-hockeytech-schedules.mjs" \
   </dev/null >>"$HT_LOG" 2>&1 &
 HT_PID=$!
@@ -81,13 +86,17 @@ if kill -0 "$HT_PID" 2>/dev/null; then
 else
   rm -f "$PID_FILE"
   # Fail loudly if the ingest hit upsert errors.
-  HT_ERRORS="$(grep -c 'upsert error' "$HT_LOG" 2>/dev/null || echo 0)"
+  HT_ERRORS="$(grep -c 'upsert error' "$HT_LOG" 2>/dev/null || true)"
+  HT_ERRORS="${HT_ERRORS:-0}"
   if [ "$HT_ERRORS" -gt 0 ]; then
     echo "FAIL: HockeyTech ingest reported $HT_ERRORS upsert errors — see $HT_LOG" >&2
     exit 1
   fi
   echo "HockeyTech ingest completed with 0 upsert errors." >>"$LOG_FILE"
 fi
+
+# Keep per-run ingest logs from accumulating forever.
+find "$LOG_DIR" -maxdepth 1 -name 'hockeytech-ingest-*.log' -mtime +14 -delete 2>/dev/null || true
 
 # --- 3. Freshness audit ----------------------------------------------------
 node scripts/_freshness-audit.cjs >>"$LOG_FILE" 2>&1
