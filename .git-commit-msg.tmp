@@ -1,0 +1,31 @@
+feat(roster): render the public roster on team pages
+
+The team page's own meta copy has always said it "shows the full roster,
+schedule, results, upcoming games, recent news and venue information" —
+but no roster was ever rendered. This adds it.
+
+Source: `hockey_player_team_history` (the canonical roster-history table)
+joined to `players`. 1,859 of those rows sit on active public teams — the
+Toronto Maple Leafs alone have 44.
+
+What renders:
+- jersey number (red, dimmed past 99)
+- player name, linking to /directory/players/{id}
+- position when known
+- a "COACH VERIFIED" marker for rows whose verification_source is
+  "coach_verified". Self-reported rows are NOT badged — that is the
+  default state, not a claim.
+- the roster count
+
+Data notes:
+- the query is on supabaseAdmin because the players!inner(...) embed
+  needs a relation whose RLS does not allow anon reads.
+- rows with no matching player row are skipped rather than rendered blank.
+- the section is hidden entirely when a team has no roster, so nothing
+  changes for the long tail of teams without one.
+
+Phase 2 of the roster build (Arnel: "Federations should be able to
+update. Coaches and admins should be able to manage and accept payments.
+Players should be able to manage their own passport.").
+Next: league-page rosters, the team admin roster editor, and the
+federation CSV upload.

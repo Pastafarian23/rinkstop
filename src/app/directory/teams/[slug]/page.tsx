@@ -111,6 +111,34 @@ interface TeamRow {
   avatar_url: string | null;
 }
 
+/**
+ * A public roster entry.
+ *
+ * Sourced from `hockey_player_team_history` (the canonical roster-history
+ * table) joined to `players`. `verification_source` distinguishes a
+ * coach-verified stint from a self-reported one, so the UI can show the
+ * difference.
+ */
+interface RosterRow {
+  id: string;
+  player_id: string;
+  jersey_number: number | null;
+  position: string | null;
+  role: string | null;
+  verification_source: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  players: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    slug: string | null;
+    headshot_url: string | null;
+    position: string | null;
+    nationality: string | null;
+  } | null;
+}
+
 interface NewsRow {
   id: string;
   title: string;
@@ -283,7 +311,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const seasonStart = new Date();
   seasonStart.setMonth(seasonStart.getMonth() - 18);
 
-  const [newsRes, resultsRes, upcomingEventsRes, adminsRes] = await Promise.all([
+  const [newsRes, resultsRes, upcomingEventsRes, adminsRes, rosterRes] = await Promise.all([
     supabase
       .from('team_news')
       .select('id, title, body, author_user_id, published_at')
@@ -315,10 +343,26 @@ export default async function PublicTeamPage({ params }: PageProps) {
       .is('left_at', null)
       .in('role', ['head_coach', 'assistant_coach', 'manager', 'team_staff'])
       .order('joined_at'),
+    // Public roster. The team page copy has always claimed it "shows the
+    // full roster" but nothing rendered it. `hockey_player_team_history`
+    // is the canonical roster-history table (1,859 rows on active public
+    // teams), and it carries the verification source, so a coach-verified
+    // stint can be shown differently from a self-reported one.
+    supabaseAdmin
+      .from('hockey_player_team_history')
+      .select(
+        'id, player_id, jersey_number, position, role, verification_source, start_date, end_date, ' +
+        'players!inner(id, first_name, last_name, slug, headshot_url, position, nationality)'
+      )
+      .eq('team_id', team.id)
+      .order('jersey_number', { ascending: true, nullsFirst: false })
+      .limit(60)
+      .returns<RosterRow[]>(),
   ]);
 
   const news: NewsRow[] = newsRes.data || [];
   const results: ResultRow[] = resultsRes.data || [];
+  const roster: RosterRow[] = (rosterRes.data || []) as RosterRow[];
   // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
   const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
     id: string;
@@ -597,6 +641,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
         team={team}
         news={news}
         results={results}
+        roster={roster}
         upcoming={mergedUpcoming}
         admins={admins}
         claimed={isVerifiedClaim}

@@ -39,6 +39,26 @@ interface Team {
   avatar_url?: string | null;
 }
 
+interface RosterRow {
+  id: string;
+  player_id: string;
+  jersey_number: number | null;
+  position: string | null;
+  role: string | null;
+  verification_source: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  players: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    slug: string | null;
+    headshot_url: string | null;
+    position: string | null;
+    nationality: string | null;
+  } | null;
+}
+
 interface NewsRow {
   id: string;
   title: string;
@@ -86,6 +106,11 @@ interface SeasonRecord {
 interface Props {
   team: Team;
   news: NewsRow[];
+  /**
+   * Public roster. The page copy has always claimed it "shows the full
+   * roster" but nothing rendered it — added 2026-11-06.
+   */
+  roster?: RosterRow[];
   results: ResultRow[];
   upcoming: ScheduleRow[];
   admins: AdminJoin[];
@@ -313,6 +338,7 @@ export default function PublicTeamProfile({
   team,
   news,
   results,
+  roster = [],
   upcoming,
   admins,
   claimed,
@@ -580,6 +606,129 @@ export default function PublicTeamProfile({
 
         {/* ── Left column ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+          {/* Public roster — 2026-11-06.
+              The team page's own meta copy has always said it "shows the
+              full roster, schedule, results, upcoming games, recent news and
+              venue information" but no roster was ever rendered. This adds it.
+
+              Sourced from hockey_player_team_history joined to players, so a
+              player row links to their public player profile. Rows carry
+              verification_source: a coach_verified stint is shown with a
+              "Coach verified" marker, a self_reported one is not marked as
+              such (it is the default state, not a claim). */}
+          {roster && roster.length > 0 && (
+            <section>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
+                  ROSTER
+                </h2>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem' }}>
+                  {roster.length} {roster.length === 1 ? 'player' : 'players'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: '0.5rem',
+                }}
+              >
+                {roster.map((r) => {
+                  const p = r.players;
+                  if (!p) return null;
+                  const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unnamed player';
+                  const href = `/directory/players/${p.id}`;
+                  const verified = r.verification_source === 'coach_verified';
+                  const pos = r.position || p.position;
+                  return (
+                    <Link
+                      key={r.id}
+                      href={href}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.625rem',
+                        padding: '0.5rem 0.625rem',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        borderRadius: 8,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {r.jersey_number != null && (
+                        <span
+                          style={{
+                            flex: '0 0 30px',
+                            textAlign: 'center',
+                            fontSize: '1.0625rem',
+                            fontWeight: 700,
+                            color: r.jersey_number > 99 ? 'rgba(255,255,255,0.5)' : '#C8102E',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {r.jersey_number}
+                        </span>
+                      )}
+                      <span style={{ flex: '1 1 auto', minWidth: 0 }}>
+                        <span
+                          style={{
+                            display: 'block',
+                            color: '#fff',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {name}
+                        </span>
+                        {(pos || verified) && (
+                          <span
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              marginTop: '0.125rem',
+                              color: 'rgba(255,255,255,0.45)',
+                              fontSize: '0.6875rem',
+                            }}
+                          >
+                            {pos && <span>{pos}</span>}
+                            {verified && (
+                              <span
+                                title="Verified by this team's coaching staff"
+                                style={{
+                                  color: '#FFB81C',
+                                  border: '1px solid rgba(255,184,28,0.35)',
+                                  borderRadius: 999,
+                                  padding: '0 0.375rem',
+                                  fontSize: '0.625rem',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.04em',
+                                }}
+                              >
+                                COACH VERIFIED
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Recent results */}
           <section>
