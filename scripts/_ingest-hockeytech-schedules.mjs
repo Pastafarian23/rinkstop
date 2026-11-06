@@ -168,6 +168,18 @@ function teamLookupVariants(name) {
   return [...variants].filter(Boolean);
 }
 
+/** Look up a team's league_id (cached per run). */
+async function teamLeague(teamId) {
+  if (!teamId) return null;
+  if (teamLeagueCache.has(teamId)) return teamLeagueCache.get(teamId);
+  const { data } = await supabase.from('teams').select('league_id').eq('id', teamId).maybeSingle();
+  const lid = data?.league_id ?? null;
+  teamLeagueCache.set(teamId, lid);
+  return lid;
+}
+
+const teamLeagueCache = new Map();
+
 async function resolveTeamId(name, leagueId, teamCache, altLeagueId = null) {
   const variants = teamLookupVariants(name);
   const cacheKey = `${leagueId}:${altLeagueId || ''}:${variants[0]}`;
@@ -316,6 +328,7 @@ async function main() {
     let unresolved = 0;
     let skipped = 0;
     let downgraded = 0;
+    let crossover = 0;
 
     // League ids for cross-league markers (e.g. QMJHL feed lists OHL teams).
     const altLeagueIds = {};
@@ -347,8 +360,32 @@ async function main() {
       }
       const status = mapStatus(g);
       const isCompleted = status === 'completed';
+
+      // Cross-league games are SKIPPED, not mis-filed.
+      //
+      // The QMJHL and OHL feeds list crossover games between each other (the
+      // visiting team is tagged "(OHL)" in the QMJHL feed and untagged in the
+      // OHL feed). The `fixtures_check_team_league_match` trigger requires
+      // BOTH teams to belong to league_id, and the DB currently contains
+      // ZERO cross-league fixtures — the schema deliberately keeps every
+      // fixture inside one league.
+      //
+      // Filing a crossover game under either league would break that
+      // invariant and desynchronise the two leagues' schedules. The safe
+      // behaviour is to skip it and report the count, so the schedules stay
+      // internally consistent. (A future dedicated crossover table would be
+      // the correct long-term model.)
+      const homeLeague = (await teamLeague(homeId)) ?? league.id;
+      const awayLeague = (await teamLeague(awayId)) ?? league.id;
+      if (homeLeague !== awayLeague) {
+        crossover++;
+        continue;
+      }
+
+      const fixtureLeagueId = homeLeague;
+
       const record = {
-        league_id: league.id,
+        league_id: fixtureLeagueId,
         scheduled_at: scheduledAt,
         home_team_id: homeId,
         away_team_id: awayId,
@@ -393,7 +430,7 @@ async function main() {
           const { error: fixErr } = await supabase
             .from('fixtures')
             .update({ status: 'scheduled', home_score: null, away_score: null })
-            .eq('league_id', league.id)
+            .eq('league_id', fixtureLeagueId)
             .eq('scheduled_at', scheduledAt)
             .eq('home_team_id', homeId)
             .eq('away_team_id', awayId)
@@ -419,14 +456,14 @@ async function main() {
 
     totalWritten += written;
     totalUnresolved += unresolved;
-    results[key] = { written, unresolved, skipped, downgraded, feedGames: schedule.length };
-    console.log(`[${key}] wrote=${written} unresolvedTeams=${unresolved} errors=${skipped} downgraded=${downgraded}`);
+    results[key] = { written, unresolved, skipped, downgraded, crossover, feedGames: schedule.length };
+    console.log(`[${key}] wrote=${written} unresolvedTeams=${unresolved} errors=${skipped} downgraded=${downgraded} crossoverSkipped=${crossover}`);
   }
 
   console.log('');
   console.log('=== Summary ===');
   for (const [k, v] of Object.entries(results)) {
-    console.log(`  ${k.padEnd(8)} feed=${v.feedGames} written=${v.written} unresolved=${v.unresolved} errors=${v.skipped} downgraded=${v.downgraded || 0}`);
+    console.log(`  ${k.padEnd(8)} feed=${v.feedGames} written=${v.written} unresolved=${v.unresolved} errors=${v.skipped} downgraded=${v.downgraded || 0} crossoverSkipped=${v.crossover || 0}`);
   }
   console.log(`  TOTAL written=${totalWritten} unresolvedTeams=${totalUnresolved}`);
   if (DRY_RUN) console.log('  (dry run — nothing written)');
