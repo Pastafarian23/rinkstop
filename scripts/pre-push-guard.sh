@@ -22,7 +22,7 @@ echo "=== pre-push guard: branch=$BRANCH ==="
 cd "$(git rev-parse --show-toplevel)"
 
 # Gate 1: working tree state
-echo "[1/11] checking working tree..."
+echo "[1/12] checking working tree..."
 if [ -n "$(git status --porcelain)" ]; then
   echo "FAIL: working tree has uncommitted changes"
   git status -sb
@@ -30,7 +30,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Gate 2: branch is ahead of main (we're pushing new work)
-echo "[2/11] checking branch is ahead of main..."
+echo "[2/12] checking branch is ahead of main..."
 if [ "$BRANCH" = "main" ]; then
   echo "    main branch - skipping ahead-of-main check"
 else
@@ -45,7 +45,7 @@ fi
 # Gate 3: TypeScript compile
 # 2026-09-17: default 2 GiB Node heap OOMs on this project's full type check
 # (measured 72s with abort, vs 60s clean with 4 GiB). Bump to match Vercel.
-echo "[3/11] running npx tsc --noEmit..."
+echo "[3/12] running npx tsc --noEmit..."
 if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192" npx tsc --noEmit 2>&1 | tail -50; then
   echo "FAIL: TypeScript compile errors"
   exit 1
@@ -58,7 +58,7 @@ fi
 # The original version of this gate checked across all parents at the same
 # depth, which flagged every legitimate shared bracket name as a collision
 # and made every push fail. Fixed 2026-08-11.
-echo "[4/11] checking for dynamic-segment collisions in next-app routes..."
+echo "[4/12] checking for dynamic-segment collisions in next-app routes..."
 TOTAL_BRACKETS=$(find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | wc -l)
 find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | \
   awk -F/ '{
@@ -88,7 +88,7 @@ echo "    no real collisions ($TOTAL_BRACKETS bracket routes checked)"
 # page reported "No teams found" for a team that was live in the DB.
 # tsc cannot catch this (the Supabase client is untyped), and HTTP 200 proves
 # nothing. Only a schema-vs-code diff catches it.
-echo "[5/11] auditing team_workspaces column references against live schema..."
+echo "[5/12] auditing team_workspaces column references against live schema..."
 if ! node scripts/_audit-team-workspace-columns.mjs 2>&1 | tail -40; then
   echo "FAIL: invalid team_workspaces column references (see above)"
   exit 1
@@ -103,7 +103,7 @@ fi
 #
 # This generalises it to every table: all explicit column selects in src/
 # are checked against the live PostgREST schema.
-echo "[6/11] auditing every column select against the live schema..."
+echo "[6/12] auditing every column select against the live schema..."
 if ! node scripts/_audit-select-columns.mjs 2>&1 | tail -30; then
   echo "FAIL: code selects columns that do not exist in the live database."
   echo "      PostgREST returns 42703 for these; the route usually swallows it"
@@ -119,7 +119,7 @@ fi
 # third table, so it stayed open for ~4 months. This gate re-runs the audit
 # against the LIVE database and tests BEHAVIOUR (can anon actually read it?)
 # rather than policy definitions, because the two drift.
-echo "[7/11] auditing RLS for publicly-readable submitter PII..."
+echo "[7/12] auditing RLS for publicly-readable submitter PII..."
 if ! node scripts/_audit-rls-pii.mjs 2>&1 | tail -40; then
   echo "FAIL: public read exposes captured submitter contact data (see above)"
   exit 1
@@ -137,7 +137,7 @@ fi
 # This gate FAILS until the anon/authenticated grants are revoked in the
 # Supabase Dashboard SQL editor (which runs as supabase_admin). That is
 # intentional: the exposure is real and must not be allowed to ship silently.
-echo "[8/11] auditing for public tables exposed to anon WITHOUT RLS..."
+echo "[8/12] auditing for public tables exposed to anon WITHOUT RLS..."
 if ! node scripts/_audit-rls-disabled.mjs 2>&1 | tail -40; then
   echo "FAIL: a public table is reachable by the anon role without RLS (see above)."
   echo "      If it is extension-owned (supabase_admin), run the REVOKE from the"
@@ -154,7 +154,7 @@ fi
 # Root cause: ENTITY_TO_TIER mapped claims to the PAID tier in two files.
 # This gate checks the tier maps and the CTA labels so the copy cannot drift
 # back into telling people claiming costs money.
-echo "[9/11] auditing claim-funnel pricing copy for 'claiming is free' consistency..."
+echo "[9/12] auditing claim-funnel pricing copy for 'claiming is free' consistency..."
 if ! node scripts/_audit-claim-pricing-copy.mjs 2>&1 | tail -40; then
   echo "FAIL: claim funnel shows a paid price as the cost of claiming (see above)"
   exit 1
@@ -175,7 +175,7 @@ fi
 # This gate exercises the REAL production resolver against the LIVE database
 # and asserts the structural rules no query can catch (league is not a
 # self-serve claim type; federations are invite-only).
-echo "[10/11] testing claim-flow entity resolution against the live database..."
+echo "[10/12] testing claim-flow entity resolution against the live database..."
 if ! node scripts/_test-claim-flow.mjs 2>&1 | tail -40; then
   echo "FAIL: the claim flow cannot complete for one or more entity types (see above)"
   exit 1
@@ -191,9 +191,23 @@ fi
 # This gate asserts: export row counts equal the marketing counts, no
 # private-visibility rows leak into the paid dataset, and sampled exported
 # team slugs resolve on the public directory.
-echo "[11/11] auditing the paid dataset export for count/privacy/404 defects..."
+echo "[11/12] auditing the paid dataset export for count/privacy/404 defects..."
 if ! node scripts/_audit-dataset-export.mjs 2>&1 | tail -40; then
   echo "FAIL: the paid dataset export does not match the advertised counts (see above)"
+  exit 1
+fi
+
+# Gate 10: NHL abbrev -> team id map integrity.
+# 2026-11-06 (Arnel data-integrity audit): the hardcoded NHL_ABBREV_TO_TEAMS_ID
+# map held a stale UUID for MTL. The team's row had been replaced during the
+# teams -> team_workspaces migration, so every NHL game involving Montreal
+# failed with "home_team_id ... does not exist in teams table". The ingest
+# kept running and reported success; the per-game errors scrolled past and
+# NHL fixtures silently stopped refreshing. A stale UUID in a hardcoded map
+# is invisible to tsc and to the build — only a live-DB check catches it.
+echo "[12/12] auditing the NHL abbrev->team-id map against the live database..."
+if ! node scripts/_audit-nhl-abbrev-map.mjs 2>&1 | tail -30; then
+  echo "FAIL: a mapped NHL team id does not exist in the teams table (see above)"
   exit 1
 fi
 
