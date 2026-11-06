@@ -279,7 +279,7 @@ export async function getCityPageData(opts: {
 
   let rinksQuery = supabase
     .from('rinks')
-    .select('id, name, slug, address, phone, website_url, notes')
+    .select('id, name, slug, address, website_url, notes')
     .eq('country', countryName)
     .eq('is_active', true);
 

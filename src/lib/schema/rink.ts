@@ -25,10 +25,13 @@ export type RinkSchemaInput = {
   latitude?: number | null;
   longitude?: number | null;
   capacity?: number | null;
-  phone?: string | null;
+  // 2026-11-06 (Arnel): rink phone / email / google_phone are INTERNAL —
+  // for our own marketing outreach, not published. They are deliberately
+  // absent from this public structured-data type, and revoked from
+  // anon/authenticated at the DB level
+  // (migration 2026-11-06_keep_rink_contacts_internal.sql).
   website_url?: string | null;
   google_maps_url?: string | null;
-  google_phone?: string | null;
   cover_photo_url?: string | null;
   logo_url?: string | null;
   opening_hours_json?: OpeningHoursJson | null;
@@ -268,7 +271,7 @@ export function buildRinkSchema(
       ? { geo: { '@type': 'GeoCoordinates', latitude: rink.latitude, longitude: rink.longitude } }
       : {}),
     ...(rink.capacity ? { maximumAttendeeCapacity: rink.capacity } : {}),
-    ...(rink.phone ? { telephone: rink.phone } : {}),
+    // 2026-11-06: no telephone in public structured data — rink phone is internal.
     ...(rink.website_url ? { url: rink.website_url } : {}),
     ...(rink.google_maps_url ? { hasMap: rink.google_maps_url } : {}),
     ...(() => {

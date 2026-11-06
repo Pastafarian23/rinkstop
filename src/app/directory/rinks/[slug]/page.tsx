@@ -462,7 +462,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league, qr_identifier, qr_revoked_at, claimable')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_website, google_maps_url, league, qr_identifier, qr_revoked_at, claimable')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -797,7 +797,9 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         latitude: rink.latitude,
         longitude: rink.longitude,
         capacity: rink.capacity,
-        phone: rink.phone,
+        // 2026-11-06 (Arnel): rink phone/email are INTERNAL — for our own
+        // marketing outreach, not published. They are not even part of the
+        // public schema type, so they cannot leak into structured data.
         website_url: rink.website_url,
         google_maps_url: rink.google_maps_url,
         cover_photo_url: rink.cover_photo_url,
@@ -871,7 +873,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             // Targets "rink size", "rink type", "rink league" search intents (high-impression GSC queries).
             { '@type': 'Question', name: `What is the capacity of ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.capacity ? `${rink.name} has a seating capacity of ${rink.capacity.toLocaleString()} spectators.` : `${rink.name}'s exact seating capacity is not yet on file in our directory. Contact the rink directly for current capacity.` } },
             { '@type': 'Question', name: `What size is the ice rink at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.ice_size ? `${rink.name} has a ${rink.ice_size} ice surface${rink.surface_type ? ` (${rink.surface_type})` : ''}.` : `${rink.name}'s exact ice dimensions are not yet on file. RinkStop adds verified measurements as rink operators submit them.` } },
-            { '@type': 'Question', name: `How do I contact ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.phone || rink.email ? `${rink.name} can be reached at${rink.phone ? ` ${rink.phone}` : ''}${rink.email ? ` or by email at ${rink.email}` : ''}.` : `${rink.name}'s contact info is not yet verified. RinkStop aggregates verified contact details from rink operators, public sources, and rink visitors.` } },
+            { '@type': 'Question', name: `How do I contact ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: `${rink.name}'s contact details are held privately by RinkStop for direct outreach. The rink's own website and address are shown on this page.` } },
           ],
         }) }}
       />
@@ -1056,7 +1058,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             We only render anything if the rink has at least one of these
             fields — for un-enriched rinks we render nothing (no fake
             "Closed" pill). */}
-        {(openState.kind !== 'unknown' || rink.google_phone || rink.google_website || rink.google_maps_url) && (
+        {(openState.kind !== 'unknown' || rink.google_website || rink.google_maps_url) && (
           <div
             data-testid="rink-google-info"
             style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginBottom: '24px' }}
@@ -1089,14 +1091,10 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 Closed · Opens {openState.nextOpenLabel}
               </span>
             )}
-            {rink.google_phone && (
-              <a
-                href={`tel:${rink.google_phone.replace(/[^0-9+]/g, '')}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
-              >
-                📞 {rink.google_phone}
-              </a>
-            )}
+            {/* 2026-11-06 (Arnel): rink phone numbers are INTERNAL — for our own
+                marketing outreach, not for public display. The google_website
+                and google_maps_url links stay public: they are how a visitor
+                reaches the rink, and they are not contact details. */}
             {rink.google_website && (
               <a
                 href={rink.google_website}
@@ -1624,22 +1622,16 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             </dl>
           </div>
 
-          {(rink.phone || rink.email || rink.website_url) && (
+          {/* 2026-11-06 (Arnel): the rink's phone and email are INTERNAL — kept for
+              our own marketing outreach, admin consoles and booking inquiries.
+              Only the website stays public here; it is how a visitor reaches the
+              rink, and it is not a contact detail we are withholding.
+              The phone/email columns are also revoked from anon/authenticated at
+              the DB level (migration 2026-11-06_keep_rink_contacts_internal.sql). */}
+          {(rink.website_url && rink.website_url !== 'N/A') && (
             <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <h2 style={{ fontWeight: 600, marginBottom: '12px', color: '#fff', fontSize: '16px' }}>Contact</h2>
               <dl style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {rink.phone && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Phone</dt>
-                  <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.phone}</dd>
-                </div>
-              )}
-              {rink.email && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Email</dt>
-                  <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.email}</dd>
-                </div>
-              )}
               {rink.website_url && rink.website_url !== 'N/A' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Website</dt>

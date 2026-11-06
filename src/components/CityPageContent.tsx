@@ -92,7 +92,8 @@ export default function CityPageContent({ data, faqs }: Props) {
           addressRegion: regionName,
           addressCountry: countryName,
         } : undefined,
-        telephone: r.phone,
+        // 2026-11-06: rink phone is INTERNAL — omit from public structured data.
+        telephone: undefined,
         url: r.website_url,
       },
     })),
@@ -607,7 +608,9 @@ export default function CityPageContent({ data, faqs }: Props) {
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8125rem', flexWrap: 'wrap' }}>
-                      {rink.phone && <span style={{ color: textMuted }}>📞 {rink.phone}</span>}
+                      {/* 2026-11-06 (Arnel): rink phone is INTERNAL — for our own
+                          marketing outreach, not for public display. Removed from
+                          the public select as well, so it never reaches the page. */}
                       {rink.website_url && (
                         <a
                           href={rink.website_url}

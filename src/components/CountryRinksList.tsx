@@ -83,7 +83,8 @@ export default function CountryRinksList({
                 </div>
               )}
               {rink.address && <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📍 {rink.address}</div>}
-              {rink.phone && <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📞 {rink.phone}</div>}
+              {/* 2026-11-06 (Arnel): rink phone is INTERNAL — for our own marketing
+                  outreach, not for public display. */}
               {rink.website_url && (
                 <a
                   href={rink.website_url}
