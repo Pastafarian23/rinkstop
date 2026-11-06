@@ -57,7 +57,7 @@ export async function buildTimeline(
   // 1 + 2. Team memberships
   const membershipsRes = await supabaseAdmin
     .from('team_members')
-    .select('id, joined_at, left_at, team_id, teams!inner(name)')
+    .select('id, joined_at, left_at, team_id, team_workspaces!inner(name)')
     .eq('player_id', playerId)
     .not('joined_at', 'is', null);
 
@@ -66,11 +66,11 @@ export async function buildTimeline(
     joined_at: string;
     left_at: string | null;
     team_id: string;
-    teams: { name: string } | { name: string }[] | null;
+    team_workspaces: { name: string } | { name: string }[] | null;
   }>;
 
   for (const m of memberships) {
-    const teamName = Array.isArray(m.teams) ? m.teams[0]?.name : m.teams?.name;
+    const teamName = Array.isArray(m.team_workspaces) ? m.team_workspaces[0]?.name : m.team_workspaces?.name;
     const name = teamName || 'a team';
     events.push({
       type: 'joined_team',

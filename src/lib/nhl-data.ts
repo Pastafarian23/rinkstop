@@ -146,7 +146,7 @@ export async function getStandingsForSeason(season: string): Promise<NhlStanding
     .from('nhl_official_standings')
     .select(`
       *,
-      teams(name, slug)
+      team_workspaces(name, slug)
     `)
     .eq('season', season)
     .order('points', { ascending: false });

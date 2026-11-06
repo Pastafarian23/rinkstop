@@ -59,7 +59,7 @@ function getDirectAdminClient() {
 // nothing is rendered if the value is missing.
 function buildPlayerDescription(player: any): string {
   const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-  const teamArr: any[] = Array.isArray(player.teams) ? player.teams : (player.teams ? [player.teams] : []);
+  const teamArr: any[] = Array.isArray(player.team_workspaces) ? player.team_workspaces : (player.team_workspaces ? [player.team_workspaces] : []);
   const team0 = teamArr[0] || {};
   const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
   const teamName = (typeof team0?.name === 'string' && team0.name.trim()) ? team0.name : null;
@@ -121,13 +121,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const { data: player } = await sb
       .from('players')
-      .select('id, first_name, last_name, position, nationality, headshot_url, teams(name, leagues(name))')
+      .select('id, first_name, last_name, position, nationality, headshot_url, team_workspaces(name, leagues(name))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle();
 
     if (!player) return { title: 'Player Not Found' };
 
-    const team0: any = Array.isArray(player.teams) ? player.teams[0] : player.teams;
+    const team0: any = Array.isArray(player.team_workspaces) ? player.team_workspaces[0] : player.team_workspaces;
     const league0: any = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
     const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
     const teamName = safeName(team0?.name);
@@ -200,7 +200,7 @@ export default async function PlayerPage({ params }: Props) {
   // not on the legacy `teams` (national teams) table.
   const { data: seoPlayer, error: playerError } = await supabaseAdmin
     .from('players')
-    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, teams(name, leagues(name))')
+    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, team_workspaces(name, leagues(name))')
     .eq(isUuid ? 'id' : 'slug', id)
     .maybeSingle();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -237,7 +237,7 @@ export default async function PlayerPage({ params }: Props) {
   try {
     const { data: hist } = await supabaseAdmin
       .from('hockey_player_team_history')
-      .select('team_id, team_name_snapshot, end_date, teams(name, slug)')
+      .select('team_id, team_name_snapshot, end_date, team_workspaces(name, slug)')
       .eq('player_id', seoPlayer.id)
       .not('end_date', 'is', null)
       .order('end_date', { ascending: false })
@@ -245,11 +245,11 @@ export default async function PlayerPage({ params }: Props) {
       .maybeSingle();
     if (hist && (hist as any).team_id) {
       const teamId = (hist as any).team_id;
-      recentTeamName = (hist as any).teams?.name || (hist as any).team_name_snapshot || null;
-      recentTeamSlug = (hist as any).teams?.slug || null;
+      recentTeamName = (hist as any).team_workspaces?.name || (hist as any).team_name_snapshot || null;
+      recentTeamSlug = (hist as any).team_workspaces?.slug || null;
       const { data: games } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_score, away_score, home_team_id, away_team_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
         .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
         .eq('status', 'completed')
         .order('scheduled_at', { ascending: false })
@@ -305,7 +305,7 @@ export default async function PlayerPage({ params }: Props) {
   let playerJsonLd: object | null = null;
   try {
     const fullName = `${playerTyped.first_name ?? ''} ${playerTyped.last_name ?? ''}`.trim() || 'Hockey Player';
-    const teamsArr: any[] = Array.isArray(playerTyped.teams) ? playerTyped.teams : (playerTyped.teams ? [playerTyped.teams] : []);
+    const teamsArr: any[] = Array.isArray(playerTyped.team_workspaces) ? playerTyped.team_workspaces : (playerTyped.team_workspaces ? [playerTyped.team_workspaces] : []);
     const team0 = teamsArr[0] || {};
     const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : {};
     const teamName = safeName(team0?.name);

@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 // (JSONB), AND the joined teams all come back undefined. Use only the
 // JSONB path; skip the column reference entirely.
     const { data: fx } = await supabaseAdmin.from('fixtures')
-      .select('game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name), away_team:teams!fixtures_away_team_id_fkey(name)')
+      .select('game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name), away_team:team_workspaces!fixtures_away_team_id_fkey(name)')
       .eq('id', gameId)
       .maybeSingle();
     if (fx?.game_data?.nhl_game_id) {

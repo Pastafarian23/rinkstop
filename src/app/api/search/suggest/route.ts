@@ -244,7 +244,7 @@ export async function GET(req: NextRequest) {
     include('player') ? applyMultiWordSearch(
       supabaseAdmin
         .from('players')
-        .select('id, first_name, last_name, slug, position, teams(name)')
+        .select('id, first_name, last_name, slug, position, team_workspaces(name)')
         .eq('is_active', true),
       q,
       ['first_name', 'last_name']
@@ -253,7 +253,7 @@ export async function GET(req: NextRequest) {
       .then(({ data }) =>
         (data ?? []).map((r) => {
           const fullName = `${r.first_name} ${r.last_name}`;
-          const teams = r.teams as { name: string } | { name: string }[] | null;
+          const teams = r.team_workspaces as { name: string } | { name: string }[] | null;
           const teamName = Array.isArray(teams) ? teams[0]?.name : teams?.name;
           return {
             type: 'player' as const,

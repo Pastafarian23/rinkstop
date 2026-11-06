@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
       .from('fixtures')
       .select(
         `id, scheduled_at, status, home_score, away_score, season, league_id,
-         home_team:teams!home_team_id(id, name, slug, logo_url),
-         away_team:teams!away_team_id(id, name, slug, logo_url),
+         home_team:team_workspaces!home_team_id(id, name, slug, logo_url),
+         away_team:team_workspaces!away_team_id(id, name, slug, logo_url),
          league:leagues(id, name, slug)`,
         { count: 'exact' }
       )

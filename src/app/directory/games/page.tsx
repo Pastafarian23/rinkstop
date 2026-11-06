@@ -248,7 +248,7 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
     // Build query
     let query = sb
       .from('fixtures')
-      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`, { count: 'exact' })
+      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`, { count: 'exact' })
       .not('home_team_id', 'is', null)
       .not('away_team_id', 'is', null)
       .order('scheduled_at', { ascending: true })
@@ -324,7 +324,7 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
     // of the week, then yesterday/this-week's completed results at the
     // bottom. hasMore is true if either side has more rows.
     if (time === 'current' && !hasExplicitRange) {
-      const baseSelect = `id, scheduled_at, status, home_score, away_score, season, league_id, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`;
+      const baseSelect = `id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`;
       // Resolve subleague override (when set, narrow to that one league)
       let mergedLeagueIds = leagueIds;
       if (subleague) {

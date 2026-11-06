@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     if (isUuid) {
       const { data, error } = await supabase
         .from('players')
-        .select('*, teams(name, slug, logo_url, leagues(name, slug))')
+        .select('*, team_workspaces(name, slug, logo_url, leagues(name, slug))')
         .eq('id', id)
         .limit(1)
         .maybeSingle();
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     const cleanSlug = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const { data: rsData, error: rsErr } = await supabase
       .from('players')
-      .select('*, teams(name, slug, logo_url, leagues(name, slug))')
+      .select('*, team_workspaces(name, slug, logo_url, leagues(name, slug))')
       .or(`slug.ilike.${cleanSlug}-%,slug.eq.${cleanSlug}`)
       .limit(1)
       .maybeSingle();
@@ -247,7 +247,7 @@ export async function GET(request: NextRequest) {
   // Default: RinkStop players table
   let query = supabase
     .from('players')
-    .select('*, teams!inner(name, slug, logo_url, leagues(name, slug))', { count: 'exact' });
+    .select('*, team_workspaces!inner(name, slug, logo_url, leagues(name, slug))', { count: 'exact' });
 
   if (teamId) query = query.eq('team_id', teamId);
   if (position) query = query.eq('position', position);
@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json();
-  const { data, error } = await supabaseAdmin.from('players').insert(body).select('*, teams(name)').single();
+  const { data, error } = await supabaseAdmin.from('players').insert(body).select('*, team_workspaces(name)').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data, { status: 201 });
 }
@@ -277,7 +277,7 @@ export async function PUT(request: NextRequest) {
   if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...rest } = await request.json();
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { data, error } = await supabaseAdmin.from('players').update(rest).eq('id', id).select('*, teams(name)').single();
+  const { data, error } = await supabaseAdmin.from('players').update(rest).eq('id', id).select('*, team_workspaces(name)').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }

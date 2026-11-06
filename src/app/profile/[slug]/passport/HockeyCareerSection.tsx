@@ -49,7 +49,7 @@ export async function HockeyCareerSection({
         id, team_id, team_name_snapshot, jersey_number, position, role,
         start_date, end_date, verification_source, verified_at, level,
         season:hockey_seasons(label),
-        team:teams(slug, name)
+        team:team_workspaces(slug, name)
       `)
       .eq('player_id', playerId)
       .order('start_date', { ascending: false, nullsFirst: false }),

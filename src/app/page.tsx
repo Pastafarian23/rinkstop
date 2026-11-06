@@ -283,14 +283,14 @@ export default async function Home() {
       const [liveRes, finalRes] = await Promise.all([
         supabaseAdmin
           .from('fixtures')
-          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
           .in('league_id', leagueIds)
           .eq('status', 'in_progress')
           .order('scheduled_at', { ascending: true })
           .limit(5),
         supabaseAdmin
           .from('fixtures')
-          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
           .in('league_id', leagueIds)
           .eq('status', 'completed')
           .gte('scheduled_at', dayStart.toISOString())

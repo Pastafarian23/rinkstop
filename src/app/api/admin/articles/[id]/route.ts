@@ -22,8 +22,8 @@ export async function GET(_req: NextRequest, { params }: Props) {
   const { data, error } = await supabaseAdmin
     .from('posts')
     .select(
-      `*, team_home:teams!posts_team_home_id_fkey(id, name, slug),
-       team_away:teams!posts_team_away_id_fkey(id, name, slug),
+      `*, team_home:team_workspaces!posts_team_home_id_fkey(id, name, slug),
+       team_away:team_workspaces!posts_team_away_id_fkey(id, name, slug),
        league:leagues!posts_league_id_fkey(id, name, slug),
        player:players!posts_player_id_fkey(id, first_name, last_name, slug)`,
     )

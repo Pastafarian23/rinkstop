@@ -90,7 +90,7 @@ export default async function PendingVerificationsPage() {
     .select(`
       id, team_id, jersey_number, position, role, start_date, end_date, created_at,
       player:players(id, first_name, last_name, slug, user_id),
-      team:teams(name, slug),
+      team:team_workspaces(name, slug),
       season:hockey_seasons(label)
     `)
     .eq('verification_source', 'self_reported')

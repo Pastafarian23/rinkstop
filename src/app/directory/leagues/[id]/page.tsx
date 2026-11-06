@@ -136,7 +136,7 @@ export default async function LeaguePage({
       // Last 5 completed games with team names joined inline.
       const { data: recentData } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, season, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
         .eq('league_id', league.id)
         .eq('status', 'completed')
         .not('home_score', 'is', null)
@@ -150,7 +150,7 @@ export default async function LeaguePage({
       // Next 5 scheduled games with team names joined inline.
       const { data: upcomingData } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_team_id, away_team_id, status, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_team_id, away_team_id, status, season, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
         .eq('league_id', league.id)
         .eq('status', 'scheduled')
         .gte('scheduled_at', nowIso)
@@ -174,7 +174,7 @@ export default async function LeaguePage({
       const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
       const { data: todayData } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
         .eq('league_id', league.id)
         .gte('scheduled_at', dayStart.toISOString())
         .lt('scheduled_at', dayEnd.toISOString())

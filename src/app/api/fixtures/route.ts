@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
   const season = searchParams.get('season');
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-  let query = supabase.from('fixtures').select('*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url), venue:rinks(name), league:leagues(name)');
+  let query = supabase.from('fixtures').select('*, home_team:team_workspaces!home_team_id(name,logo_url), away_team:team_workspaces!away_team_id(name,logo_url), venue:rinks(name), league:leagues(name)');
 
   if (leagueId) query = query.eq('league_id', leagueId);
   if (teamId) query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json();
-  const { data, error } = await supabaseAdmin.from('fixtures').insert(body).select('*, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').single();
+  const { data, error } = await supabaseAdmin.from('fixtures').insert(body).select('*, home_team:team_workspaces!home_team_id(name), away_team:team_workspaces!away_team_id(name)').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data, { status: 201 });
 }

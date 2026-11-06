@@ -15,8 +15,8 @@ export async function GET() {
         home_score,
         away_score,
         status,
-        home_team:teams!home_team_id(id, name, city),
-        away_team:teams!away_team_id(id, name, city),
+        home_team:team_workspaces!home_team_id(id, name, city),
+        away_team:team_workspaces!away_team_id(id, name, city),
         league:leagues!league_id(id, name)
       `)
       .eq('league_id', '2b5f2b9d-84b9-4edb-8373-a732b72f4e40')

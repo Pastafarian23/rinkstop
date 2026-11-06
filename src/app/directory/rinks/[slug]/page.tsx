@@ -508,7 +508,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     // memory/2026-10-28-postgrest-embedded-filter-bug.md.
     supabase
       .from('fixtures')
-      .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey!inner(name, slug), away_team:teams!fixtures_away_team_id_fkey!inner(name, slug)')
+      .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:team_workspaces!inner(name, slug), away_team:team_workspaces!inner(name, slug)')
       .eq('home_team.home_rink_id', rink.id)
       .gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at', { ascending: true })

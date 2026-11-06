@@ -60,7 +60,7 @@ export async function GET(
   if (type === 'player') {
     let query = supabaseAdmin
       .from('players')
-      .select('id, first_name, last_name, position, jersey_number, headshot_url, team_id, teams(name)')
+      .select('id, first_name, last_name, position, jersey_number, headshot_url, team_id, team_workspaces(name)')
       .eq('is_active', true)
       .order('last_name', { ascending: true })
       .limit(limit);

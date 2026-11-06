@@ -26,8 +26,8 @@ export async function GET(
     .select(`
       id, scheduled_at, status, home_score, away_score, league_id,
       home_team_id, away_team_id, season, game_data,
-      home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url, city, country),
-      away_team:teams!fixtures_away_team_id_fkey(id, name, slug, logo_url, city, country),
+      home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, logo_url, city, country),
+      away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, logo_url, city, country),
       league:leagues!fixtures_league_id_fkey(id, name, slug, level, country)
     `)
     .eq('id', id)

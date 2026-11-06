@@ -26,7 +26,7 @@ export default async function CoachHubPage() {
   // joined on coach_id). Verification status stays here.
   const { data: coach } = await supabaseAdmin
     .from('coach_profiles')
-    .select('id, verification_status, current_team_id, current_team:teams(name, slug)')
+    .select('id, verification_status, current_team_id, current_team:team_workspaces(name, slug)')
     .eq('profile_id', userId)
     .maybeSingle();
 

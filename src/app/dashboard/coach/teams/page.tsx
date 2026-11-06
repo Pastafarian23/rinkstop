@@ -55,7 +55,7 @@ export default async function CoachTeamsPage() {
   const [{ data: history }, { data: seasons }, { data: teams }] = await Promise.all([
     supabaseAdmin
       .from('coach_team_history')
-      .select('id, team_id, role, season_id, start_date, end_date, created_at, team:teams(name, slug, league_id, leagues(name)), season:hockey_seasons(label)')
+      .select('id, team_id, role, season_id, start_date, end_date, created_at, team:team_workspaces(name, slug, league_id, leagues(name)), season:hockey_seasons(label)')
       .eq('coach_id', coach.id)
       .order('start_date', { ascending: false }),
     supabaseAdmin

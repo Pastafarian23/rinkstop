@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
     applyMultiWordSearch(
       supabaseAdmin
         .from('players')
-        .select('id, first_name, last_name, slug, position, teams(name)')
+        .select('id, first_name, last_name, slug, position, team_workspaces(name)')
         .eq('is_active', true),
       q,
       ['first_name', 'last_name']
@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
       .limit(MAX_PER_TYPE)
       .then(({ data }) =>
         (data ?? []).map((r) => {
-          const teams = r.teams as { name: string } | { name: string }[] | null;
+          const teams = r.team_workspaces as { name: string } | { name: string }[] | null;
           const teamName = Array.isArray(teams) ? teams[0]?.name : teams?.name;
           return {
             type: 'player' as const,

@@ -61,7 +61,7 @@ export async function getTeamForm(leagueId: string | null | undefined, teamId: s
         const sb = getSupabase();
         const { data: recent } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)')
+          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!home_team_id(name), away_team:team_workspaces!away_team_id(name)')
           .eq('league_id', leagueId)
           .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
           .eq('status', 'completed')
@@ -125,7 +125,7 @@ export async function getH2H(leagueId: string | null, homeId: string | null, awa
         const sb = getSupabase();
         const { data: rows } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)')
+          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!home_team_id(name), away_team:team_workspaces!away_team_id(name)')
           .eq('league_id', leagueId)
           .or(`and(home_team_id.eq.${homeId},away_team_id.eq.${awayId}),and(home_team_id.eq.${awayId},away_team_id.eq.${homeId})`)
           .eq('status', 'completed')
@@ -183,7 +183,7 @@ export async function getNextGame(leagueId: string | null, teamId: string | null
         const sb = getSupabase();
         const { data: rows } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:teams!home_team_id(name, slug), away_team:teams!away_team_id(name, slug), league:leagues(slug, name)')
+          .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:team_workspaces!home_team_id(name, slug), away_team:team_workspaces!away_team_id(name, slug), league:leagues(slug, name)')
           .eq('league_id', leagueId)
           .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
           .gt('scheduled_at', afterIso)
@@ -237,7 +237,7 @@ export async function getSameDayGames(leagueId: string | null, dayStart: string,
         const sb = getSupabase();
         const { data: rows } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score, home_team:teams!home_team_id(name, slug), away_team:teams!away_team_id(name, slug)')
+          .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score, home_team:team_workspaces!home_team_id(name, slug), away_team:team_workspaces!away_team_id(name, slug)')
           .eq('league_id', leagueId)
           .gte('scheduled_at', dayStart)
           .lt('scheduled_at', dayEnd)
