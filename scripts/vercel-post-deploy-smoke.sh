@@ -113,6 +113,9 @@ done
 # Each entry: path|expected code|required substring
 declare -a API_CHECKS=(
   "/api/players?limit=2|200|data"
+  "/api/teams?limit=2|200|data"
+  "/api/rinks?limit=2|200|data"
+  "/api/pwhl|200|"
   "/api/scores?limit=2|200|data"
   "/api/fixtures?limit=2|200|home_team"
   "/api/fixtures/ticker|200|homeCode"

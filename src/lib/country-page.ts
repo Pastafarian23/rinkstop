@@ -311,7 +311,7 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     supabase.from('rinks').select('id, slug, name, city, address, website_url').eq('country', countryName).eq('is_active', true).order('name').limit(50),
     supabase.from('team_workspaces').select('id, name, slug, avatar_url, home_city, league_id').eq('country_code', isoCode).eq('is_active', true).order('name').limit(20),
     supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('country', countryName).eq('is_active', true),
-    supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('country_code', isoCode).eq('is_active', true),
+    supabase.from('team_workspaces').select('id', { count: 'exact', head: true }).eq('country_code', isoCode).eq('is_active', true),
     supabase.from('leagues').select('id, name, slug, level, logo_url, country').or(`country.eq.${countryName},country.ilike.%${countryName}%`).eq('is_active', true).order('level').limit(8),
     iocCode
       ? supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id').eq('nationality', iocCode).eq('is_active', true).order('last_name').limit(8)

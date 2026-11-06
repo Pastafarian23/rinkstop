@@ -67,10 +67,10 @@ async function getDirectoryStatsForMeta(): Promise<{ rinks: number; teams: numbe
       { count: leagues },
       statsRpc,
     ] = await Promise.all([
-      supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true),
       // 2026-11-06: count active + public team_workspaces, matching the
       // canonical team count everywhere else on the site.
-      supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).eq('visibility', 'public'),
+      supabase.from('team_workspaces').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('visibility', 'public'),
       supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
       // 2026-11-06: cities/countries come from the canonical RPC. The old

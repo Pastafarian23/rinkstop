@@ -31,7 +31,17 @@ export async function GET(request: NextRequest) {
   const sort = searchParams.get('sort') || 'name';
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
-  let query = supabase.from('rinks').select('*');
+  // Explicit column list, not select('*') — see the note in /api/teams:
+  // the contact-details hardening revoked table-level SELECT from anon on
+  // `rinks`, so a star select is now a permission error.
+  let query = supabase.from('rinks').select(
+    'id, name, slug, city, province_state, country, address, latitude, longitude, ' +
+      'capacity, ice_size, surface_type, website_url, logo_url, is_active, created_at, ' +
+      'updated_at, notes, source, status, cover_photo_url, place_id, opening_hours_json, ' +
+      'google_website, google_maps_url, static_map_url, league, timezone, ' +
+      'cover_photo_verified_at, cover_photo_source, seo_h1, seo_title, qr_identifier, ' +
+      'verification_tier, qr_revoked_at, notes_generated, meta_description, claimable',
+  );
 
   if (id) {
     query = query.eq('id', id).limit(1);
@@ -55,7 +65,7 @@ export async function GET(request: NextRequest) {
 
   // For list responses (no id/slug), enrich with the active claimer's tier so the
   // directory can show "Verified owner" and sort by tier.
-  let enrichedData = data;
+  let enrichedData = (data || []) as unknown as Array<Record<string, unknown> & { name?: string }>;
   if (!id && !slug && data && data.length) {
     const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'rink', data.map((d: any) => d.id));
     enrichedData = data.map((d: any) => {

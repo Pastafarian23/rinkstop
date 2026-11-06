@@ -169,7 +169,11 @@ export const supabaseRead: AnyClient = new Proxy({} as AnyClient, {
  *
  * Example:
  *   import { db } from '@/lib/supabase';
- *   const { data } = await db.from('rinks').select('*');      // → replica
+ *   //   Name your columns. A star select fails on tables whose
+ *   //   table-level SELECT is revoked from anon (team_workspaces,
+ *   //   federations, rinks) — PostgREST validates the star against the
+ *   //   column grants even when head:true.
+ *   const { data } = await db.from('rinks').select('id, name'); // → replica
  *   await db.from('rinks').insert({ name: 'X' });              // → primary
  *   await db.rpc('my_function', { arg: 1 });                   // → primary
  */

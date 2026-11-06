@@ -111,11 +111,61 @@ function extractEmbeds() {
   return pairs;
 }
 
+/**
+ * Find any PUBLIC (anon-client) select('*') on a table whose table-level
+ * SELECT was revoked from anon/authenticated.
+ *
+ * 2026-11-06: the contact-details hardening revoked table-level SELECT on
+ * team_workspaces / federations / rinks and re-granted it per column. A
+ * star select then fails at RUNTIME with "permission denied for table X" —
+ * PostgREST validates the star against the column grants even when
+ * head:true. That silently took down /api/teams, /api/rinks and /api/pwhl
+ * while tsc and the build stayed green.
+ *
+ * `tsc` cannot catch this: the select is a string, and the grant is a
+ * database fact.
+ */
+const REVOKED_TABLE_SELECT = ['team_workspaces', 'federations', 'rinks'];
+
+function findAnonStarSelects() {
+  const hits = [];
+  const files = walk(SRC);
+  // The gap between .from('tbl') and .select() must NOT contain another
+  // .from() — otherwise the regex spans across two queries and pairs the
+  // first table with the second query's select.
+  const re = /(supabase|db|supabaseRead)\s*\.?\s*\.from\('([a-z_]+)'\)((?:(?!\.from\()[^])*?)\.select\(\s*('\*'|`\*`|\"\*\")/g;
+  for (const file of files) {
+    const src = readFileSync(file, 'utf8');
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const [, client, table] = m;
+      if (!REVOKED_TABLE_SELECT.includes(table)) continue;
+      // supabaseAdmin bypasses the anon grant entirely.
+      if (client === 'supabaseAdmin') continue;
+      const line = src.slice(0, m.index).split('\n').length;
+      hits.push({ file, line, table, client });
+    }
+  }
+  return hits;
+}
+
 async function main() {
+  const failures = [];
+
+  // --- 0. No anon star selects on a table with a revoked table grant -----
+  const starHits = findAnonStarSelects();
+  for (const h of starHits) {
+    failures.push(
+      `${h.file}:${h.line} — ${h.client}.from('${h.table}').select('*') ` +
+        `will fail with "permission denied for table ${h.table}" ` +
+        `(table-level SELECT was revoked from anon; name the columns)`,
+    );
+  }
+  console.log(`  anon star-selects on grant-revoked tables: ${starHits.length}`);
+
   const pairs = extractEmbeds();
   console.log(`  distinct embedded relations in ${SRC}: ${pairs.size}`);
 
-  const failures = [];
   let ok = 0;
 
   for (const [relation, table] of pairs.entries()) {
@@ -141,6 +191,7 @@ async function main() {
   }
   console.log('=== EMBED COLUMN AUDIT: PASS ===');
   console.log('  every embedded relation resolves against the live schema.');
+  console.log('  no anon star-selects on a table with a revoked table grant.');
 }
 
 main().catch((e) => {

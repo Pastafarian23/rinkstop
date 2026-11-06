@@ -97,7 +97,24 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get('offset') || '0', 10);
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
-  let query = supabase.from('team_workspaces').select('*, leagues(name)', { count: 'exact' });
+  // Explicit column list, not select('*').
+  //
+  // 2026-11-06: the contact-details hardening revoked table-level SELECT
+  // from anon/authenticated on team_workspaces and re-granted it per
+  // column. A star select then fails with "permission denied for table
+  // team_workspaces" — PostgREST validates the star against the column
+  // grants even when head:true. Every anon read must name its columns.
+  let query = supabase
+    .from('team_workspaces')
+    .select(
+      'id, name, slug, short_name, home_rink_id, home_city, home_country, ' +
+        'country_code, age_category, age_label, age_min, age_max, level, ' +
+        'season_label, description, visibility, is_active, created_at, updated_at, ' +
+        'avatar_url, banner_url, federation_id, organization_id, league_id, ' +
+        'website_url, division, home_state, timezone, is_published, ' +
+        'leagues(name)',
+      { count: 'exact' },
+    );
 
   if (id) {
     query = query.eq('id', id).limit(1);
@@ -160,7 +177,7 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  let enrichedData = data;
+  let enrichedData = (data || []) as unknown as Array<Record<string, unknown> & { name?: string }>;
   if (!id && !slug && data && data.length) {
     const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'team', data.map((d: any) => d.id));
     enrichedData = data.map((d: any) => {
