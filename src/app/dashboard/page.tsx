@@ -310,7 +310,7 @@ async function renderDashboard(userId: string) {
       try {
         const { data } = await supabaseAdmin
           .from('team_members')
-          .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, organization_id, is_active, organization:organizations(id, name, slug) )')
+          .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, organization_id, is_active, organization:organizations!team_workspaces_organization_id_fkey(id, name, slug) )')
           .eq('user_id', userId)
           .is('left_at', null)
           .order('joined_at', { ascending: false })

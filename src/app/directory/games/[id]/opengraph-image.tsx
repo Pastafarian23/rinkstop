@@ -54,8 +54,8 @@ export default async function Image({ params }: { params: { id: string } }) {
         home_team_id,
         away_team_id,
         league:leagues!fixtures_league_id_fkey(id, name, slug),
-        home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, logo_url),
-        away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, logo_url)
+        home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, logo_url:avatar_url),
+        away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, logo_url:avatar_url)
       `)
       .eq('id', id)
       .maybeSingle();

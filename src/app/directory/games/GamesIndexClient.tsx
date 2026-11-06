@@ -783,7 +783,7 @@ export default function GamesIndexClient({ initialData }: Props) {
     const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
     let query = sb
       .from('fixtures')
-      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`, { count: 'exact' })
+      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`, { count: 'exact' })
       .not('home_team_id', 'is', null)
       .not('away_team_id', 'is', null)
       .order('scheduled_at', { ascending: true })

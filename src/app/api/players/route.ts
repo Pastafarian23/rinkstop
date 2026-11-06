@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     if (isUuid) {
       const { data, error } = await supabase
         .from('players')
-        .select('*, team_workspaces(name, slug, logo_url, leagues(name, slug))')
+        .select('*, team_workspaces(name, slug, logo_url:avatar_url, leagues(name, slug))')
         .eq('id', id)
         .limit(1)
         .maybeSingle();
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     const cleanSlug = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const { data: rsData, error: rsErr } = await supabase
       .from('players')
-      .select('*, team_workspaces(name, slug, logo_url, leagues(name, slug))')
+      .select('*, team_workspaces(name, slug, logo_url:avatar_url, leagues(name, slug))')
       .or(`slug.ilike.${cleanSlug}-%,slug.eq.${cleanSlug}`)
       .limit(1)
       .maybeSingle();
@@ -247,7 +247,7 @@ export async function GET(request: NextRequest) {
   // Default: RinkStop players table
   let query = supabase
     .from('players')
-    .select('*, team_workspaces!inner(name, slug, logo_url, leagues(name, slug))', { count: 'exact' });
+    .select('*, team_workspaces!inner(name, slug, logo_url:avatar_url, leagues(name, slug))', { count: 'exact' });
 
   if (teamId) query = query.eq('team_id', teamId);
   if (position) query = query.eq('position', position);

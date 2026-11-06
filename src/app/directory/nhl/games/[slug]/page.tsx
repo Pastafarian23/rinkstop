@@ -110,7 +110,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           // before declaring a match.
           const { data: candidates } = await sb
             .from('fixtures')
-            .select('id, status, scheduled_at, home_team:team_workspaces!inner(name), away_team:team_workspaces!inner(name)')
+            .select('id, status, scheduled_at, home_team:team_workspaces!fixtures_home_team_id_fkey!inner(name), away_team:team_workspaces!fixtures_away_team_id_fkey!inner(name)')
             .eq('league_id', leagueId)
             .gte('scheduled_at', `${parsed.date}T00:00:00Z`)
             .lt('scheduled_at', `${parsed.date}T23:59:59Z`)

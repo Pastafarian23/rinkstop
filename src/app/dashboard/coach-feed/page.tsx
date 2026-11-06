@@ -129,7 +129,7 @@ export default async function CoachFeedPage({
         .select(
           `id, team_id, title, starts_at, ends_at, opposing_team, status,
            location_note, description,
-           profiles:author_user_id(display_name),
+           profiles:created_by(display_name),
            team_schedule!inner(id, opponent, home_away, location, notes)`
         )
         .in('team_id', teamIds)

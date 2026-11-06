@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
   const season = searchParams.get('season');
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-  let query = supabase.from('fixtures').select('*, home_team:team_workspaces!home_team_id(name,logo_url), away_team:team_workspaces!away_team_id(name,logo_url), venue:rinks(name), league:leagues(name)');
+  let query = supabase.from('fixtures').select('*, home_team:team_workspaces!home_team_id(name, logo_url:avatar_url), away_team:team_workspaces!away_team_id(name, logo_url:avatar_url), venue:rinks(name), league:leagues(name)');
 
   if (leagueId) query = query.eq('league_id', leagueId);
   if (teamId) query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
