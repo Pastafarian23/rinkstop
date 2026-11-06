@@ -63,16 +63,15 @@ export async function generateMetadata() {
 export const revalidate = 3600;
 
 async function getCounts() {
-  // 2026-11-05: these were RAW table counts, so this page advertised 1,920
-  // rinks and 3,249 teams while /dataset-license (same product) advertised
-  // 1,859 and 2,613 via the get_directory_stats RPC. Two pages selling the
-  // same dataset with different numbers is a trust problem, and the raw
-  // counts included inactive/merged rows that are not actually in the
-  // product. Now both pages use active records only — verified against the
-  // live DB: rinks 1,920 total / 1,859 active, teams 3,249 total / 2,613 active.
+  // 2026-11-06: teams now counted from team_workspaces (active + public),
+  // the same canonical source as get_directory_stats, /api/counts, and the
+  // public /directory/teams list. The legacy `teams` table (2,613 active,
+  // non-merged) was a different population: 16 of its rows 404 on the site
+  // and 36 browsable teams were missing from the count. Verified live:
+  // team_workspaces active + public = 2,633, matching the export.
   const [rinks, teams, players, leagues, federations, games, fixtures] = await Promise.all([
     supabaseAdmin.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
-    supabaseAdmin.from('teams').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
+    supabaseAdmin.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).eq('visibility', 'public'),
     supabaseAdmin.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabaseAdmin.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabaseAdmin
@@ -499,7 +498,7 @@ export default async function HockeyDatabasePage() {
           License this dataset — $499
         </h2>
         <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', maxWidth: 600, margin: '0 auto 1.25rem', lineHeight: 1.55 }}>
-          ${counts.rinks.toLocaleString()} rinks · 2,601 teams · ${counts.leagues.toLocaleString()} ${1} · 6,351 players. CSV + JSON + JSONL.
+          ${counts.rinks.toLocaleString()} rinks · ${counts.teams.toLocaleString()} teams · ${counts.leagues.toLocaleString()} leagues · ${counts.players.toLocaleString()} players. CSV + JSON + JSONL.
           Commercial-use license. Quarterly refreshes for 12 months. No scraping.
         </p>
         <MoneyCtaLink

@@ -69,7 +69,9 @@ async function getDirectoryStatsForMeta(): Promise<{ rinks: number; teams: numbe
       { data: countriesRows },
     ] = await Promise.all([
       supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('teams').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
+      // 2026-11-06: count active + public team_workspaces, matching the
+      // canonical team count everywhere else on the site.
+      supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).eq('visibility', 'public'),
       supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),

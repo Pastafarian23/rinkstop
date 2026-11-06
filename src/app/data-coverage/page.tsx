@@ -27,7 +27,9 @@ async function getCounts() {
   // Every number on this page is one of these or a citation to an external source.
   const [rinks, teams, players, leagues, federations, usRinks, caRinks] = await Promise.all([
     supabaseAdmin.from('rinks').select('*', { count: 'exact', head: true }),
-    supabaseAdmin.from('teams').select('*', { count: 'exact', head: true }),
+    // 2026-11-06: active + public team_workspaces, matching the canonical
+    // team count used everywhere else on the site.
+    supabaseAdmin.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).eq('visibility', 'public'),
     supabaseAdmin.from('players').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('leagues').select('*', { count: 'exact', head: true }),
     // IIHF member federations + the IIHF itself = 85 rows; member nations are 84.

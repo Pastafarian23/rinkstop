@@ -41,29 +41,33 @@ export async function GET(_request: NextRequest) {
   }
 
   // Parallel count queries. Use count:'exact' head:true to avoid pulling rows.
-  const [rinksH, rinksGeo, rinksWithCap, teamsH, playersH, leaguesH, citiesH, countriesRinksH, countriesTeamsH] = await Promise.all([
+  const [rinksH, rinksGeo, rinksWithCap, teamsH, playersH, leaguesH, citiesH, countriesH] = await Promise.all([
     supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('rinks').select('id', { count: 'exact', head: true })
       .eq('is_active', true).not('latitude', 'is', null).not('longitude', 'is', null),
     supabase.from('rinks').select('id', { count: 'exact', head: true })
       .eq('is_active', true).not('capacity', 'is', null),
-    supabase.from('team_workspaces').select('id', { count: 'exact', head: true }),
-    supabase.from('players').select('id', { count: 'exact', head: true }),
-    supabase.from('leagues').select('id', { count: 'exact', head: true }),
-    // Distinct cities across rinks (rough proxy for "cities with hockey")
-    supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
-    // 2026-09-23: country count now unions rinks + teams.country to match
-    // get_directory_stats. Previously only rinks.country was counted which
-    // missed countries with active teams but no rinks yet (62 vs 84).
-    supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
+    // 2026-11-06: count active + public team_workspaces, matching
+    // get_directory_stats and the public /directory/teams list. Previously
+    // this query had no is_active filter and returned 3,253 total rows.
+    supabase.from('team_workspaces').select('id', { count: 'exact', head: true })
+      .eq('is_active', true).eq('visibility', 'public'),
+    supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    // 2026-11-06: filter to active leagues only. Previously returned 298
+    // (all rows) while get_directory_stats and the export both serve 294.
+    supabase.from('leagues').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    // 2026-11-06: cities/countries now count the same canonical source as
+    // get_directory_stats (the legacy `teams` table) so every marketing
+    // surface shows the same number. Previously this unioned rinks + teams
+    // and returned 837 cities / 82 countries while the RPC said 687 / 85.
+    supabase.from('teams').select('city').eq('is_active', true).not('city', 'is', null),
     supabase.from('teams').select('country').eq('is_active', true).not('country', 'is', null),
   ]);
 
   const citySet = new Set<string>();
   for (const r of citiesH.data || []) if (r.city) citySet.add(r.city.trim().toLowerCase());
   const countrySet = new Set<string>();
-  for (const r of countriesRinksH.data || []) if (r.country) countrySet.add(r.country);
-  for (const r of countriesTeamsH.data || []) if (r.country) countrySet.add(r.country);
+  for (const r of countriesH.data || []) if (r.country) countrySet.add(r.country);
 
   const data = {
     rinks: rinksH.count || 0,

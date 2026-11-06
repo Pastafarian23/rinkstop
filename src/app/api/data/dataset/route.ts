@@ -49,7 +49,11 @@ export const revalidate = 3600; // 1 hour — data changes as users add listings
 
 const ENTITY_TABLES = {
   rinks: { table: 'rinks', select: 'id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, status, timezone, source, verification_tier, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  // 2026-11-06: filter to active + public so the export matches the
+  // canonical team count (2,633) that every marketing page advertises.
+  // Previously this served is_active only, which included 7 private-visibility
+  // team workspaces — non-public listings leaked into a paid $499 dataset.
+  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', extraFilter: "visibility = 'public'", pageSize: 1000 },
   leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   players: { table: 'players', select: 'id, first_name, last_name, slug, position, primary_position_category, team_id, nationality, birth_date, height_cm, weight_kg, shoots, catches, jersey_number, headshot_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   federations: { table: 'federations', select: 'id, name, slug, country_code, kind, category, website_url, logo_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
@@ -60,7 +64,7 @@ type EntityKey = keyof typeof ENTITY_TABLES;
 const ALL_ENTITIES: EntityKey[] = ['rinks', 'teams', 'leagues', 'players', 'federations'];
 
 async function fetchEntity(entity: EntityKey): Promise<any[]> {
-  const config = ENTITY_TABLES[entity];
+  const config: any = ENTITY_TABLES[entity];
   const client: any = supabaseAdmin;
   const pageSize = config.pageSize || 1000;
   const allRows: any[] = [];
@@ -69,7 +73,8 @@ async function fetchEntity(entity: EntityKey): Promise<any[]> {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const baseQuery: any = client.from(config.table).select(config.select).range(offset, offset + pageSize - 1);
-    const filteredQuery: any = config.filter === 'is_active' ? baseQuery.eq('is_active', true) : baseQuery;
+    let filteredQuery: any = config.filter === 'is_active' ? baseQuery.eq('is_active', true) : baseQuery;
+    if (config.extraFilter) filteredQuery = filteredQuery.filter(config.extraFilter);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = await filteredQuery;
     if (result?.error) {
