@@ -190,11 +190,18 @@ export default async function LeaguePage({
       // Top 5 teams by name (alphabetical — cheap proxy for "notable")
       const { data: teamsData } = await supabaseAdmin
         .from('team_workspaces')
-        .select('id, name, slug, city, country, logo_url')
+        // 2026-11-06: `city` / `country` / `logo_url` are LEGACY `teams`
+        // columns — on team_workspaces they are home_city / home_country /
+        // avatar_url. The query was erroring and returning nothing.
+        .select('id, name, slug, home_city, home_country, avatar_url')
         .eq('league_id', league.id)
         .eq('is_active', true)
+        .eq('visibility', 'public')
         .order('name')
-        .limit(5);
+        // 40, not 5: a league page should show its clubs. The list was
+        // capped at 5, so a league with 13 clubs showed 5 and the rest were
+        // only reachable via the directory filter.
+        .limit(40);
       topTeams = teamsData || [];
     } catch {
       // Best-effort: never block the page on enrichment failures

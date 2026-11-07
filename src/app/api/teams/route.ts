@@ -144,12 +144,21 @@ export async function GET(request: NextRequest) {
       if (leagueId) {
         resolved = [leagueId];
       } else if (league) {
-        // Exact-name match (case-insensitive). Wildcards over-matched previously
-        // (e.g. "College" matched "College Hockey League").
+        // Match the league by NAME or by SLUG.
+        //
+        // 2026-11-06: this was an exact NAME match only (`ilike('name', ...)`),
+        // but the league page links here with the league SLUG
+        // (`/directory/teams?league=india-first-league`). ilike without
+        // wildcards is exact, so a slug never matched a name and the page
+        // showed zero teams. The slug is now matched too.
+        //
+        // The name match stays EXACT (no wildcards) because wildcards
+        // over-matched previously ("College" matched "College Hockey
+        // League").
         const { data: matchedLeagues } = await supabase
           .from('leagues')
           .select('id')
-          .ilike('name', league);
+          .or(`name.ilike.${league},slug.ilike.${league}`);
         resolved = (matchedLeagues ?? []).map((m: { id: string }) => m.id);
         if (resolved.length === 0) {
           return NextResponse.json({ data: [], count: 0 });

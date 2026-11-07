@@ -365,8 +365,10 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
                     paddingTop: '0.375rem',
                   }}
                 >
-                  {t.logo_url && (
-                    <img src={t.logo_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain', background: '#1a2D45', borderRadius: 3 }} loading="lazy" />
+                  {/* 2026-11-06: was logo_url — a legacy `teams` column.
+                      The canonical team_workspaces table calls it avatar_url. */}
+                  {t.avatar_url && (
+                    <img src={t.avatar_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain', background: '#1a2D45', borderRadius: 3 }} loading="lazy" />
                   )}
                   <Link href={`/directory/teams/${t.slug}`} style={{ color: '#5eead4' }}>
                     {t.name}
