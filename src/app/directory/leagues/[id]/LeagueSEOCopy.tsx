@@ -23,11 +23,19 @@ interface Props {
   recentFixtures?: any[];
   upcomingFixtures?: any[];
   topTeams?: any[];
+  /**
+   * Public rosters for the league's clubs: team_id -> roster rows.
+   *
+   * 2026-11-06: the league page listed clubs but showed no rosters, while
+   * the team pages did. Each row carries `verification_source`, so a
+   * coach-verified stint can be marked differently from a self-reported one.
+   */
+  leagueRosters?: Map<string, any[]>;
   seasonYear?: number | null;
   todayFixtures?: any[];
 }
 
-export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryContext, faqs, recentFixtures = [], upcomingFixtures = [], topTeams = [], seasonYear = null, todayFixtures = [] }: Props) {
+export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryContext, faqs, recentFixtures = [], upcomingFixtures = [], topTeams = [], leagueRosters = new Map(), seasonYear = null, todayFixtures = [] }: Props) {
   const displayName: string = league.name;
   const country: string = league.country || '';
   const level: string = (league.level || '').toLowerCase();
@@ -384,6 +392,145 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
                 </Link>
               </p>
             )}
+          </div>
+        )}
+
+        {/* Public rosters for this league's clubs — 2026-11-06.
+            The league page listed clubs but showed no rosters, while the
+            team pages did. Each row carries verification_source, so a
+            coach-verified stint is marked and a self-reported one is not
+            (self-reported is the default state, not a claim). */}
+        {leagueRosters.size > 0 && (
+          <div style={{ marginTop: '1.75rem' }}>
+            <h3
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '1.125rem',
+                letterSpacing: '0.04em',
+                color: '#fff',
+                margin: '0 0 0.75rem',
+              }}
+            >
+              ROSTERS
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {[...leagueRosters.entries()].map(([teamId, rows]) => {
+                const team = topTeams.find((t: any) => t.id === teamId);
+                if (!team || !rows.length) return null;
+                return (
+                  <div
+                    key={teamId}
+                    style={{
+                      background: 'rgba(13,17,23,0.5)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 10,
+                      padding: '0.875rem 1rem',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '0.625rem',
+                      }}
+                    >
+                      {team.avatar_url && (
+                        <img
+                          src={team.avatar_url}
+                          alt=""
+                          style={{ width: 22, height: 22, objectFit: 'contain', background: '#1a2D45', borderRadius: 3 }}
+                          loading="lazy"
+                        />
+                      )}
+                      <Link
+                        href={`/directory/teams/${team.slug}`}
+                        style={{ color: '#fff', fontWeight: 700, fontSize: '0.9375rem' }}
+                      >
+                        {team.name}
+                      </Link>
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
+                        {rows.length} {rows.length === 1 ? 'player' : 'players'}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                        gap: '0.375rem',
+                      }}
+                    >
+                      {rows.map((r: any) => {
+                        const p = r.players;
+                        if (!p) return null;
+                        const name =
+                          [p.first_name, p.last_name].filter(Boolean).join(' ') ||
+                          'Unnamed player';
+                        const verified = r.verification_source === 'coach_verified';
+                        return (
+                          <Link
+                            key={r.id}
+                            href={`/directory/players/${p.id}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.3125rem 0.5rem',
+                              background: 'rgba(255,255,255,0.03)',
+                              border: '1px solid rgba(255,255,255,0.06)',
+                              borderRadius: 6,
+                              textDecoration: 'none',
+                            }}
+                          >
+                            {r.jersey_number != null && (
+                              <span
+                                style={{
+                                  flex: '0 0 26px',
+                                  textAlign: 'center',
+                                  fontSize: '0.9375rem',
+                                  fontWeight: 700,
+                                  color: r.jersey_number > 99 ? 'rgba(255,255,255,0.45)' : '#C8102E',
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}
+                              >
+                                {r.jersey_number}
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                flex: '1 1 auto',
+                                minWidth: 0,
+                                color: '#fff',
+                                fontSize: '0.8125rem',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {name}
+                            </span>
+                            {verified && (
+                              <span
+                                title="Verified by this team's coaching staff"
+                                style={{
+                                  flex: '0 0 auto',
+                                  color: '#FFB81C',
+                                  fontSize: '0.5625rem',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.04em',
+                                }}
+                              >
+                                ✓
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

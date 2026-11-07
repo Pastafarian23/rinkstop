@@ -134,6 +134,8 @@ export default async function LeaguePage({
   let recentFixtures: any[] = [];
   let upcomingFixtures: any[] = [];
   let topTeams: any[] = [];
+  // team_id -> roster rows, for the league's clubs.
+  let leagueRosters = new Map<string, any[]>();
   let seasonYear: number | null = null;
   if (league) {
     try {
@@ -203,6 +205,33 @@ export default async function LeaguePage({
         // only reachable via the directory filter.
         .limit(40);
       topTeams = teamsData || [];
+
+      // Public rosters for the league's clubs.
+      //
+      // 2026-11-06: the league page listed clubs but showed no rosters,
+      // while the team pages did. `hockey_player_team_history` is the
+      // canonical roster-history table and carries the verification source,
+      // so a coach-verified stint can be marked differently from a
+      // self-reported one — the same distinction the team page makes.
+      const teamIdsForRoster = (teamsData || []).map((t: any) => t.id);
+      if (teamIdsForRoster.length > 0) {
+        const { data: rosterRows } = await supabaseAdmin
+          .from('hockey_player_team_history')
+          .select(
+            'id, team_id, player_id, jersey_number, position, verification_source, ' +
+              'players!inner(id, first_name, last_name, slug, headshot_url)',
+          )
+          .in('team_id', teamIdsForRoster)
+          .order('jersey_number', { ascending: true, nullsFirst: false })
+          .limit(400);
+        const byTeam = new Map<string, any[]>();
+        for (const r of (rosterRows || []) as any[]) {
+          const list = byTeam.get(r.team_id) || [];
+          list.push(r);
+          byTeam.set(r.team_id, list);
+        }
+        leagueRosters = byTeam;
+      }
     } catch {
       // Best-effort: never block the page on enrichment failures
     }
@@ -338,6 +367,7 @@ export default async function LeaguePage({
           recentFixtures={recentFixtures}
           upcomingFixtures={upcomingFixtures}
           topTeams={topTeams}
+          leagueRosters={leagueRosters}
           seasonYear={seasonYear}
           todayFixtures={todayFixtures}
         />
