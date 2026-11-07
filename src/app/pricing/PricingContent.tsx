@@ -12,7 +12,7 @@ import {
   FOUNDING_PROMO_HEADLINE,
   FOUNDING_PROMO_MAX_REDEMPTIONS,
   FOUNDING_PROMO_PERCENT_OFF,
-  FOUNDING_PROMO_RENEWAL_NOTE,
+  foundingPromoRenewalSentence,
   foundingPromoFirstYearPrice,
   isFoundingPromoEligibleTier,
 } from '@/lib/founding-promo';
@@ -432,7 +432,7 @@ export default function PricingContent({
             <span style={{ color: 'rgba(255,255,255,0.7)' }}> first year with the founding promotion</span>
             <br />
             <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
-              {FOUNDING_PROMO_RENEWAL_NOTE} New customers only, first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.
+              {foundingPromoRenewalSentence()} New customers only, first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.
             </span>
           </div>
         )}
@@ -648,7 +648,7 @@ export default function PricingContent({
             </li>
             <li style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.45 }}>
               <span style={{ color: '#4ade80', marginRight: 6 }}>✓</span>
-              {FOUNDING_PROMO_RENEWAL_NOTE} Your second year is charged at the standard price.
+              {foundingPromoRenewalSentence()}
             </li>
           </ul>
         </div>

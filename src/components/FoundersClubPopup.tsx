@@ -8,7 +8,7 @@ import {
   FOUNDING_PROMO_CODE,
   FOUNDING_PROMO_MAX_REDEMPTIONS,
   FOUNDING_PROMO_PERCENT_OFF,
-  FOUNDING_PROMO_RENEWAL_NOTE,
+  foundingPromoRenewalSentence,
   foundingPromoFirstYearPrice,
 } from '@/lib/founding-promo';
 
@@ -196,7 +196,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
           {[
             `${FOUNDING_PROMO_PERCENT_OFF}% off your first annual payment`,
             `Only the first ${FOUNDING_PROMO_MAX_REDEMPTIONS} new customers get this price`,
-            `${FOUNDING_PROMO_RENEWAL_NOTE} Your second year is charged at the standard price.`,
+            `${foundingPromoRenewalSentence()}`,
           ].map(point => (
             <li key={point} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
               <span style={{ color: '#4ade80', fontSize: '0.875rem', flexShrink: 0, lineHeight: 1.5 }}>✓</span>
@@ -313,7 +313,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
           {[
             `${FOUNDING_PROMO_PERCENT_OFF}% off your first annual payment`,
             `First ${FOUNDING_PROMO_MAX_REDEMPTIONS} new customers only`,
-            `${FOUNDING_PROMO_RENEWAL_NOTE}`,
+            `${foundingPromoRenewalSentence()}`,
           ].map(point => (
             <li key={point} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
               <span style={{ color: '#4ade80', fontSize: '0.8125rem', flexShrink: 0, lineHeight: 1.5 }}>✓</span>

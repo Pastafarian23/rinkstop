@@ -87,8 +87,22 @@ export function isFoundingPromoEligibleTier(tier: string | null | undefined): bo
  * The discounted first-year price, or null when the tier is not eligible or
  * has no price (free / custom).
  *
- * Used to render "first year $12.50, then $24.99/yr" honestly rather than
+ * Used to render "first year $12.49, then $24.99/yr" honestly rather than
  * making the visitor do the arithmetic.
+ *
+ * ROUNDING — this must match Stripe exactly, or the site advertises a price
+ * Stripe does not charge.
+ *
+ * Stripe applies a percentage discount by FLOORING the discounted amount in
+ * the smallest currency unit. Verified live against Stripe:
+ *   $24.99 (2499c) -> $12.49 (1249c)   [not $12.50 — 1249.5 floors to 1249]
+ *   $59.99 (5999c) -> $29.99 (2999c)
+ *   $99.00 (9900c) -> $49.50 (4950c)
+ *   $299.00        -> $149.50
+ *   $599.00        -> $299.50
+ *
+ * Rounding UP (the obvious `Math.round`) would show $12.50 for a plan
+ * Stripe bills $12.49 — a one-cent mismatch on the advertised price.
  */
 export function foundingPromoFirstYearPrice(
   tier: string | null | undefined,
@@ -96,7 +110,10 @@ export function foundingPromoFirstYearPrice(
 ): number | null {
   if (!isFoundingPromoEligibleTier(tier)) return null;
   if (fullPriceUsd === null || fullPriceUsd === undefined || fullPriceUsd <= 0) return null;
-  return Math.round(fullPriceUsd * (1 - FOUNDING_PROMO_PERCENT_OFF / 100) * 100) / 100;
+  // Work in integer cents to avoid float drift, then floor like Stripe does.
+  const cents = Math.round(fullPriceUsd * 100);
+  const discountedCents = Math.floor((cents * (100 - FOUNDING_PROMO_PERCENT_OFF)) / 100);
+  return discountedCents / 100;
 }
 
 /** Headline: "50% off your first year". */
@@ -108,6 +125,20 @@ export const FOUNDING_PROMO_SHORT =
 
 /** The renewal disclaimer that must accompany every mention of the offer. */
 export const FOUNDING_PROMO_RENEWAL_NOTE = 'Renews at full price.';
+
+/**
+ * The renewal fact written as a CLAUSE so it can follow another clause
+ * without producing "Then Renews at full price."
+ */
+export const FOUNDING_PROMO_RENEWAL_CLAUSE = 'your second year is charged at the standard price';
+
+/**
+ * The renewal clause with its first letter capitalised, for use at the
+ * start of a sentence.
+ */
+export function foundingPromoRenewalSentence(): string {
+  return FOUNDING_PROMO_RENEWAL_CLAUSE.charAt(0).toUpperCase() + FOUNDING_PROMO_RENEWAL_CLAUSE.slice(1) + '.';
+}
 
 /**
  * The full set of facts the popup and the pricing banner must communicate.
@@ -129,7 +160,7 @@ export function foundingPromoFacts() {
     points: [
       `${FOUNDING_PROMO_PERCENT_OFF}% off your first annual payment`,
       `Only the first ${FOUNDING_PROMO_MAX_REDEMPTIONS} new customers get this price`,
-      `Then ${FOUNDING_PROMO_RENEWAL_NOTE}`,
+      `Then ${FOUNDING_PROMO_RENEWAL_CLAUSE}`,
     ],
   };
 }

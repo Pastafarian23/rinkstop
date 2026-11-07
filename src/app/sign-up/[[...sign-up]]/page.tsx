@@ -5,7 +5,7 @@ import { ClaimIntentCard, parseClaimIntent } from '../ClaimIntentCard';
 import {
   FOUNDING_PROMO_MAX_REDEMPTIONS,
   FOUNDING_PROMO_PERCENT_OFF,
-  FOUNDING_PROMO_RENEWAL_NOTE,
+  foundingPromoRenewalSentence,
 } from '@/lib/founding-promo';
 
 // Sign-up page (audit fix 2026-07-13): preserve the user's intended destination
@@ -95,7 +95,7 @@ export default async function SignUpPage({
               </div>
               <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
                 New customers only — first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.{' '}
-                {FOUNDING_PROMO_RENEWAL_NOTE} Your second year is charged at the standard price.
+                {foundingPromoRenewalSentence()}
               </div>
             </div>
             <ClaimIntentCard

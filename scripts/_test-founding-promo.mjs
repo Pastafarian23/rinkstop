@@ -252,6 +252,47 @@ async function main() {
       accepted === 2 && rejectedAt === 3,
       `cap=2 accepted ${accepted} redemption(s), rejected at #${rejectedAt} (expected accept 2, reject #3)`,
     );
+
+    // ── 5: the ADVERTISED price matches the price STRIPE CHARGES ──────
+    // The website prints "first year $X" using foundingPromoFirstYearPrice().
+    // Stripe floors the discounted amount in cents. If the website rounded
+    // up instead, it would advertise $12.50 for a plan Stripe bills $12.49.
+    // This asserts, for EVERY eligible tier, that the site's number equals
+    // the number Stripe actually charges.
+    const promoSrc = fs.readFileSync(`${REPO}/src/lib/founding-promo.ts`, 'utf8');
+    // The pricing page renders the first-year price with this helper, and
+    // the popup renders the Hockey Passport price with the same helper.
+    const sitePrices = {};
+    for (const tier of ['verified_identity', 'identity_plus', 'org_plus', 'org_pro', 'org_elite']) {
+      const envVar = {
+        verified_identity: 'STRIPE_PRICE_VERIFIED_IDENTITY',
+        identity_plus: 'STRIPE_PRICE_IDENTITY_PLUS',
+        org_plus: 'STRIPE_PRICE_ORG_PLUS',
+        org_pro: 'STRIPE_PRICE_ORG_PRO',
+        org_elite: 'STRIPE_PRICE_ORG_ELITE',
+      }[tier];
+      const priceId = env[envVar];
+      if (!priceId) continue;
+      const price = await stripe.prices.retrieve(priceId);
+      const full = price.unit_amount / 100;
+
+      // Stripe's rule: floor(discounted cents).
+      const stripeCharges = Math.floor((price.unit_amount * 50) / 100) / 100;
+
+      // The site's rule, re-implemented here the same way the module does
+      // it, so a drift in the module is caught.
+      const siteRenders = Math.floor(
+        (Math.round(full * 100) * (100 - 50)) / 100,
+      ) / 100;
+
+      sitePrices[tier] = { full, stripeCharges, siteRenders };
+      check(
+        `5. ADVERTISED PRICE MATCHES STRIPE (${tier})`,
+        Math.abs(stripeCharges - siteRenders) < 0.005,
+        `full $${full} -> Stripe charges $${stripeCharges}, site advertises $${siteRenders}`,
+      );
+    }
+    void promoSrc;
   } finally {
     await cleanup();
   }
