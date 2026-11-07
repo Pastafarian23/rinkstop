@@ -261,7 +261,7 @@ fi
 #   - the roster write path round-trips (insert / read / update / delete)
 #   - the database CHECK constraints reject invalid roles and positions
 # Everything it creates is rolled back.
-echo "[15/17] testing the roster API and its role + tier authorization..."
+echo "[15/18] testing the roster API and its role + tier authorization..."
 if ! npx tsx scripts/_test-roster-api.mjs 2>&1 | tail -30; then
   echo "FAIL: the roster API or its authorization failed (see above)"
   exit 1
@@ -284,7 +284,7 @@ fi
 #   - every canonical subscription payment link allows promotion codes, and
 #     the one-time dataset license link does NOT
 #   - every eligible tier's price is an ANNUAL recurring price
-echo "[16/17] verifying the Founding Member promotion against live Stripe..."
+echo "[16/18] verifying the Founding Member promotion against live Stripe..."
 if ! node scripts/_audit-founding-promo.mjs 2>&1 | tail -30; then
   echo "FAIL: the Founding Member promotion does not match what the site advertises (see above)"
   exit 1
@@ -301,9 +301,22 @@ fi
 #   3. an existing customer is refused the promotion
 #   4. the redemption cap is enforced
 # Everything it creates is deleted.
-echo "[17/17] testing the Founding Member promotion behaviour..."
+echo "[17/18] testing the Founding Member promotion behaviour..."
 if ! node scripts/_test-founding-promo.mjs 2>&1 | tail -30; then
   echo "FAIL: the Founding Member promotion does not behave as advertised (see above)"
+  exit 1
+fi
+
+# Gate 16c: Founding Member POPUP behaviour.
+# 2026-11-07: the popup carries four behavioural requirements (states the
+# three facts, mobile-friendly, easy to dismiss, never shown twice). A
+# browser test caught a real defect here — the popup was reading the
+# LEGACY founders key, which would have hidden the founding offer from
+# every visitor who had already seen the previous, different popup. This
+# gate locks that in.
+echo "[18/18] testing the Founding Member popup behaviour..."
+if ! node scripts/_test-founding-promo-popup.mjs 2>&1 | tail -30; then
+  echo "FAIL: the Founding Member popup does not meet its behavioural requirements (see above)"
   exit 1
 fi
 

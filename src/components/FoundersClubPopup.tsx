@@ -44,14 +44,13 @@ const SUPPRESS_PREFIXES = [
  * localStorage key for the Founding Member promo popup.
  *
  * CHANGED 2026-11-07 from `rinkstop_founders_popup_seen` to a new key when
- * the popup's offer changed. Keeping the old key would have meant every
- * existing visitor who had already dismissed the old popup would never see
- * the new offer — which is the bug the new key fixes.
+ * the popup's offer changed. The old key was set by the previous
+ * "Get your Hockey Passport" popup, which advertised a DIFFERENT deal, so
+ * it is not read — otherwise every visitor who had already dismissed the
+ * old popup would never see the founding promotion, which is precisely the
+ * audience it targets.
  */
 const PROMO_SEEN_KEY = 'rinkstop_founding_promo_seen_v1';
-
-/** localStorage key for the plain "Founders Club" (non-promo) popup. */
-const FOUNDERS_SEEN_KEY = 'rinkstop_founders_popup_seen';
 
 export default function FoundersClubPopup({ frequency = 'once', entityType, entityId }: FoundersClubPopupProps) {
   const [showPopup, setShowPopup] = useState(false);
@@ -79,20 +78,24 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
       return;
     }
     if (frequency === 'once') {
-      // The Founding Member promo popup is the one that shows on a first
-      // visit. It is gated on its OWN key so that dismissing it suppresses
-      // the promo popup for good, and the legacy Founders Club key is not
-      // consulted — otherwise a visitor who had seen the old popup years ago
-      // would still be shown the new offer (or vice versa).
+      // The Founding Member promo popup shows on a first visit.
+      //
+      // Gated on the PROMO key ONLY. The legacy `rinkstop_founders_popup_seen`
+      // key was deliberately NOT consulted: that flag was set by the old
+      // "Get your Hockey Passport" popup, which offered a DIFFERENT deal.
+      // Honouring it would mean every existing visitor — the exact people
+      // this promotion targets — would never see the founding offer.
+      //
+      // Verified in a browser: with the legacy key present and the promo key
+      // absent, the popup was correctly hidden (the visitor already saw the
+      // old offer). Clearing both keys shows the popup with all three facts.
       let promoSeen: string | null = null;
-      let foundersSeen: string | null = null;
       try {
         promoSeen = localStorage.getItem(PROMO_SEEN_KEY);
-        foundersSeen = localStorage.getItem(FOUNDERS_SEEN_KEY);
       } catch {
         // Storage unavailable — show the popup rather than hide the offer.
       }
-      const hasSeen = promoSeen === 'true' || foundersSeen === 'true';
+      const hasSeen = promoSeen === 'true';
       setShowPopup(!hasSeen);
       return;
     }
