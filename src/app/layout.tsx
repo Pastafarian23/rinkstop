@@ -34,6 +34,7 @@ import NavAuth from '@/components/NavAuth';
 import TopNavQuickLinks from '@/components/TopNavQuickLinks';
 import CommandPalette from '@/components/CommandPalette';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
+import FoundingPromoBanner from '@/components/FoundingPromoBanner';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
 import OffSeasonTicker from '@/components/OffSeasonTicker';
 import IntentBanner from '@/components/IntentBanner';
@@ -260,6 +261,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <input type="checkbox" id="mob-nav" />
             <MobileNav />
           </header>
+
+          {/* ---- Founding Member promo bar (under header, every public page) -------------------------------------------- */}
+          <FoundingPromoBanner />
 
           {/* ---- Page Content ---------------------------------------------------------------------------------------------- */}
           <main>{children}</main>
