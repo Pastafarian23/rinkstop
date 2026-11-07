@@ -802,7 +802,7 @@ export default function GamesIndexClient({ initialData }: Props) {
     }
     if (q) {
       const safe = q.replace(/[%_\\]/g, '\\$&');
-      const { data: matchingTeams } = await sb.from('teams').select('id').ilike('name', `%${safe}%`);
+      const { data: matchingTeams } = await sb.from('team_workspaces').select('id').ilike('name', `%${safe}%`);
       const teamList = (matchingTeams as { id: string }[] | null) || [];
       if (teamList.length > 0) {
         const teamIds = teamList.map((t) => t.id).join(',');

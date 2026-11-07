@@ -267,7 +267,7 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
 
     if (q) {
       const safe = q.replace(/[%_\\]/g, '\\$&');
-      const { data: matchingTeams } = await sb.from('teams').select('id').ilike('name', `%${safe}%`);
+      const { data: matchingTeams } = await sb.from('team_workspaces').select('id').ilike('name', `%${safe}%`);
       if (matchingTeams && matchingTeams.length > 0) {
         const teamIds = matchingTeams.map((t) => t.id).join(',');
         query = query.or(`home_team_id.in.(${teamIds}),away_team_id.in.(${teamIds})`);
@@ -340,7 +340,7 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
       let qTeamIds: string[] | null = null;
       if (q) {
         const safe = q.replace(/[%_\\]/g, '\\$&');
-        const { data: matchingTeams } = await sb.from('teams').select('id').ilike('name', `%${safe}%`);
+        const { data: matchingTeams } = await sb.from('team_workspaces').select('id').ilike('name', `%${safe}%`);
         qTeamIds = (matchingTeams || []).map((t) => t.id);
       }
       // Upcoming: scheduled + in_progress, ASC by date. Also bound

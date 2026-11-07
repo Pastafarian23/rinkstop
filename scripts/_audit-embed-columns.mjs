@@ -149,8 +149,64 @@ function findAnonStarSelects() {
   return hits;
 }
 
+/**
+ * Find any PUBLIC read of the LEGACY `teams` table.
+ *
+ * 2026-11-06: `teams` and `team_workspaces` are two tables for the same
+ * entity. The public directory, /api/teams and the dataset export all
+ * serve `team_workspaces`; anything still reading `teams` sees a
+ * DIFFERENT population. Live examples found and fixed:
+ *   - the league page counted teams from `teams` and showed "0 teams" for
+ *     the India — First League, which has 13 clubs in team_workspaces
+ *   - the team-stats widget resolved teams from `teams` and rendered
+ *     "Team not found" for every club a federation creates
+ *
+ * A public page reading the legacy table is always a bug. Admin/dashboard
+ * paths are allowed to read it (it owns the lifecycle columns
+ * team_workspaces does not have).
+ */
+function findPublicTeamReadsSafe() {
+  const hits = [];
+  const files = walk('src/app');
+  for (const file of files) {
+    // Admin / dashboard / owner / manage / debug paths may legitimately
+    // read the legacy table.
+    if (
+      /\/dashboard\//.test(file) ||
+      /\/admin\//.test(file) ||
+      /\/api\/admin\//.test(file) ||
+      /\/api\/manage\//.test(file) ||
+      /\/api\/owner\//.test(file) ||
+      /\/api\/cron\//.test(file) ||
+      /debug-/.test(file)
+    ) {
+      continue;
+    }
+    const src = readFileSync(file, 'utf8');
+    const re = /\.from\('teams'\)/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const line = src.slice(0, m.index).split('\n').length;
+      const context = src.slice(Math.max(0, m.index - 160), m.index + 160);
+      hits.push({ file, line, context: context.replace(/\s+/g, ' ').trim() });
+    }
+  }
+  return hits;
+}
+
 async function main() {
   const failures = [];
+
+  // --- 0b. No public read of the legacy `teams` table --------------------
+  const legacyReads = findPublicTeamReadsSafe();
+  for (const h of legacyReads) {
+    failures.push(
+      `${h.file}:${h.line} — a PUBLIC path reads the legacy 'teams' table. ` +
+        `The public directory, /api/teams and the export all serve ` +
+        `team_workspaces; the two tables are different populations.`,
+    );
+  }
+  console.log(`  public reads of the legacy teams table: ${legacyReads.length}`);
 
   // --- 0. No anon star selects on a table with a revoked table grant -----
   const starHits = findAnonStarSelects();

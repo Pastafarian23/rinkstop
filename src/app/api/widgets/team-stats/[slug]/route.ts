@@ -38,9 +38,14 @@ export async function GET(
     });
   }
 
+  // 2026-11-06: this read the LEGACY `teams` table, so a team that exists
+  // only in the canonical `team_workspaces` (every club a federation
+  // creates — including all 13 newly published India clubs) rendered
+  // "Team not found". The public directory, /api/teams and the dataset
+  // export all serve team_workspaces, so this must too.
   const { data: team } = await supabaseAdmin
-    .from('teams')
-    .select('id, name, city, country, logo_url')
+    .from('team_workspaces')
+    .select('id, name, home_city, home_country, avatar_url')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -105,10 +110,10 @@ footer a { color: #FFB81C; text-decoration: none; }
 </head>
 <body>
 <div class="team-header">
-  ${team.logo_url ? `<img class="team-logo" src="${esc(team.logo_url)}" alt="${esc(team.name)} logo">` : ''}
+  ${team.avatar_url ? `<img class="team-logo" src="${esc(team.avatar_url)}" alt="${esc(team.name)} logo">` : ''}
   <div class="team-info">
     <h2>${esc(team.name)}</h2>
-    <p>${esc(team.city ? '' : '')}${esc(team.city || '')}, ${esc(team.country || '')}</p>
+    <p>${esc(team.home_city || '')}, ${esc(team.home_country || '')}</p>
   </div>
 </div>
 <div class="record">

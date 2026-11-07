@@ -13,7 +13,8 @@ export const dynamic = 'force-dynamic';
  * completed + next scheduled game for each team. Response shape:
  *
  *   { teams: Array<{
- *       team: { id, name, slug, logo_url },
+ *       team: { id, name, slug, avatar_url },  // 2026-11-06: was logo_url
+ *       //   (legacy `teams` column); the canonical table calls it avatar_url.
  *       lastGame: { id, scheduled_at, opponent, score, status } | null,
  *       nextGame: { id, scheduled_at, opponent, status } | null,
  *     }> }
@@ -24,9 +25,12 @@ export async function GET(req: NextRequest) {
   if (slugs.length === 0) return NextResponse.json({ teams: [] });
 
   const sb = supabaseAdmin;
+  // 2026-11-06: the LEGACY `teams` table -> the canonical
+  // `team_workspaces`. A followed team that exists only in
+  // team_workspaces (every club a federation creates) was invisible here.
   const { data: teams, error: tErr } = await sb
-    .from('teams')
-    .select('id, name, slug, logo_url')
+    .from('team_workspaces')
+    .select('id, name, slug, avatar_url')
     .in('slug', slugs);
   if (tErr) return NextResponse.json({ error: tErr.message }, { status: 500 });
   if (!teams || teams.length === 0) return NextResponse.json({ teams: [] });
@@ -110,7 +114,7 @@ export async function GET(req: NextRequest) {
   for (const v of lastByTeam.values()) opponentIds.add(v.opponent_id);
   for (const v of nextByTeam.values()) opponentIds.add(v.opponent_id);
   const { data: opps }: { data: any[] | null } = opponentIds.size > 0
-    ? await sb.from('teams').select('id, name, slug').in('id', Array.from(opponentIds))
+    ? await sb.from('team_workspaces').select('id, name, slug').in('id', Array.from(opponentIds))
     : { data: [] };
   const oppMap = new Map((opps || []).map((o: any) => [o.id, o]));
 

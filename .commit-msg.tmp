@@ -1,0 +1,33 @@
+fix(directory): stop reading the legacy `teams` table in public paths
+
+`teams` and `team_workspaces` are two tables for the same entity. The
+public directory, /api/teams and the dataset export all serve
+`team_workspaces`; anything still reading `teams` sees a DIFFERENT
+population. Two live bugs found and fixed:
+
+1. The league page counted teams from the legacy table, so the
+   India — First League (published 2026-11-06 with 13 clubs in
+   team_workspaces) rendered "0 teams". Verified: legacy count 0,
+   canonical count 13.
+
+2. The team-stats widget resolved a team from the legacy table, so every
+   club a federation creates rendered "Team not found". Verified live
+   before the fix: /api/widgets/team-stats/skara returned a 129-byte
+   "Team not found" body while toronto-maple-leafs returned 2,466 bytes
+   of real widget. Now reads team_workspaces (home_city /
+   home_country / avatar_url instead of city / country / logo_url).
+
+Also repointed the remaining public legacy reads:
+  /api/followed-teams-games — team lookup AND opponent lookup
+  /directory/games — team-name search filter (both the server page and
+  the client component)
+
+Gate 14 (_audit-embed-columns.mjs) now also fails if any PUBLIC path
+reads the legacy `teams` table. Admin / dashboard / owner / manage /
+debug paths are exempt, because `teams` still owns the lifecycle columns
+team_workspaces does not have (deactivated_at, merged_into_id,
+claimable, brand_id, city, country, state_province, logo_url,
+logo_source, logo_verified_at, deactivated_reason) and those are actively
+used — 636 deactivated, 46 merged, 97 unclaimable, 32 branded rows.
+
+After this, public legacy `teams` reads: 0.

@@ -54,9 +54,14 @@ export async function generateMetadata({
   // Query Supabase directly for the count so the title can include it.
   if (league && teamCount === undefined) {
     try {
+      // 2026-11-06: this counted the LEGACY `teams` table, which is the
+      // two-table trap: the public directory, the export and /api/teams all
+      // serve `team_workspaces`. For a league created from the canonical
+      // table (e.g. the India — First League published 2026-11-06 with 13
+      // clubs) the legacy count was 0 and the page said "0 teams".
       const { count } = await supabaseAdmin
-        .from('teams')
-        .select('*', { count: 'exact', head: true })
+        .from('team_workspaces')
+        .select('id', { count: 'exact', head: true })
         .eq('league_id', league.id)
         .eq('is_active', true);
       if (typeof count === 'number') teamCount = count;
@@ -184,7 +189,7 @@ export default async function LeaguePage({
 
       // Top 5 teams by name (alphabetical — cheap proxy for "notable")
       const { data: teamsData } = await supabaseAdmin
-        .from('teams')
+        .from('team_workspaces')
         .select('id, name, slug, city, country, logo_url')
         .eq('league_id', league.id)
         .eq('is_active', true)
