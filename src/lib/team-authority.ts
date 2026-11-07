@@ -66,7 +66,12 @@ export type TeamAuthority = {
     | 'org-plan-required';
   /** The role they hold, if any. */
   role: string | null;
-  /** The org tier of the owning organization. */
+  /**
+   * The org tier of the owning organization.
+   *
+   * May be the sentinel `'super_admin'` when the site-admin bypass was
+   * used — that is not a real tier, it marks "not tier-gated".
+   */
   orgTier: string | null;
 };
 
@@ -86,6 +91,40 @@ export async function getTeamAuthority(
       reason: 'not-authenticated',
       role: null,
       orgTier: null,
+    };
+  }
+
+  // 0. SITE SUPER-ADMIN BYPASS.
+  //
+  // The organization tier (step 3) is a BILLING gate: it exists so that a
+  // club pays Organization Plus to manage a roster. A site super_admin is
+  // the platform owner — the tier gate must not apply to them, or the
+  // owner is locked out of a feature the owner ships. (This is exactly
+  // what happened: the roster editor was correct and complete, but
+  // `org_free` on the owner's own profile produced "Organization Plus
+  // required" for the person who built it.)
+  //
+  // Read from `profiles.role` — the same column `requireAdmin()` falls back
+  // to — so any admin promoted through the dashboard gets the bypass, not
+  // just the hardcoded OWNER_EMAILS set.
+  //
+  // This is deliberately checked FIRST and returns early: a super_admin
+  // may manage ANY team's roster, which is the point of the bypass.
+  const { data: adminProfile } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const isSuperAdmin =
+    adminProfile?.role === 'super_admin' || adminProfile?.role === 'admin';
+
+  if (isSuperAdmin) {
+    return {
+      canView: true,
+      canManage: true,
+      reason: null,
+      role: 'super_admin',
+      orgTier: 'super_admin',
     };
   }
 

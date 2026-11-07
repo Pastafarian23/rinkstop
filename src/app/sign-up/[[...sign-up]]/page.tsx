@@ -2,6 +2,11 @@ import { SignUp } from '@clerk/nextjs';
 import { signInAppearance } from '@/lib/clerk-appearance';
 import styles from '../../login/login.module.css';
 import { ClaimIntentCard, parseClaimIntent } from '../ClaimIntentCard';
+import {
+  FOUNDING_PROMO_MAX_REDEMPTIONS,
+  FOUNDING_PROMO_PERCENT_OFF,
+  FOUNDING_PROMO_RENEWAL_NOTE,
+} from '@/lib/founding-promo';
 
 // Sign-up page (audit fix 2026-07-13): preserve the user's intended destination
 // across the auth round-trip.
@@ -72,6 +77,27 @@ export default async function SignUpPage({
       <div className={styles.card}>
         {claimIntent ? (
           <div style={{ padding: '1.25rem 1.5rem 0' }}>
+            {/* Founding Member promotion — the offer is carried through the
+                sign-up step so a visitor sees the same three facts here, on
+                the pricing page, and in the first-visit popup. */}
+            <div
+              data-testid="founding-promo-signup"
+              style={{
+                marginBottom: '1rem',
+                background: 'rgba(255,184,28,0.08)',
+                border: '1px solid rgba(255,184,28,0.4)',
+                borderRadius: 10,
+                padding: '0.875rem 1rem',
+              }}
+            >
+              <div style={{ color: '#FFB81C', fontWeight: 800, fontSize: '0.9375rem', marginBottom: '0.35rem' }}>
+                {FOUNDING_PROMO_PERCENT_OFF}% off your first year
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+                New customers only — first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.{' '}
+                {FOUNDING_PROMO_RENEWAL_NOTE} Your second year is charged at the standard price.
+              </div>
+            </div>
             <ClaimIntentCard
               entity={claimIntent.entity}
               entityName={claimIntent.entityName}

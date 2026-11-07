@@ -7,7 +7,15 @@ import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
 import RelatedProducts from '@/components/RelatedProducts';
 import PricingComparisonTable from '@/components/PricingComparisonTable';
-import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
+import { formatTierPrice, formatTierPriceAmount, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
+import {
+  FOUNDING_PROMO_HEADLINE,
+  FOUNDING_PROMO_MAX_REDEMPTIONS,
+  FOUNDING_PROMO_PERCENT_OFF,
+  FOUNDING_PROMO_RENEWAL_NOTE,
+  foundingPromoFirstYearPrice,
+  isFoundingPromoEligibleTier,
+} from '@/lib/founding-promo';
 import { tierRank, tierTrack } from '@/lib/tier';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
@@ -27,6 +35,10 @@ type Tier = {
   stripePriceEnv: string | null;
   features: string[];
   footnote?: string;
+  /** Full annual price in USD, used to render the founding-promo first-year price. */
+  priceUsd: number | null;
+  /** Is this tier eligible for the Founding Member 50%-off promotion? */
+  promoEligible: boolean;
 };
 
 // Build display tiers in the canonical order from PRICING_DISPLAY_ORDER.
@@ -58,6 +70,8 @@ const TIERS_DISPLAY: Tier[] = PRICING_DISPLAY_ORDER.map((id) => {
     cta: t.cta,
     ctaStyle: isFree ? 'free' : isCustom ? 'contact' : 'primary',
     stripePriceEnv: t.stripePriceEnv || null,
+    priceUsd: t.priceUsd,
+    promoEligible: isFoundingPromoEligibleTier(id),
     features: t.features,
     footnote: t.footnote,
   };
@@ -396,6 +410,32 @@ export default function PricingContent({
               (src/lib/pricing.ts). No duplicate here — the isCustom branch
               only applies to tiers with a null priceUsd (federation). */}
         </div>
+        {/* Founding Member promotion — show the discounted first-year price
+            so the visitor does not have to do the arithmetic, and state the
+            full-price renewal next to it. */}
+        {tier.promoEligible && tier.priceUsd && (
+          <div
+            data-testid={`tier-promo-${tier.id}`}
+            style={{
+              margin: '0 0 1rem',
+              padding: '0.5rem 0.65rem',
+              background: 'rgba(255,184,28,0.08)',
+              border: '1px solid rgba(255,184,28,0.35)',
+              borderRadius: 8,
+              fontSize: '0.8125rem',
+              lineHeight: 1.4,
+            }}
+          >
+            <span style={{ color: '#FFB81C', fontWeight: 700 }}>
+              {formatTierPriceAmount(foundingPromoFirstYearPrice(tier.id, tier.priceUsd))}
+            </span>
+            <span style={{ color: 'rgba(255,255,255,0.7)' }}> first year with the founding promotion</span>
+            <br />
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
+              {FOUNDING_PROMO_RENEWAL_NOTE} New customers only, first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.
+            </span>
+          </div>
+        )}
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', margin: '0 0 1.5rem', minHeight: 40 }}>{tier.tagline}</p>
 
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', flex: 1 }}>
@@ -559,6 +599,58 @@ export default function PricingContent({
           }}
         >
           RinkStop pricing
+        </div>
+
+        {/* FOUNDING MEMBER PROMOTION — 50% off the first annual payment.
+            Distinct from the Founding Member BADGE (500 slots, counted from
+            profiles.is_founding_member). This is the 50%-off discount, limited
+            to the first 50 successful new-customer redemptions. */}
+        <div
+          data-testid="founding-promo-banner"
+          style={{
+            margin: '0 auto 1.5rem',
+            maxWidth: 560,
+            background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,184,28,0.06))',
+            border: '1px solid rgba(255,184,28,0.5)',
+            borderRadius: 12,
+            padding: '1.25rem 1.5rem',
+            textAlign: 'left',
+          }}
+        >
+          <div
+            style={{
+              color: '#FFB81C',
+              fontWeight: 800,
+              fontSize: '1.0625rem',
+              letterSpacing: '0.02em',
+              marginBottom: '0.5rem',
+            }}
+          >
+            {FOUNDING_PROMO_HEADLINE}
+          </div>
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem',
+            }}
+          >
+            <li style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.45 }}>
+              <span style={{ color: '#4ade80', marginRight: 6 }}>✓</span>
+              {FOUNDING_PROMO_PERCENT_OFF}% off your first annual payment on every paid plan
+            </li>
+            <li style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.45 }}>
+              <span style={{ color: '#4ade80', marginRight: 6 }}>✓</span>
+              New customers only — first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups
+            </li>
+            <li style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.45 }}>
+              <span style={{ color: '#4ade80', marginRight: 6 }}>✓</span>
+              {FOUNDING_PROMO_RENEWAL_NOTE} Your second year is charged at the standard price.
+            </li>
+          </ul>
         </div>
         {foundingClaimed < foundingCap ? null : (
           <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>

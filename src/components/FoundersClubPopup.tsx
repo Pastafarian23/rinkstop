@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { formatTierPrice } from '@/lib/pricing';
+import {
+  FOUNDING_PROMO_CODE,
+  FOUNDING_PROMO_MAX_REDEMPTIONS,
+  FOUNDING_PROMO_PERCENT_OFF,
+  FOUNDING_PROMO_RENEWAL_NOTE,
+  foundingPromoFirstYearPrice,
+} from '@/lib/founding-promo';
 
 interface FoundersClubPopupProps {
   frequency?: 'always' | 'once' | 'weekly';
@@ -33,6 +40,19 @@ const SUPPRESS_PREFIXES = [
   '/_next',
 ];
 
+/**
+ * localStorage key for the Founding Member promo popup.
+ *
+ * CHANGED 2026-11-07 from `rinkstop_founders_popup_seen` to a new key when
+ * the popup's offer changed. Keeping the old key would have meant every
+ * existing visitor who had already dismissed the old popup would never see
+ * the new offer — which is the bug the new key fixes.
+ */
+const PROMO_SEEN_KEY = 'rinkstop_founding_promo_seen_v1';
+
+/** localStorage key for the plain "Founders Club" (non-promo) popup. */
+const FOUNDERS_SEEN_KEY = 'rinkstop_founders_popup_seen';
+
 export default function FoundersClubPopup({ frequency = 'once', entityType, entityId }: FoundersClubPopupProps) {
   const [showPopup, setShowPopup] = useState(false);
   const { isSignedIn, isLoaded } = useUser();
@@ -59,9 +79,21 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
       return;
     }
     if (frequency === 'once') {
-      const hasSeen = localStorage.getItem('rinkstop_founders_popup_seen');
+      // The Founding Member promo popup is the one that shows on a first
+      // visit. It is gated on its OWN key so that dismissing it suppresses
+      // the promo popup for good, and the legacy Founders Club key is not
+      // consulted — otherwise a visitor who had seen the old popup years ago
+      // would still be shown the new offer (or vice versa).
+      let promoSeen: string | null = null;
+      let foundersSeen: string | null = null;
+      try {
+        promoSeen = localStorage.getItem(PROMO_SEEN_KEY);
+        foundersSeen = localStorage.getItem(FOUNDERS_SEEN_KEY);
+      } catch {
+        // Storage unavailable — show the popup rather than hide the offer.
+      }
+      const hasSeen = promoSeen === 'true' || foundersSeen === 'true';
       setShowPopup(!hasSeen);
-      if (!hasSeen) localStorage.setItem('rinkstop_founders_popup_seen', 'true');
       return;
     }
     if (frequency === 'weekly') {
@@ -74,10 +106,35 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
     }
   }, [frequency, isSignedIn, isLoaded]);
 
+  /**
+   * Dismissal. Marks the promo as seen so the visitor is NOT shown it again.
+   *
+   * "easy to dismiss" means three things here:
+   *   1. the X button,
+   *   2. clicking the backdrop,
+   *   3. the explicit "No thanks" button.
+   * All three funnel through `dismiss()` so the localStorage flag is always
+   * written — there is no path where the popup closes but reappears on the
+   * next page load.
+   */
+  const dismiss = () => {
+    try {
+      localStorage.setItem(PROMO_SEEN_KEY, 'true');
+    } catch {
+      // Private browsing / storage disabled — the popup will show again,
+      // which is an acceptable degradation (no crash).
+    }
+    setShowPopup(false);
+  };
+
   if (!showPopup) return null;
+
+  const passportFull = 24.99;
+  const passportFirstYear = foundingPromoFirstYearPrice('verified_identity', passportFull);
 
   return (
     <div
+      data-testid="founding-promo-popup"
       style={{
         position: 'fixed', inset: 0,
         background: 'rgba(0,0,0,0.88)',
@@ -85,7 +142,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         zIndex: 1000, padding: '1rem',
         backdropFilter: 'blur(6px)',
       }}
-      onClick={e => { if (e.target === e.currentTarget) setShowPopup(false); }}
+      onClick={e => { if (e.target === e.currentTarget) dismiss(); }}
     >
       {/* Desktop modal */}
       <div className="founders-modal-desktop" style={{
@@ -93,51 +150,67 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         borderRadius: '12px', padding: '2rem',
         maxWidth: '500px', width: '100%', position: 'relative',
       }}>
-        <button onClick={() => setShowPopup(false)} style={{
+        <button onClick={dismiss} aria-label="Close" data-testid="promo-popup-close" style={{
           position: 'absolute', top: '0.75rem', right: '0.75rem',
           background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)',
           fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1,
         }}>×</button>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
-            <span style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#FFB81C', textTransform: 'uppercase' }}>Most Hockey People Start Here</span>
+            <span style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#FFB81C', textTransform: 'uppercase' }}>Founding Member Promotion</span>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
           </div>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            GET YOUR HOCKEY PASSPORT
+            {FOUNDING_PROMO_PERCENT_OFF}% OFF YOUR FIRST YEAR
           </h2>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.75rem' }}>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>{formatTierPrice('verified_identity')}</span>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>/ year</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginBottom: '0.25rem' }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>
+              ${passportFirstYear?.toFixed(2)}
+            </span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>/ first year</span>
           </div>
-          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
+          <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.75rem' }}>
+            then {formatTierPrice('verified_identity')}/year
+          </div>
+          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
             Claim your player profile, link unlimited roles under one identity, and unlock the only verified checkmark in hockey.
           </p>
         </div>
 
-        {/* Benefits */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
+        {/* The three required facts */}
+        <ul
+          data-testid="promo-popup-points"
+          style={{
+            listStyle: 'none',
+            margin: '0 0 1.5rem',
+            display: 'flex', flexDirection: 'column', gap: '0.6rem',
+            background: 'rgba(255,184,28,0.06)',
+            border: '1px solid rgba(255,184,28,0.25)',
+            borderRadius: 8,
+            padding: '0.875rem 1rem',
+          }}
+        >
           {[
-            '✅ Verified player, coach & team profiles',
-            '✅ Unlimited role claims under one identity',
-            '✅ Priority support access',
-            '✅ Free tier included — browse, save, review',
-          ].map(benefit => (
-            <div key={benefit} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ color: '#4ade80', fontSize: '1rem', flexShrink: 0 }}>{benefit.slice(0, 2)}</span>
-              <span style={{ color: '#ccc', fontSize: '0.875rem' }}>{benefit.slice(2)}</span>
-            </div>
+            `${FOUNDING_PROMO_PERCENT_OFF}% off your first annual payment`,
+            `Only the first ${FOUNDING_PROMO_MAX_REDEMPTIONS} new customers get this price`,
+            `${FOUNDING_PROMO_RENEWAL_NOTE} Your second year is charged at the standard price.`,
+          ].map(point => (
+            <li key={point} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
+              <span style={{ color: '#4ade80', fontSize: '0.875rem', flexShrink: 0, lineHeight: 1.5 }}>✓</span>
+              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.8125rem', lineHeight: 1.5 }}>{point}</span>
+            </li>
           ))}
-        </div>
+        </ul>
 
         {/* CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <Link
             href="/pricing?tier=verified_identity"
-            onClick={() => setShowPopup(false)}
+            onClick={dismiss}
+            data-testid="promo-popup-cta"
             style={{
               display: 'block',
               textAlign: 'center',
@@ -152,11 +225,11 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               boxShadow: '0 4px 16px rgba(255,215,0,0.25)',
             }}
           >
-            Get My Hockey Passport →
+            Claim {FOUNDING_PROMO_PERCENT_OFF}% Off →
           </Link>
           <Link
             href="/pricing"
-            onClick={() => setShowPopup(false)}
+            onClick={dismiss}
             style={{
               display: 'block',
               textAlign: 'center',
@@ -170,7 +243,8 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             See all plans
           </Link>
           <button
-            onClick={() => setShowPopup(false)}
+            onClick={dismiss}
+            data-testid="promo-popup-dismiss"
             style={{
               background: 'none',
               border: 'none',
@@ -181,55 +255,78 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               width: '100%',
             }}
           >
-            Maybe Later
+            No thanks, I&apos;ll pay full price
           </button>
+          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+            Code {FOUNDING_PROMO_CODE} applies automatically at checkout
+          </div>
         </div>
       </div>
 
       {/* Mobile modal */}
       <div className="founders-modal-mobile" style={{
         background: '#0B1622', border: '1px solid #C8102E',
-        borderRadius: '12px', padding: '1.5rem',
-        width: '100%', maxHeight: '92vh', overflowY: 'auto',
+        borderRadius: '12px', padding: '1.25rem',
+        width: '100%', maxWidth: '420px', maxHeight: '92vh', overflowY: 'auto',
         position: 'relative',
       }}>
-        <button onClick={() => setShowPopup(false)} style={{
+        <button onClick={dismiss} aria-label="Close" data-testid="promo-popup-close-mobile" style={{
           position: 'absolute', top: '0.5rem', right: '0.5rem',
           background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)',
           fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1,
+          padding: '0.25rem',
         }}>×</button>
 
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
-            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#FFB81C', textTransform: 'uppercase' }}>Most Hockey People Start Here</span>
+            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#FFB81C', textTransform: 'uppercase' }}>Founding Member Promotion</span>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
           </div>
-          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            GET YOUR HOCKEY PASSPORT
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.375rem' }}>
+            {FOUNDING_PROMO_PERCENT_OFF}% OFF YOUR FIRST YEAR
           </h2>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.625rem' }}>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>{formatTierPrice('verified_identity')}</span>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>/ year</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 5, marginBottom: '0.125rem' }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>
+              ${passportFirstYear?.toFixed(2)}
+            </span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>/ first year</span>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>
-            Claim your profile, link unlimited roles, get verified.
+          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.5rem' }}>
+            then {formatTierPrice('verified_identity')}/year
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.55, margin: 0 }}>
+            Verified hockey identity, unlimited roles, the only checkmark in hockey.
           </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.5rem' }}>
-          {['✅ Verified player, coach & team profiles', '✅ Unlimited role claims', '✅ Priority support', '✅ Free tier included'].map(benefit => (
-            <div key={benefit} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#4ade80', fontSize: '0.875rem', flexShrink: 0 }}>{benefit.slice(0, 2)}</span>
-              <span style={{ color: '#ccc', fontSize: '0.8rem' }}>{benefit.slice(2)}</span>
-            </div>
+        <ul
+          style={{
+            listStyle: 'none', margin: '0 0 1rem',
+            display: 'flex', flexDirection: 'column', gap: '0.5rem',
+            background: 'rgba(255,184,28,0.06)',
+            border: '1px solid rgba(255,184,28,0.25)',
+            borderRadius: 8,
+            padding: '0.75rem 0.875rem',
+          }}
+        >
+          {[
+            `${FOUNDING_PROMO_PERCENT_OFF}% off your first annual payment`,
+            `First ${FOUNDING_PROMO_MAX_REDEMPTIONS} new customers only`,
+            `${FOUNDING_PROMO_RENEWAL_NOTE}`,
+          ].map(point => (
+            <li key={point} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+              <span style={{ color: '#4ade80', fontSize: '0.8125rem', flexShrink: 0, lineHeight: 1.5 }}>✓</span>
+              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.75rem', lineHeight: 1.45 }}>{point}</span>
+            </li>
           ))}
-        </div>
+        </ul>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <Link
             href="/pricing?tier=verified_identity"
-            onClick={() => setShowPopup(false)}
+            onClick={dismiss}
+            data-testid="promo-popup-cta-mobile"
             style={{
               display: 'block',
               textAlign: 'center',
@@ -243,11 +340,11 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               letterSpacing: '0.02em',
             }}
           >
-            Get My Hockey Passport →
+            Claim {FOUNDING_PROMO_PERCENT_OFF}% Off →
           </Link>
           <Link
             href="/pricing"
-            onClick={() => setShowPopup(false)}
+            onClick={dismiss}
             style={{
               display: 'block',
               textAlign: 'center',
@@ -261,7 +358,8 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             See all plans
           </Link>
           <button
-            onClick={() => setShowPopup(false)}
+            onClick={dismiss}
+            data-testid="promo-popup-dismiss-mobile"
             style={{
               background: 'none',
               border: 'none',
@@ -272,8 +370,11 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               width: '100%',
             }}
           >
-            Maybe Later
+            No thanks, I&apos;ll pay full price
           </button>
+          <div style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+            Code {FOUNDING_PROMO_CODE} applies automatically at checkout
+          </div>
         </div>
       </div>
 

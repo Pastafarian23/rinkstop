@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getUserOrgTier } from '@/lib/connections';
+import { getTeamAuthority } from '@/lib/team-authority';
 import { countryToCurrency } from '@/lib/currency';
 import EntityEditForm from '../../EntityEditForm';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
@@ -41,15 +42,14 @@ export default async function ManageTeamPage({ params }: PageProps) {
     );
   }
 
-  const { count: claimCount } = await supabaseAdmin
-    .from('claims')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('claim_type', 'team')
-    .eq('entity_id', id)
-    .eq('status', 'approved');
+  // Authority over this team. A site super_admin bypasses both the
+  // approved-claim requirement and the organization tier gate — see
+  // `src/lib/team-authority.ts`. The claim requirement alone is what
+  // locked the platform owner out of their own team's management page
+  // (the `claims` table had no rows at all).
+  const authority = await getTeamAuthority(userId, id);
 
-  if (!claimCount) {
+  if (!authority.canView) {
     return (
       <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ background: 'rgba(255,184,28,0.08)', border: '1px solid rgba(255,184,28,0.3)', color: '#FFB81C', padding: '1rem 1.25rem', borderRadius: 8, fontSize: '0.9rem' }}>
@@ -80,7 +80,8 @@ export default async function ManageTeamPage({ params }: PageProps) {
   // org_free is listing-only (public directory + media storage). Roster,
   // schedule, events and attendance management require Organization Plus.
   // The rink page already had this logic — this now matches it.
-  const needsOrgPlan = orgTier === 'org_free';
+  // A site super_admin is not tier-gated (see `getTeamAuthority`).
+  const needsOrgPlan = orgTier === 'org_free' && !authority.canManage;
 
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

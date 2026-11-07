@@ -6,6 +6,11 @@ import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
 import { TierName, TIER_TO_TRACK, canonicalTier } from '@/lib/pricing';
+import {
+  FOUNDING_PROMO_CODE,
+  FOUNDING_PROMO_PROMOTION_CODE_ID,
+  isFoundingPromoEligibleTier,
+} from '@/lib/founding-promo';
 import { tierRank } from '@/lib/tier';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { emitIdentityVerifyRecommended } from '@/lib/notifications/emit';
@@ -271,6 +276,63 @@ export async function POST(req: NextRequest) {
 
   const origin = req.headers.get('origin') || `https://${req.headers.get('host')}`;
 
+  // ── FOUNDING MEMBER PROMOTION ──────────────────────────────────────
+  // 50% off the first annual payment, first 50 new customers only.
+  //
+  // Stripe enforces the hard parts:
+  //   - the coupon is `duration: 'once'`, so it applies to the FIRST invoice
+  //     only and the renewal is charged at full price with no extra code;
+  //   - the promotion code has `restrictions.first_time_transaction = true`,
+  //     so Stripe refuses to apply it to a customer that has already paid
+  //     us — that is the NEW CUSTOMERS ONLY rule, enforced server-side by
+  //     Stripe rather than by a heuristic on our side.
+  //
+  // We apply the code automatically so the customer does not have to know it
+  // exists or type it. Stripe treats `discounts` and `allow_promotion_codes`
+  // as mutually exclusive, so when the promotion applies we send `discounts`
+  // (code pre-applied, still visible and removable on the hosted page) and
+  // when it does not we send `allow_promotion_codes` so the customer can
+  // still enter a code themselves.
+  //
+  // Gating here:
+  //   - only the eligible PAID tiers (free tiers cost nothing; enterprise is
+  //     contact-sales with no Stripe price);
+  //   - only when the customer is new — for signed-in users we check that
+  //     they have no existing Stripe customer with a completed transaction.
+  let foundingPromoApplied = false;
+  const promoEligibleTier = isFoundingPromoEligibleTier(tier);
+
+  // New-customer check for SIGNED-IN users. An existing Stripe customer who
+  // has already completed a transaction is not a new customer and must not
+  // receive the founding discount. Guests have no Stripe customer yet —
+  // Stripe creates one during checkout and applies its own
+  // `first_time_transaction` restriction, so we do not pre-check them.
+  let isNewCustomer = isGuest;
+  if (promoEligibleTier && customerId) {
+    try {
+      const subs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'all',
+        limit: 1,
+      });
+      const charges = await stripe.paymentIntents.list({
+        customer: customerId,
+        limit: 1,
+      });
+      isNewCustomer = subs.data.length === 0 && charges.data.length === 0;
+    } catch (err) {
+      // If we cannot determine prior activity, do NOT grant the promo —
+      // a wrong discount is a refund, whereas a missing discount is a
+      // support ticket we can honour manually.
+      console.error('[tier/upgrade] new-customer check failed:', err);
+      isNewCustomer = false;
+    }
+  }
+
+  if (promoEligibleTier && isNewCustomer) {
+    foundingPromoApplied = true;
+  }
+
   // Stripe Checkout Session parameters.
   //   - Signed-in: pass `customer` (existing or new); no `customer_email`.
   //   - Guest: omit `customer` (Stripe creates one); metadata carries is_guest=true
@@ -282,6 +344,7 @@ export async function POST(req: NextRequest) {
   if (userId) sessionMetadata.clerk_user_id = userId;
   if (isGuest) sessionMetadata.is_guest = 'true';
   if (originalPathname) sessionMetadata.original_pathname = originalPathname;
+  if (foundingPromoApplied) sessionMetadata.founding_promo = FOUNDING_PROMO_CODE;
 
   const subscriptionMetadata: Record<string, string> = {
     tier,
@@ -289,6 +352,7 @@ export async function POST(req: NextRequest) {
   };
   if (userId) subscriptionMetadata.clerk_user_id = userId;
   if (isGuest) subscriptionMetadata.is_guest = 'true';
+  if (foundingPromoApplied) subscriptionMetadata.founding_promo = FOUNDING_PROMO_CODE;
 
   const checkoutSessionParams: any = {
     mode: 'subscription',
@@ -303,14 +367,49 @@ export async function POST(req: NextRequest) {
     cancel_url: `${origin}/pricing?cancelled=1${resumeToClaims ? `&entity=${resumeToClaims.entity}&id=${encodeURIComponent(resumeToClaims.entityId)}` : ''}`,
     metadata: sessionMetadata,
     subscription_data: { metadata: subscriptionMetadata },
-    allow_promotion_codes: true,
   };
+
+  // Auto-apply the Founding Member discount for eligible new customers.
+  //
+  // Stripe: "You may only specify one of these parameters:
+  // allow_promotion_codes, discounts." So the two are MUTUALLY EXCLUSIVE.
+  //
+  //   - discount applied  -> `discounts` (the code is pre-applied; the
+  //     customer sees the discounted total on the hosted page)
+  //   - no discount       -> `allow_promotion_codes: true`, so the customer
+  //     can still type a code themselves
+  //
+  // We set `discounts` when the promotion applies. The code remains
+  // pre-applied AND visible/editable on the Stripe-hosted page, so a
+  // customer who somehow already transacted sees Stripe's own rejection
+  // rather than a silently wrong price. Stripe re-validates
+  // `first_time_transaction` and the 50-redemption cap at completion, so a
+  // race on the last redemption degrades to "no discount" rather than an
+  // over-discount.
+  if (foundingPromoApplied) {
+    const promoId = process.env.STRIPE_PROMO_CODE_FOUNDING50 || FOUNDING_PROMO_PROMOTION_CODE_ID;
+    if (promoId) {
+      checkoutSessionParams.discounts = [{ promotion_code: promoId }];
+    } else {
+      foundingPromoApplied = false;
+    }
+  }
+
+  if (!checkoutSessionParams.discounts) {
+    checkoutSessionParams.allow_promotion_codes = true;
+  }
   if (customerId) checkoutSessionParams.customer = customerId;
 
   const checkoutSession = await stripe.checkout.sessions.create(checkoutSessionParams);
 
-  console.log(`[conversion] checkout_started user_id=${userId ?? 'guest'} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId ?? 'stripe-created'} session_id=${checkoutSession.id}`);
+  console.log(`[conversion] checkout_started user_id=${userId ?? 'guest'} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId ?? 'stripe-created'} session_id=${checkoutSession.id} founding_promo=${foundingPromoApplied ? 'applied' : 'no'}`);
 
-  const res = NextResponse.json({ url: checkoutSession.url, sessionId: checkoutSession.id, tier, track: TIER_TO_TRACK[tier] });
+  const res = NextResponse.json({
+    url: checkoutSession.url,
+    sessionId: checkoutSession.id,
+    tier,
+    track: TIER_TO_TRACK[tier],
+    foundingPromo: foundingPromoApplied,
+  });
   return applyRateLimitHeaders(res, result);
 }

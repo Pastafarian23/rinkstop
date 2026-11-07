@@ -261,9 +261,49 @@ fi
 #   - the roster write path round-trips (insert / read / update / delete)
 #   - the database CHECK constraints reject invalid roles and positions
 # Everything it creates is rolled back.
-echo "[15/15] testing the roster API and its role + tier authorization..."
+echo "[15/17] testing the roster API and its role + tier authorization..."
 if ! npx tsx scripts/_test-roster-api.mjs 2>&1 | tail -30; then
   echo "FAIL: the roster API or its authorization failed (see above)"
+  exit 1
+fi
+
+# Gate 16: Founding Member promotion integrity.
+# 2026-11-07: the Founding Member promotion advertises "50% off the first
+# year, first 50 new customers, renews at full price" on three public
+# surfaces (first-visit popup, pricing banner, per-tier first-year price).
+# If live Stripe drifts from those claims we advertise a discount we do not
+# honour — a chargeback plus a support ticket.
+#
+# This gate asserts against the LIVE Stripe account:
+#   - the coupon is valid, 50% off, duration 'once' (first annual payment
+#     only), max_redemptions 50
+#   - the promotion code is active, points at that coupon, caps at 50, and
+#     has first_time_transaction = true (NEW CUSTOMERS ONLY, enforced by
+#     Stripe rather than by a heuristic on our side)
+#   - the promotion code id in src/lib/founding-promo.ts matches the live one
+#   - every canonical subscription payment link allows promotion codes, and
+#     the one-time dataset license link does NOT
+#   - every eligible tier's price is an ANNUAL recurring price
+echo "[16/17] verifying the Founding Member promotion against live Stripe..."
+if ! node scripts/_audit-founding-promo.mjs 2>&1 | tail -30; then
+  echo "FAIL: the Founding Member promotion does not match what the site advertises (see above)"
+  exit 1
+fi
+
+# Gate 16b: Founding Member promotion BEHAVIOUR.
+# 2026-11-07: the sibling gate proves the CONFIGURATION is right; this one
+# proves it BEHAVES that way. Configuration can be correct and still behave
+# wrong (wrong coupon duration, a missing first_time_transaction, a cap that
+# is not enforced). This exercises the live Stripe objects and asserts the
+# four promises:
+#   1. first payment is 50% off
+#   2. the renewal is at full price
+#   3. an existing customer is refused the promotion
+#   4. the redemption cap is enforced
+# Everything it creates is deleted.
+echo "[17/17] testing the Founding Member promotion behaviour..."
+if ! node scripts/_test-founding-promo.mjs 2>&1 | tail -30; then
+  echo "FAIL: the Founding Member promotion does not behave as advertised (see above)"
   exit 1
 fi
 
