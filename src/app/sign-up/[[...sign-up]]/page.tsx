@@ -75,29 +75,41 @@ export default async function SignUpPage({
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        {claimIntent ? (
-          <div style={{ padding: '1.25rem 1.5rem 0' }}>
-            {/* Founding Member promotion — the offer is carried through the
-                sign-up step so a visitor sees the same three facts here, on
-                the pricing page, and in the first-visit popup. */}
-            <div
-              data-testid="founding-promo-signup"
-              style={{
-                marginBottom: '1rem',
-                background: 'rgba(255,184,28,0.08)',
-                border: '1px solid rgba(255,184,28,0.4)',
-                borderRadius: 10,
-                padding: '0.875rem 1rem',
-              }}
-            >
-              <div style={{ color: '#FFB81C', fontWeight: 800, fontSize: '0.9375rem', marginBottom: '0.35rem' }}>
-                {FOUNDING_PROMO_PERCENT_OFF}% off your first year
-              </div>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
-                New customers only — first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.{' '}
-                {foundingPromoRenewalSentence()}
-              </div>
+        {/* Founding Member promotion — the offer is carried through the
+            sign-up step so a visitor sees the same three facts here, on
+            the pricing page, and in the first-visit popup.
+
+            Shown on EVERY sign-up, not only on claim-flow deep links: a
+            visitor who arrives at /sign-up directly is exactly the person
+            this promotion targets, and hiding the offer on the plain
+            sign-up path would mean the checkout they are about to reach
+            had a discount the site never mentioned.
+
+            The popup is suppressed on /sign-up (it stacks on the Clerk form
+            — see FoundersClubPopup SUPPRESS_PREFIXES), so THIS is the only
+            place a visitor sees the offer during sign-up. */}
+        <div style={{ padding: '1.25rem 1.5rem 0' }}>
+          <div
+            data-testid="founding-promo-signup"
+            style={{
+              marginBottom: '1rem',
+              background: 'rgba(255,184,28,0.08)',
+              border: '1px solid rgba(255,184,28,0.4)',
+              borderRadius: 10,
+              padding: '0.875rem 1rem',
+            }}
+          >
+            <div style={{ color: '#FFB81C', fontWeight: 800, fontSize: '0.9375rem', marginBottom: '0.35rem' }}>
+              {FOUNDING_PROMO_PERCENT_OFF}% off your first year
             </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+              New customers only — first {FOUNDING_PROMO_MAX_REDEMPTIONS} sign-ups.{' '}
+              {foundingPromoRenewalSentence()}
+            </div>
+          </div>
+        </div>
+        {claimIntent ? (
+          <div style={{ padding: '0 1.5rem' }}>
             <ClaimIntentCard
               entity={claimIntent.entity}
               entityName={claimIntent.entityName}

@@ -188,6 +188,13 @@ check(
   'the sign-up page must read the same facts as the popup',
 );
 check(
+  'the sign-up page shows the offer on EVERY sign-up, not only claim flows',
+  /founding-promo-signup/.test(signup) &&
+    // The banner must NOT be nested inside the claimIntent conditional.
+    !/\{claimIntent \? \(\s*<div[^>]*>\s*\{?\/\*?[^}]*founding-promo-signup/.test(signup),
+  'the banner must sit outside the claimIntent branch — the popup is suppressed on /sign-up, so this is the only offer a direct sign-up visitor sees',
+);
+check(
   'all three surfaces state the same discount percentage',
   /FOUNDING_PROMO_PERCENT_OFF/.test(src) &&
     /FOUNDING_PROMO_PERCENT_OFF/.test(pricing) &&
