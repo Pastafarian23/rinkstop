@@ -194,6 +194,46 @@ check(
     !/\{claimIntent \? \(\s*<div[^>]*>\s*\{?\/\*?[^}]*founding-promo-signup/.test(signup),
   'the banner must sit outside the claimIntent branch — the popup is suppressed on /sign-up, so this is the only offer a direct sign-up visitor sees',
 );
+
+// ── 5. Header banner (always-visible, not modal) ─────────────────────
+const layout = fs.readFileSync(`${REPO}/src/app/layout.tsx`, 'utf8');
+const banner = fs.readFileSync(`${REPO}/src/components/FoundingPromoBanner.tsx`, 'utf8');
+check(
+  'the header banner is mounted in the shared layout',
+  /FoundingPromoBanner/.test(layout),
+  'the banner must be in layout.tsx so it renders on every public page',
+);
+check(
+  'the header banner states the three facts',
+  /FOUNDING_PROMO_PERCENT_OFF/.test(banner) &&
+    /FOUNDING_PROMO_MAX_REDEMPTIONS/.test(banner) &&
+    /foundingPromoRenewalSentence/.test(banner),
+  'the banner must state the discount, the limit, and the renewal',
+);
+check(
+  'the header banner is dismissible with its own key',
+  /rinkst…n_v1/.test(banner) &&
+    /handleDismiss/.test(banner) &&
+    /localStorage\.setItem\(DISMISS_KEY/.test(banner),
+  'the banner must be dismissible and write its own flag (6-hour TTL)',
+);
+check(
+  'the header banner is suppressed on auth + dashboard paths',
+  /SUPPRESS_PREFIXES/.test(banner) &&
+    /\/sign-up/.test(banner) &&
+    /\/dashboard/.test(banner),
+  'the banner must not stack on Clerk forms or appear post-checkout',
+);
+check(
+  'the header banner suppresses for signed-in users',
+  /if \(isSignedIn\) \{/.test(banner),
+  'the banner is a NEW-customer offer — signed-in users see UpgradeNudgePopup instead',
+);
+check(
+  'the header banner reads the shared promo module',
+  banner.includes("from '@/lib/founding-promo'"),
+  'the banner must not hardcode the offer',
+);
 check(
   'all three surfaces state the same discount percentage',
   /FOUNDING_PROMO_PERCENT_OFF/.test(src) &&
