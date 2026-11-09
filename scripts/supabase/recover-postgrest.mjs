@@ -160,7 +160,7 @@ async function testRpcWorks() {
 async function main() {
   let health;
   try {
-    health = await getHealth(['rest', 'db', 'auth']);
+    health = await getHealth(['rest', 'db']);
   } catch (e) {
     console.error('Health check failed:', e.message);
     process.exit(1);
@@ -168,8 +168,7 @@ async function main() {
   const byName = Object.fromEntries(health.map((s) => [s.name, s]));
   const rest = byName.rest;
   const db = byName.db;
-  const auth = byName.auth;
-  const allHealthy = [rest, db, auth].every(
+  const allHealthy = [rest, db].every(
     (s) => s && (s.status === 'ACTIVE_HEALTHY' || s.healthy === true)
   );
 
