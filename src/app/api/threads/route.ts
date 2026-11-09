@@ -134,12 +134,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot message yourself.' }, { status: 400 });
   }
 
-  // Tier check: Hockey Passport Plus (personal) or Organization Pro (business) required to start DMs.
-  // Per privilege matrix, DMs are gated to ensure quality conversations.
+  // Tier check: Hockey Passport (verified_identity) or Organization Pro (business) required to start DMs.
+  // Per Arnel 2026-07-07 correction: ALL paid tiers can send direct messages.
+  // The UI (/dashboard/messages canDM) gates at verified_identity — the API must match.
   const tier = await getUserTier(userId);
   const orgTier = await getUserOrgTier(userId);
-  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Organization Plus+ (or legacy business_pro).
-  const canDM = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(orgTier, 'org_plus');
+  const canDM = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canDM) {
     return NextResponse.json(
       { error: 'Hockey Passport Plus or Organization Pro membership required to start conversations.', currentTier: tier },

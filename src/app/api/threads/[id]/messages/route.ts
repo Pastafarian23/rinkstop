@@ -163,16 +163,15 @@ export async function POST(
     return NextResponse.json({ error: 'Thread not found.' }, { status: 404 });
   }
 
-  // Tier check: Hockey Passport Plus (personal) or Organization Pro (business) required to send messages.
-  // Connection requests are gated at /api/connections, but we re-check here
-  // so users who somehow got into the thread without proper tier are blocked.
+  // Tier check: Hockey Passport (verified_identity) or Organization Pro (business) required to send messages.
+  // Per Arnel 2026-07-07 correction: ALL paid tiers can send direct messages.
+  // The UI (/dashboard/messages canDM) gates at verified_identity — the API must match.
   const tier = await getUserTier(userId);
   const orgTier = await getUserOrgTier(userId);
-  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Organization Plus+ (or legacy business_pro).
-  const canSendMessage = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(orgTier, 'org_plus');
+  const canSendMessage = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canSendMessage) {
     return NextResponse.json(
-      { error: 'Hockey Passport Plus or Organization Pro membership required to send messages.', currentTier: tier },
+      { error: 'Hockey Passport or Organization Pro membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }
