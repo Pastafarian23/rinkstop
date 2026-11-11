@@ -216,7 +216,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, notes_generated, meta_description, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league, cover_photo_url')
+    // NOTE (2026-11-11): `phone`, `email` and `google_phone` are NOT here on
+    // purpose. The Nov 6 privacy migration revoked table-level SELECT on
+    // `rinks` and re-granted it per non-sensitive column, so anon can read
+    // everything EXCEPT those three.
+    //
+    // Requesting an ungranted column makes PostgREST reject the ENTIRE row
+    // with 42501 "permission denied for table rinks" — so a single
+    // `phone` in the list 404'd EVERY rink page on the site for 5 days.
+    // The page rendered "Rink Not Found" with HTTP 200.
+    //
+    // If you need a contact column here, it must come from a
+    // service-role client (owner-only, private path) — never from this
+    // anon/public query.
+    .select('name, slug, city, country, province_state, notes, notes_generated, meta_description, website_url, address, capacity, ice_size, surface_type, status, opening_hours_json, league, cover_photo_url')
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
@@ -245,7 +258,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
-  const fields: Array<keyof typeof rink> = ['city', 'country', 'province_state', 'notes', 'website_url', 'phone', 'email', 'address', 'capacity', 'ice_size', 'surface_type'];
+  // `phone` and `email` are deliberately internal (Nov 6 privacy change) and
+  // are not selectable via the anon client, so they are absent from `rink`
+  // and cannot count toward the populated-field total. Listing them here
+  // would inflate the SEO field count with values that are never present.
+  const fields: Array<keyof typeof rink> = ['city', 'country', 'province_state', 'notes', 'website_url', 'address', 'capacity', 'ice_size', 'surface_type'];
   const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? (rink[f] as any[]).length > 0 : String(rink[f]).trim().length > 0)).length;
   const uniqueWordCount = estimateRinkUniqueWordCount(rink);
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);

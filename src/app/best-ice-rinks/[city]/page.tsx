@@ -41,7 +41,11 @@ export default async function BestIceRinksPage({ params }: Props) {
   const escapedCity = cityName.replace(/[%_]/g, '\\$&');
   const { data: rinks } = await supabaseAdmin
     .from('rinks')
-    .select('id, name, slug, address, city, province_state, country, phone, website_url, notes')
+    // `phone` is not selectable here: it is one of the three columns the
+    // Nov 6 privacy migration excluded from the anon grant on `rinks`.
+    // Requesting it makes PostgREST reject the whole row (42501), which
+    // took this page down with it.
+    .select('id, name, slug, address, city, province_state, country, website_url, notes')
     .ilike('city', `*${escapedCity}*`)
     .not('slug', 'is', null)
     .order('name')
