@@ -2,14 +2,45 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Bump on every deploy to invalidate Vercel's per-build CDN cache.
-  // Without this, Vercel can serve stale bundles for ~hours after a
-  // successful deploy (seen 2026-07-30 08:04 CDT — 3 successful deploys
-  // in a row, CDN stuck on the build hash from 90 min earlier).
-  // Bump this to the current epoch when shipping a fix you need on
-  // production immediately. Cheap, safe, deterministic.
-  // Force buildId bump for next deploy
-  generateBuildId: async () => `v-${Date.now()}`,
+  // BUILD ID — content-based, NOT time-based.
+  //
+  // HISTORY: this was `v-${Date.now()}`, added 2026-07-30 to work around
+  // Vercel serving stale bundles after a deploy (3 deploys in a row, CDN
+  // stuck on the build hash from 90 min earlier).
+  //
+  // WHY IT CHANGED (2026-11-11, Arnel: "build time was way too expensive
+  // on previous vercel invoice, we need to put safeguards in place"):
+  // A time-based build ID changes on EVERY build, which defeats Vercel's
+  // Build Cache — the cache is keyed on the build output, and a unique ID
+  // per build means a cache miss every single time. Every push was paying
+  // a full ~148s compile from scratch, and re-prerendering all 461 static
+  // pages.
+  //
+  // A content-based ID gives us BOTH properties:
+  //   - the CDN still busts when the code changes (new SHA → new ID → new
+  //     asset URLs → no stale bundle), which is what the original
+  //     Date.now() workaround was trying to achieve;
+  //   - the ID is stable across rebuilds of the SAME commit, so the build
+  //     cache can hit.
+  //
+  // Vercel exposes VERCEL_GIT_COMMIT_SHA at build time. Locally we fall
+  // back to the git HEAD, then to 'dev'. The value only changes when the
+  // source changes — which is exactly when we DO want a cache bust.
+  generateBuildId: async () => {
+    const sha =
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      (() => {
+        try {
+          return require('child_process')
+            .execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+            .toString()
+            .trim();
+        } catch {
+          return '';
+        }
+      })();
+    return sha ? `v-${sha}` : 'v-local';
+  },
   reactStrictMode: true,
   // WS-Recovery 2026-08-11: skip ESLint during builds.
   // eslint is not in devDependencies, and Next.js's build fails with
