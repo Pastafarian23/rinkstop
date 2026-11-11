@@ -1,88 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import {
+  formatNhlStaff,
+  formatCommunityCoach,
+  COACH_ROLES,
+} from '@/lib/staff-record';
 
-// Helper: format NHL row to the RinkStop players shape so existing detail page works
-function formatNhlStaff(p: any): any {
-  const name = p.full_name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
-  const [first, ...rest] = name.split(' ');
-  const last = rest.join(' ');
-  const result: Record<string, any> = {
-    id: `nhl-${p.id}`,
-    source: 'nhl',
-    first_name: first || null,
-    last_name: last || null,
-    full_name: name,
-    slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    position: p.position ?? null,
-    position_abbreviation: p.position_abbreviation ?? null,
-    jersey_number: p.jersey_number ?? null,
-    nationality: p.nationality ?? null,
-    birth_date: p.birth_date ?? null,
-    height_cm: p.height ?? null,
-    weight_kg: p.weight ?? null,
-    shoots: p.shoots ?? null,
-    headshot_url: p.logo ?? null,
-    is_active: p.is_active ?? false,
-    role: p.role ?? 'staff',
-    was_player: p.was_player ?? false,
-    current_team_id: p.current_team_id ?? null,
-    current_team_abbreviation: p.current_team_abbreviation ?? null,
-    current_team_name: p.current_team_name ?? null,
-    current_team_logo: p.current_team_logo ?? null,
-    league_name: p.league_name ?? null,
-    teams: p.current_team_name ? {
-      name: p.current_team_name,
-      logo_url: p.current_team_logo,
-      league_id: p.league_name || 'NHL',
-      leagues: { name: p.league_name || 'NHL', slug: (p.league_name || 'nhl').toLowerCase() },
-    } : null,
-  };
-  return result;
-}
-
-// Helper: format community coach from team_members
-function formatCommunityCoach(m: any, teamName: string | null, teamShortName: string | null, teamLogo: string | null) {
-  const displayName = (m.profiles as any)?.display_name || 'Unknown';
-  const [first, ...rest] = displayName.split(' ');
-  const last = rest.join(' ');
-  const result: Record<string, any> = {
-    id: `team-${m.id}`,
-    source: 'community',
-    first_name: first || null,
-    last_name: last || null,
-    full_name: displayName,
-    slug: ((m.profiles as any)?.username || displayName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    position: null,
-    position_abbreviation: null,
-    jersey_number: null,
-    nationality: null,
-    birth_date: null,
-    height_cm: null,
-    weight_kg: null,
-    shoots: null,
-    headshot_url: (m.profiles as any)?.avatar_url || null,
-    is_active: !m.left_at,
-    role: 'coach',
-    was_player: false,
-    current_team_id: m.team_id,
-    current_team_abbreviation: teamShortName,
-    current_team_name: teamName,
-    current_team_logo: teamLogo,
-    league_name: null,
-    teams: teamName ? {
-      name: teamName,
-      logo_url: teamLogo,
-      league_id: null,
-      leagues: null,
-    } : null,
-  };
-  return result;
-}
-
-// Coach-related roles in team_members
-const COACH_ROLES = [
-  'head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach', 'manager'
-];
+// The two formatters and the coach-role list now live in `@/lib/staff-record`
+// so that this API and `/directory/coaches/[id]` cannot drift apart.
+//
+// They used to be duplicated here AND in the coach detail page — and the
+// copy in the page selected `nhl_players.headshot_url`, a column that does
+// not exist (the column is `logo`). Two copies of one mapping; one of them
+// was wrong. One copy now.
 
 // GET /api/staff/[role]?role=coach|scout|official|staff
 // role=staff returns all non-player rows (catch-all)

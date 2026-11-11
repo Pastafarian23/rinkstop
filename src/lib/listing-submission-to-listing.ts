@@ -27,6 +27,23 @@
 //   `listing_submissions.notes` carries the created listing id. If a note
 //   already references a rink/team/league id, that listing is returned
 //   as-is instead of creating a second one. Approving twice is safe.
+//
+// CANONICAL TABLE (2026-11-11 fix):
+//   Teams are written to `team_workspaces`, NOT the legacy `teams` table.
+//   Since commit 282c8bcf (2026-11-07) the public directory, /api/teams and
+//   the dataset export all read `team_workspaces`. This file used to insert
+//   into legacy `teams`, so every newly-approved TEAM submission created a
+//   row that NEVER appeared on the site — an invisible listing. Both real
+//   leads escaped it only because they were created by hand.
+//
+//   `team_workspaces` also has a different column vocabulary:
+//     teams            →  team_workspaces
+//     city             →  home_city
+//     country          →  home_country
+//     (none)           →  visibility / is_published / age_category (REQUIRED)
+//   `teams.city` is still used for the duplicate-match lookup because the
+//   legacy table is the only place a city is reliably populated for old
+//   rows; team_workspaces uses `home_city`. Both are checked.
 
 import { supabaseAdmin } from '@/lib/supabase';
 import { slugify, uniqueSlug } from '@/lib/slug';
@@ -67,6 +84,20 @@ const CREATEABLE: Record<string, 'rink' | 'team' | 'league'> = {
   league: 'league',
 };
 
+/**
+ * The table a listing actually lives in.
+ *
+ * `team` → `team_workspaces` (canonical). The legacy `teams` table still
+ * owns lifecycle columns team_workspaces lacks (deactivated_at,
+ * merged_into_id, claimable, city, country, logo_url), but public paths
+ * stopped reading it on 2026-11-07 — so a listing written there is invisible.
+ */
+const TARGET_TABLE: Record<'rink' | 'team' | 'league', string> = {
+  rink: 'rinks',
+  team: 'team_workspaces',
+  league: 'leagues',
+};
+
 /** Where a created listing lives, for building the admin-facing link. */
 const URL_PREFIX: Record<'rink' | 'team' | 'league', string> = {
   rink: '/directory/rinks/',
@@ -85,7 +116,9 @@ async function findExistingMatch(
   name: string,
   city: string | null,
 ): Promise<{ id: string; slug: string } | null> {
-  const table = entity === 'rink' ? 'rinks' : entity === 'team' ? 'teams' : 'leagues';
+  const table = TARGET_TABLE[entity];
+  // rinks/leagues use `city`; team_workspaces uses `home_city`.
+  const cityCol = entity === 'team' ? 'home_city' : 'city';
   const targetName = name.trim().toLowerCase();
   const targetCity = (city || '').trim().toLowerCase();
 
@@ -94,16 +127,25 @@ async function findExistingMatch(
   // do not have, and the candidate set per name is tiny.
   const { data, error } = await supabaseAdmin
     .from(table)
-    .select('id, name, slug, city')
+    .select(`id, name, slug${entity === 'team' ? '' : ', city'}`)
     .ilike('name', name.trim());
 
   if (error || !data || data.length === 0) return null;
 
-  const matches = (data as Array<{ id: string; name: string; slug: string; city: string | null }>).filter(
+  const rows = data as unknown as Array<{
+    id: string;
+    name: string;
+    slug: string;
+    city?: string | null;
+    home_city?: string | null;
+  }>;
+
+  const matches = rows.filter(
     (row) => {
       if ((row.name || '').trim().toLowerCase() !== targetName) return false;
       if (!targetCity) return true; // submission has no city — name match is enough
-      return (row.city || '').trim().toLowerCase() === targetCity;
+      const rowCity = (row.city ?? row.home_city ?? '').trim().toLowerCase();
+      return rowCity === targetCity;
     },
   );
 
@@ -124,10 +166,17 @@ export function parseLinkedListingId(notes: string | null): {
   if (!notes) return null;
   // Matches: "Listing created from this submission: rinks/<uuid>" and
   //          "Venue already listed: ... (rinks/<uuid>".
-  const re = /(rinks|teams|leagues)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+  //
+  // `team_workspaces` is the canonical team table now (2026-11-11), but
+  // older notes rows say `teams/<uuid>`. Both must parse — otherwise a
+  // re-approval of an already-listed submission would create a DUPLICATE.
+  const re =
+    /(rinks|teams|team_workspaces|leagues)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
   const m = notes.match(re);
   if (!m) return null;
-  const entity = m[1].toLowerCase() as 'rink' | 'team' | 'league';
+  const table = m[1].toLowerCase();
+  const entity: 'rink' | 'team' | 'league' =
+    table === 'rinks' ? 'rink' : table === 'leagues' ? 'league' : 'team';
   return { entity, id: m[2] };
 }
 
@@ -184,7 +233,7 @@ export async function createListingFromSubmission(
   }
 
   // 3. Create it.
-  const table = entity === 'rink' ? 'rinks' : entity === 'team' ? 'teams' : 'leagues';
+  const table = TARGET_TABLE[entity];
   const baseSlug = slugify(
     [submission.name, submission.city].filter(Boolean).join(' '),
   );
@@ -201,16 +250,18 @@ export async function createListingFromSubmission(
   // The three tables have DIFFERENT schemas. Writing a shared field bag
   // breaks on the first missing column:
   //   rinks   has email, notes, source, verification_tier, status
-  //   teams   has NO email / notes / source / verification_tier, and has a
-  //           CHECK (teams_deactivation_consistent) that requires
-  //           is_active=true => deactivated_at IS NULL AND merged_into_id IS NULL
   //   leagues has NO email / notes / source, and a CHECK on `level`
+  //   team_workspaces has NO email / notes / source / verification_tier /
+  //           claimable, uses home_city / home_country instead of
+  //           city / country, and REQUIRES visibility, is_published and
+  //           age_category (CHECK: youth | adult | mixed)
   // So each entity gets only the columns it actually has.
   //
   // Submission provenance (which submission created this) is written to the
-  // `notes`/`source` columns where they exist. For teams/leagues, which
-  // have neither, the provenance lives on the SUBMISSION row (notes column)
-  // and in admin_audit_log — that is enough for the audit trail.
+  // `notes`/`source` columns where they exist. For leagues and
+  // team_workspaces, which have neither, the provenance lives on the
+  // SUBMISSION row (notes column) and in admin_audit_log — that is enough
+  // for the audit trail.
   const sourceNote = `add-listing submission ${submission.id}${submission.created_at ? ` (${submission.created_at})` : ''}`;
 
   const baseFields = {
@@ -243,20 +294,30 @@ export async function createListingFromSubmission(
     if (error) insertError = error.message;
     else insertedId = (data as { id: string }).id;
   } else if (entity === 'team') {
-    // teams: no email/notes/source/verification_tier columns. deactivated_at
-    // and merged_into_id must stay NULL for is_active=true (CHECK constraint).
+    // team_workspaces (canonical). The legacy `teams` table is NOT read by
+    // any public directory path since 2026-11-07 — writing there produces a
+    // listing nobody can see.
     const { data, error } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .insert({
         name: baseFields.name,
         slug: baseFields.slug,
-        city: submission.city || null,
-        country: submission.country || null,
+        // team_workspaces vocabulary:
+        //   home_city / home_country (not city / country)
+        //   visibility / is_published / age_category are REQUIRED
+        //   there is NO claimable column here — claiming is tracked by the
+        //   `claims` table, not by a flag on the workspace.
+        home_city: submission.city || null,
+        home_country: submission.country || null,
         website_url: baseFields.website_url,
+        visibility: 'public',
+        is_published: true,
         is_active: true,
-        claimable: true,
-        deactivated_at: null,
-        merged_into_id: null,
+        // CHECK (team_workspaces_age_category_check): youth | adult | mixed.
+        // A generic listing has no age bracket — 'mixed' is the truthful
+        // value (it does not assert the team is for every age, it declines
+        // to narrow it).
+        age_category: 'mixed',
       })
       .select('id, slug')
       .single();

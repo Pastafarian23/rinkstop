@@ -90,8 +90,20 @@ export async function PATCH(
 
       // Append the listing reference to notes so the audit trail and the
       // admin UI both show where the submission ended up.
+      //
+      // The table name must match the table the listing actually lives in,
+      // because `parseLinkedListingId` reads this string back to enforce
+      // idempotency. Teams live in `team_workspaces` (2026-11-11), not the
+      // legacy `teams` table — writing "teams/<id>" here would still parse,
+      // but it would misreport which table holds the row.
+      const linkTable =
+        result.entity === 'team'
+          ? 'team_workspaces'
+          : result.entity === 'rink'
+            ? 'rinks'
+            : 'leagues';
       const linkNote = result.listingId
-        ? `Listing created from this submission: ${result.entity}s/${result.listingId}${
+        ? `Listing created from this submission: ${linkTable}/${result.listingId}${
             result.listingUrl ? ` — ${result.listingUrl}` : ''
           }.`
         : result.skipReason || 'Listing creation skipped.';

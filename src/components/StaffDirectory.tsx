@@ -135,7 +135,8 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
             : filtered.map(m => (
               <Link
                 key={m.id}
-                href={`/directory/players/${m.id}`}
+                href={m.role === 'coach' ? `/directory/coaches/${m.id}` : `/directory/players/${m.id}`}
+                prefetch={false}
                 style={{
                   display: 'block',
                   background: 'var(--s2)',
