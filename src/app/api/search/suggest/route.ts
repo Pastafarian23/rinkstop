@@ -175,10 +175,11 @@ export async function GET(req: NextRequest) {
   //   /directory/rinks     → rink
   //   /directory/leagues   → league
   //   /directory/brands    → brand
-  //   /directory/coaches, /scouts, /officials, /staff → player (best-effort;
-  //     coach/scout data lives in `staff`, not players — but for the
-  //     suggest API scope, "player" is the closest match. The directory
-  //     pages fall back to their own search input if no player match.)
+  //   /directory/coaches, /scouts, /officials, /staff → their own staff
+  //     pages. Staff live in `nhl_players` / `team_members`, NOT in the
+  //     `players` table — linking them to /directory/players/<id> rendered
+  //     "Player Not Found" with HTTP 200 (a soft 404). The staff detail
+  //     route is /directory/coaches/<id>.
   const rawCategory = req.nextUrl.searchParams.get('category')?.toLowerCase() || '';
   const VALID_CATEGORIES = ['rink', 'team', 'player', 'league', 'brand', 'coach', 'official', 'staff', 'scout'] as const;
   const category = (VALID_CATEGORIES as readonly string[]).includes(rawCategory)
@@ -311,8 +312,13 @@ export async function GET(req: NextRequest) {
       ) : [],
 
     // Scout — backed by nhl_players.role='scout'. Returns SuggestItem
-    // rows that match the bar's contract. href points to the public
-    // player profile (the staff directory links scouts to /directory/players/[id]).
+    // rows that match the bar's contract. href points to the staff
+    // detail page (/directory/coaches/<id>).
+    //
+    // The id MUST be prefixed (`nhl-<id>`) — the staff detail route
+    // distinguishes the two staff sources by prefix, exactly like
+    // /api/staff/[role] does. A bare numeric id is treated as a slug and
+    // resolves to nothing.
     include('scout') ? applyMultiWordSearch(
       supabaseAdmin
         .from('nhl_players')
@@ -328,10 +334,10 @@ export async function GET(req: NextRequest) {
           const meta = [r.current_team_name, r.league_name].filter(Boolean).join(' · ');
           return {
             type: 'scout' as const,
-            id: String(r.id),
+            id: `nhl-${r.id}`,
             name,
             slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-            href: `/directory/players/${r.id}`,
+            href: `/directory/coaches/nhl-${r.id}`,
             meta,
             matchQuality: computeMatchQuality(q, name, meta),
           };
@@ -355,10 +361,10 @@ export async function GET(req: NextRequest) {
           const meta = [r.current_team_name, r.league_name].filter(Boolean).join(' · ');
           return {
             type: 'coach' as const,
-            id: String(r.id),
+            id: `nhl-${r.id}`,
             name,
             slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-            href: `/directory/players/${r.id}`,
+            href: `/directory/coaches/nhl-${r.id}`,
             meta,
             matchQuality: computeMatchQuality(q, name, meta),
           };
@@ -412,10 +418,13 @@ export async function GET(req: NextRequest) {
         const meta = teamName ? `${teamName} · community` : 'community';
         return {
           type: requestedCategory as typeof VALID_CATEGORIES[number],
-          id: String(r.id),
+          id: `team-${r.id}`,
           name,
           slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-          href: `/directory/players/${r.id}`,
+          // Community staff are `team_members` rows, not `players` rows.
+          // /directory/players/<uuid> rendered "Player Not Found" (HTTP 200
+          // soft-404). The staff detail route is /directory/coaches/<id>.
+          href: `/directory/coaches/team-${r.id}`,
           meta,
           matchQuality: computeMatchQuality(q, name, teamName ?? ''),
         };

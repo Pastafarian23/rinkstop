@@ -135,7 +135,11 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
             : filtered.map(m => (
               <Link
                 key={m.id}
-                href={m.role === 'coach' ? `/directory/coaches/${m.id}` : `/directory/players/${m.id}`}
+                // Staff (coach / scout / official / staff) all live in
+                // nhl_players or team_members — NEVER in the `players`
+                // table. Linking them to /directory/players/<id> rendered
+                // "Player Not Found" with HTTP 200 (a soft 404).
+                href={`/directory/coaches/${m.id}`}
                 prefetch={false}
                 style={{
                   display: 'block',

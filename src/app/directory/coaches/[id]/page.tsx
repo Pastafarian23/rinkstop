@@ -11,13 +11,63 @@ interface Props {
 export const revalidate = 86400;
 export const dynamicParams = true;
 
+/**
+ * Staff roles and their public labels.
+ *
+ * The four staff directories (/directory/coaches, /directory/scouts,
+ * /directory/officials, /directory/staff) all render from the same
+ * `StaffDirectory` component and all link here. One detail route for
+ * every staff role, so no staff card can point at a route that does not
+ * exist.
+ */
+const ROLE_LABEL: Record<string, string> = {
+  coach: 'hockey coach',
+  head_coach: 'hockey coach',
+  assistant_coach: 'assistant coach',
+  goalie_coach: 'goalie coach',
+  skills_coach: 'skills coach',
+  manager: 'hockey coach',
+  scout: 'hockey scout',
+  official: 'hockey official',
+  executive: 'team executive',
+  staff: 'hockey staff',
+};
+
+/** The URL segment this role is listed under, for a "browse more" link. */
+const ROLE_SEGMENT: Record<string, string> = {
+  coach: 'coaches',
+  head_coach: 'coaches',
+  assistant_coach: 'coaches',
+  goalie_coach: 'coaches',
+  skills_coach: 'coaches',
+  manager: 'coaches',
+  scout: 'scouts',
+  official: 'officials',
+  executive: 'staff',
+  staff: 'staff',
+};
+
+/** The short label used in headings and titles. */
+const ROLE_TITLE: Record<string, string> = {
+  coach: 'Coach',
+  head_coach: 'Head Coach',
+  assistant_coach: 'Assistant Coach',
+  goalie_coach: 'Goalie Coach',
+  skills_coach: 'Skills Coach',
+  manager: 'Coach',
+  scout: 'Scout',
+  official: 'Official',
+  executive: 'Executive',
+  staff: 'Staff',
+};
+
 function buildDescription(r: {
   full_name: string;
   role: string;
   current_team_name: string | null;
   league_name: string | null;
 }): string {
-  const roleLabel = r.role === 'coach' ? 'hockey coach' : `${r.role}`;
+  const roleLabel = ROLE_LABEL[r.role] || r.role;
   const team = r.current_team_name
     ? r.league_name
       ? ` with the ${r.current_team_name} in the ${r.league_name}`
@@ -35,7 +85,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const description = buildDescription(record);
-  const title = `${record.full_name} — ${record.role === 'coach' ? 'Coach' : 'Coach'}${
+  const roleName = ROLE_TITLE[record.role] || 'Staff';
+  const title = `${record.full_name} — ${roleName}${
     record.current_team_name ? ` | ${record.current_team_name}` : ''
   } | RinkStop`;
 
@@ -49,7 +100,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     alternates: { canonical: `https://rinkstop.com/directory/coaches/${id}` },
     openGraph: withDefaultOg({
-      title: `${record.full_name} — Coach${record.current_team_name ? ` | ${record.current_team_name}` : ''}`,
+      title: `${record.full_name} — ${roleName}${record.current_team_name ? ` | ${record.current_team_name}` : ''}`,
       description,
       url: `https://rinkstop.com/directory/coaches/${id}`,
       type: 'profile',
@@ -85,10 +136,10 @@ export default async function CoachPage({ params }: Props) {
       >
         <nav style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
           <Link
-            href="/directory/coaches"
+            href={`/directory/${ROLE_SEGMENT[record.role] || 'coaches'}`}
             style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}
           >
-            ← All coaches
+            ← All {ROLE_SEGMENT[record.role] || 'coaches'}
           </Link>
         </nav>
 
@@ -157,7 +208,7 @@ export default async function CoachPage({ params }: Props) {
                 margin: '0 0 0.75rem',
               }}
             >
-              {record.role === 'coach' ? 'Coach' : record.role}
+              {ROLE_TITLE[record.role] || record.role}
               {teamName ? ` · ${teamName}` : ''}
               {record.league_name ? ` · ${record.league_name}` : ''}
             </p>
@@ -181,7 +232,7 @@ export default async function CoachPage({ params }: Props) {
                   textTransform: 'capitalize',
                 }}
               >
-                {record.role === 'coach' ? 'Coach' : record.role}
+                {ROLE_TITLE[record.role] || record.role}
               </span>
               {record.was_player ? (
                 <span
@@ -232,7 +283,7 @@ export default async function CoachPage({ params }: Props) {
             About {record.full_name}
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, margin: 0 }}>
-            {record.full_name} is a hockey {record.role === 'coach' ? 'coach' : record.role}
+            {record.full_name} is a {ROLE_LABEL[record.role] || record.role}
             {teamName ? ` for the ${teamName}` : ''}
             {record.league_name ? ` in the ${record.league_name}` : ''}.{' '}
             {record.was_player
