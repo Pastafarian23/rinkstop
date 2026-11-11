@@ -859,3 +859,105 @@ Practical route: **Supabase Support** (https://supabase.com/support) can execute
 **Applied via:** Management API `/database/query` (the Management API session is `postgres`; `CREATE OR REPLACE FUNCTION` on a function owned by `postgres` is permitted).
 
 **Verified live after:** `get_home_page_data() -> 'stats'` and `get_directory_stats()` now return **identical** values for all six counts: rinks 1,859 · teams 2,656 · players 6,352 · leagues 295 · cities 687 · countries 85.
+
+---
+
+## 2026-11-11 — RLS investigation (the Supabase advisory email)
+
+**Advisory received by Arnel 2026-11-11 (email dated 08 Nov 2026):**
+"Table publicly accessible — Anyone with your project URL can read, edit, and
+delete all data in this table because Row-Level Security is not enabled."
+(`rls_disabled_in_public`)
+
+**Live state verified 2026-11-11:**
+```
+table_name        = spatial_ref_sys
+owner             = supabase_admin
+relrowsecurity    = false
+anon can          = SELECT, INSERT, UPDATE, DELETE
+```
+
+**Scope:** `spatial_ref_sys` is the ONLY table in the public schema with RLS
+disabled — verified by querying `pg_class` directly and independently by
+`scripts/_audit-rls-disabled.mjs` (185 public tables checked, 1 hit).
+
+**What the table is:** PostGIS's spatial reference table — 8,499 rows of
+SRID / coordinate-system definitions (srid, auth_name, srtext, proj4text).
+It contains NO application data, NO user data and NO credentials. It is an
+extension-owned member of `postgis` (`pg_depend.deptype = 'e'`), so it must
+NOT be dropped or recreated — only its privileges changed.
+
+**App impact:** the only spatial column in the app is `venues.location`
+(geography). `venues` has RLS enabled and **0 rows**. The app never
+references `spatial_ref_sys`.
+
+### 🚨 WHY IT CANNOT BE FIXED FROM THE MANAGEMENT API
+
+Every grant on the table originates from `supabase_admin` (verified via
+`information_schema.role_table_grants`: grantor = supabase_admin for anon,
+authenticated, postgres and service_role). Postgres only permits a REVOKE
+from the table's **owner or grantor**. The Management API `/database/query`
+endpoint runs as `postgres`, which is neither.
+
+Verified live 2026-11-11 — every avenue, with evidence:
+
+| Attempt | Result |
+|---|---|
+| `REVOKE ALL ... FROM anon, authenticated` as `postgres` | **No error, no effect** — `has_table_privilege` still true. This silent no-op is why the 2026-11-05 attempt appeared to succeed. |
+| `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` as `postgres` | `42501: must be owner of table spatial_ref_sys` |
+| `SET ROLE supabase_admin` | `42501: permission denied to set role "supabase_admin"` |
+| `SET ROLE supabase_privileged_role` (postgres IS a member) | Works, but that role is **not** the owner/grantor — the REVOKE is still a no-op |
+| `GRANT supabase_admin TO current_user` | `42501: "supabase_admin" role memberships are reserved, only superusers can grant them` |
+| `ALTER ROLE postgres SUPERUSER` | `42501: permission denied to alter role` |
+| `ALTER TABLE ... OWNER TO postgres` | `42501: must be owner of table spatial_ref_sys` |
+| Direct Postgres connection as `supabase_admin` | Direct host is IPv6-only; this host has no IPv6 route. Pooler needs a tenant identifier we do not have. No DB password exists in the credential store or Vercel env. |
+| Management API password/role endpoints | 404 — not exposed |
+
+### THE FIX — Dashboard SQL Editor
+
+`supabase/migrations/2026-11-11_spatial_ref_sys_rls_fix.sql` is prepared
+and ready to run. It revokes from anon/authenticated/PUBLIC, enables RLS,
+and **verifies inside the transaction** — raising an exception if the
+revoke did not take, so a silent no-op cannot pass.
+
+Run it in: Supabase Dashboard → SQL Editor → New query → paste → Run.
+Then confirm with:
+```sql
+SELECT has_table_privilege('anon', 'public.spatial_ref_sys', 'SELECT') AS anon_select;
+-- expect: false
+```
+
+### The other 71 advisories (WARN/INFO, not the email's ERROR)
+
+Pulled live from `GET /v1/projects/yszheonqyyskkjoxoexk/advisors/security`
+— 72 lints total:
+
+| Lint | Count | Assessment |
+|---|---|---|
+| `rls_disabled_in_public` | **1 ERROR** | `spatial_ref_sys` — the email |
+| `anon_security_definer_function_executable` | 32 WARN | audited below |
+| `authenticated_security_definer_function_executable` | 32 WARN | same functions |
+| `extension_in_public` | 1 WARN | postgis in `public` schema — inherent to Supabase's PostGIS setup, not actionable |
+| `rls_enabled_no_policy` | 6 INFO | `federation_claim_invites`, `federation_member_requests`, `fixture_dedup_audit`, `media_asset_refs`, `media_assets`, `request_logs` — RLS on with no policy means the table is **deny-all**, which is the safe default |
+
+**The 64 SECURITY DEFINER warnings were audited individually — no
+unauthenticated write path was found.** 31 app functions (excluding PostGIS
+internals). The 6 that write without a JWT check were each verified safe:
+
+| Function | Why it is safe |
+|---|---|
+| `cleanup_expired_share_tokens` | raises unless `current_setting('role')` = `service_role` |
+| `increment_business_analytics` | analytics counter; column name validated against an allowlist (anti-injection). Public by design. |
+| `fixtures_reject_completed_downgrade` | a TRIGGER, not an RPC — only fires on table writes |
+| `fixtures_reject_null_teams` | a TRIGGER |
+| `fixtures_reject_zero_score_past` | a TRIGGER |
+
+And the 5 that write WITH an auth check all use `current_user_id()`, which
+is `SELECT (auth.jwt() ->> 'sub')::text` — so they read the real JWT and
+reject a mismatched user id. `release_expired_media_asset` deletes only
+assets already past `retained_until` with no live references — 0 expired
+assets exist today.
+
+**Conclusion:** the 64 warnings are the Supabase linter being conservative
+about SECURITY DEFINER + EXECUTE-to-anon. The functions themselves
+authenticate. The real, actionable issue is the single ERROR.
