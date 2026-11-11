@@ -21,31 +21,56 @@ export async function GET() {
   // most-recently-touched rows were all from a 2026-08-23 backfill sync that
   // touched unverified rows without team_id. Result: empty <urlset></urlset>
   // even though 1,763 high-quality players exist. Fix: push the filter into
-  // the WHERE clause via PostgREST 'or' so the 500-row window all pass.
-  // We drop .limit(500) because the HQ set is 1,763 rows — well under
-  // Google's 50K URL sitemap cap, and emitting them all is more honest than
-  // promising coverage we don't deliver.
-  const { data: players } = await supabaseAdmin
-    .from('players')
-    // SELECT all columns the in-memory isHighQualityPlayer() check
-    // evaluates (team_id, position, nationality, headshot_url). Even
-    // though the WHERE clause guarantees team_id not-null server-side,
-    // the in-memory filter STILL needs to read each field to confirm —
-    // it returns false on undefined and would silently drop every row.
-    // (Found 2026-09-09: previous fix added position/nationality/headshot
-    // but missed team_id, which is the first thing the filter checks.)
-    .select('id, updated_at, first_name, last_name, team_id, position, nationality, headshot_url')
-    .eq('is_active', true)
-    .not('team_id', 'is', null)
-    .or('position.not.is.null,nationality.not.is.null,headshot_url.not.is.null')
-    .order('updated_at', { ascending: false });
+  // the WHERE clause via PostgREST 'or' so the window all pass.
+  //
+  // PAGINATION (2026-11-11): the query had NO limit, which reads like
+  // "fetch everything" — but PostgREST caps every response at 1,000 rows
+  // (`max-rows`). The live sitemap was serving exactly 1,000 <loc> entries
+  // when 1,763 qualify. A count of exactly 1000 is a truncation, never a
+  // size. 763 high-quality player pages were invisible to Google.
+  //
+  // URL FORM (2026-11-11): the <loc> used the row UUID
+  // (`/directory/players/<uuid>`), but the player page's own canonical tag
+  // is the SLUG (`/directory/players/darnell-nurse`). Every other entity
+  // sub-sitemap already emits slugs — teams, rinks, leagues. So the sitemap
+  // was submitting 1,000 non-canonical URLs and never the keyword URLs
+  // that actually rank. Google sees the UUID URL, the page says the slug
+  // is canonical, and the keyword URL is never submitted.
+  const PAGE = 1000;
+  const players: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabaseAdmin
+      .from('players')
+      // SELECT all columns the in-memory isHighQualityPlayer() check
+      // evaluates (team_id, position, nationality, headshot_url). Even
+      // though the WHERE clause guarantees team_id not-null server-side,
+      // the in-memory filter STILL needs to read each field to confirm —
+      // it returns false on undefined and would silently drop every row.
+      // (Found 2026-09-09: previous fix added position/nationality/headshot
+      // but missed team_id, which is the first thing the filter checks.)
+      .select('id, slug, updated_at, first_name, last_name, team_id, position, nationality, headshot_url')
+      .eq('is_active', true)
+      .not('team_id', 'is', null)
+      .or('position.not.is.null,nationality.not.is.null,headshot_url.not.is.null')
+      .order('updated_at', { ascending: false })
+      .range(from, from + PAGE - 1);
 
-  const filtered = (players || []).filter(isHighQualityPlayer);
+    if (error) break;
+    const batch = data || [];
+    players.push(...batch);
+    if (batch.length < PAGE) break;
+  }
+
+  const filtered = players.filter(isHighQualityPlayer);
+
+  // A player without a slug cannot produce a canonical URL. Emitting the
+  // UUID as a fallback would put a non-canonical URL back in the sitemap.
+  const withSlug = filtered.filter((p) => !!p.slug);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${filtered.map(p => `  <url>
-    <loc>${baseUrl}/directory/players/${p.id}</loc>
+${withSlug.map(p => `  <url>
+    <loc>${baseUrl}/directory/players/${p.slug}</loc>
     <lastmod>${p.updated_at ? new Date(p.updated_at).toISOString() : new Date().toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

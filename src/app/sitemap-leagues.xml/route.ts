@@ -14,12 +14,25 @@ export async function GET() {
     return new Response('<!-- supabaseAdmin unavailable -->', { status: 503 });
   }
 
-  const { data: leagues } = await supabaseAdmin
-    .from('leagues')
-    .select('slug, updated_at, country, level, website_url')
-    .eq('is_active', true);
+  // PAGINATION (2026-11-11): PostgREST caps every response at 1,000 rows.
+  // Leagues are at 295 today, but a single query without a range() silently
+  // truncates the moment that count crosses 1,000 — and a sitemap that
+  // silently stops listing URLs is invisible as a failure.
+  const PAGE = 1000;
+  const leagues: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabaseAdmin
+      .from('leagues')
+      .select('slug, updated_at, country, level, website_url')
+      .eq('is_active', true)
+      .range(from, from + PAGE - 1);
+    if (error) break;
+    const batch = data || [];
+    leagues.push(...batch);
+    if (batch.length < PAGE) break;
+  }
 
-  const filtered = (leagues || []).filter(isHighQualityLeague);
+  const filtered = leagues.filter(isHighQualityLeague);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

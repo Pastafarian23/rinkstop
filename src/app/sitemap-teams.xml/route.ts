@@ -16,12 +16,27 @@ export async function GET() {
 
   // Main sitemap uses teamWorkspacesResult as the slug source (verified 2026-07-07).
   // We do the same here — don't double-fetch, just pull slugs + updated_at.
-  const { data: workspaces } = await supabaseAdmin
-    .from('team_workspaces')
-    .select('slug, updated_at, country_code, home_city, league_id, division, avatar_url, website_url')
-    .eq('is_active', true);
+  //
+  // PAGINATION (2026-11-11): the query had no limit, which reads like
+  // "fetch everything" — but PostgREST caps every response at 1,000 rows.
+  // The live sitemap was serving exactly 999 <loc> entries when 2,649
+  // teams qualify. A count of exactly ~1000 is a truncation, never a size.
+  // 1,650 team pages were invisible to Google.
+  const PAGE = 1000;
+  const workspaces: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabaseAdmin
+      .from('team_workspaces')
+      .select('slug, updated_at, country_code, home_city, league_id, division, avatar_url, website_url')
+      .eq('is_active', true)
+      .range(from, from + PAGE - 1);
+    if (error) break;
+    const batch = data || [];
+    workspaces.push(...batch);
+    if (batch.length < PAGE) break;
+  }
 
-  const filtered = (workspaces || []).filter(isHighQualityTeam);
+  const filtered = workspaces.filter(isHighQualityTeam);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
