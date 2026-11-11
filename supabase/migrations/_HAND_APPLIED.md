@@ -835,3 +835,27 @@ Practical route: **Supabase Support** (https://supabase.com/support) can execute
 **Also learned (no DB change needed):** the `fk_tier_interest` CHECK has ALWAYS allowed `org_free` — the /launch form simply never offered it and made the field required, which forced every submission to choose a paid tier. Fixed in code.
 
 **Verified live:** production POST to `/api/launch-signup` with NO tier selected → HTTP 200, row persisted with `tier_interest='org_free'`, `ice_type`, and `primary_goal`. Test row deleted; table back to 0 rows.
+
+---
+
+## 2026-11-11 — `2026-11-11_home_page_data_canonical_counts.sql` (hand-applied)
+
+**What it does:** Rewrites the `public.get_home_page_data()` RPC so the homepage reads the same canonical tables as `get_directory_stats()`.
+
+**Why:** The Nov 6 migration canonicalized `get_directory_stats()` to count `team_workspaces` (active + public). The homepage does NOT use that RPC — it uses `get_home_page_data()`, which was never updated and still counted the legacy `teams` table.
+
+**Live before → after:**
+
+| | before | after |
+|---|---|---|
+| `team_count` | 2,613 (legacy `teams`) | **2,656** (canonical `team_workspaces`) |
+| `city_count` | 1,419 (from `rinks`) | **687** (matches canonical) |
+| `country_count` | 78 (from `rinks`) | **85** (matches canonical) |
+| `rink_count` / `player_count` / `league_count` | 1,859 / 6,352 / 295 | unchanged |
+| `newest_teams` / `recent_teams` | legacy `teams` + `city`/`country` | `team_workspaces` + `home_city`/`country_code` |
+
+**Scope:** ONLY the three count blocks and the two team-listing blocks changed. `upcoming_games`, `highlights`, `newest_players`, `newest_articles`, `newest_rinks` and `recent_rinks` are byte-identical to the original — they were not broken.
+
+**Applied via:** Management API `/database/query` (the Management API session is `postgres`; `CREATE OR REPLACE FUNCTION` on a function owned by `postgres` is permitted).
+
+**Verified live after:** `get_home_page_data() -> 'stats'` and `get_directory_stats()` now return **identical** values for all six counts: rinks 1,859 · teams 2,656 · players 6,352 · leagues 295 · cities 687 · countries 85.
