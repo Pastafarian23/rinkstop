@@ -25,6 +25,8 @@ URLS=(
   "/directory/rinks/edge-ice-arena-littleton"
   "/directory/teams/boston-bruins"
   "/directory/players/macklin-celebrini"
+  "/directory/coaches"
+  "/directory/coaches/nhl-64090907"
   "/directory/countries"
   "/directory/countries/finland"
   "/directory/united-states"
