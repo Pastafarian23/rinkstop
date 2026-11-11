@@ -40,7 +40,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } | RinkStop`;
 
   return {
-    title,
+    // `absolute` opts out of the layout's `%s | RinkStop` template. Without
+    // it the title renders as "... | RinkStop | RinkStop" — the layout
+    // template appends the brand even when the page title already ends
+    // with it. (Same bug class as the /dataset-license / /hockey-database
+    // title duplication fixed on 2026-09-14.)
+    title: { absolute: title },
     description,
     alternates: { canonical: `https://rinkstop.com/directory/coaches/${id}` },
     openGraph: withDefaultOg({
