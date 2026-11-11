@@ -65,6 +65,26 @@ for url in "${URLS[@]}"; do
     RESULTS+=("$STATUS  $url")
     continue
   fi
+  # CONTENT CHECK — a page that renders "Not Found" is DEAD even though it
+  # returns HTTP 200 and has perfectly good colors.
+  #
+  # 2026-11-11: every rink page on the site rendered "Rink Not Found" with
+  # HTTP 200 for five days. The cause was a single column (`phone`) that
+  # the anon role is not granted on `rinks` — PostgREST rejects the WHOLE
+  # ROW, so the page fell through to notFound().
+  #
+  # The color sweep passed it, because the "Rink Not Found" page has the
+  # correct dark-theme colors. Color checks cannot see a page whose
+  # CONTENT is wrong. This check can.
+  #
+  # So: assert the rendered <title> does not say "Not Found".
+  NOTFOUND=$(echo "$HTML" | grep -oE '<title>[^<]*' | head -1 | grep -icE 'not found|404')
+  if [ "$NOTFOUND" != "0" ]; then
+    TITLE=$(echo "$HTML" | grep -oE '<title>[^<]*' | head -1 | sed 's/<title>//')
+    RESULTS+=("DEAD $url  (title: $TITLE)")
+    TOTAL_HITS=$((TOTAL_HITS + 1))
+    continue
+  fi
   # Grep all color: patterns and flag forbidden hex.
   HITS=$(echo "$HTML" | grep -oE 'color:#[0-9A-Fa-f]+|color:rgba\([^)]+\)|background:#[0-9A-Fa-f]+' | sort | uniq -c | sort -rn | awk '$2 ~ /^color:(#041E42|#1a1a1a|#222|#444|#555|#666|#777|#888|#999|#AAA|#A0A0A0|#FFD700|#FFD800)/ || $2 ~ /^background:(#fafafa|#f8f8f8|#ffffff|#f8f9fb|#eef2f7|#e0e0e0|#dde3ec|#eee)/ {c+=$1} END {print c+0}')
   if [ "$HITS" -gt 0 ]; then
