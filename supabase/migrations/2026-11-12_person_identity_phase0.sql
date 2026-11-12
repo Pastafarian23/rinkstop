@@ -360,7 +360,52 @@ CREATE INDEX IF NOT EXISTS idx_person_aliases_type ON public.person_aliases (ali
 CREATE INDEX IF NOT EXISTS idx_person_aliases_source ON public.person_aliases (source, source_id);
 
 -- -----------------------------------------------------------------------------
--- 6. updated_at maintenance.
+-- 6. Row Level Security.
+--
+-- These tables are SERVICE-ROLE ONLY. Nothing reads them publicly yet, and
+-- nothing should until Phase 3 ships the central person page. The identity
+-- tables carry names, birth dates, nationalities and account links — they
+-- must not be world-readable the moment they are created.
+--
+-- This mirrors `nhl_players`, which uses the same deny-anon +
+-- deny-authenticated shape. `service_role` has BYPASSRLS, so the
+-- server-side loader in src/lib/person-identity.ts is unaffected.
+--
+-- Phase 3 will replace these deny policies with a deliberate public-read
+-- policy for whichever columns the public page actually needs.
+-- -----------------------------------------------------------------------------
+ALTER TABLE public.persons ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_persons ON public.persons;
+CREATE POLICY deny_anon_persons ON public.persons AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_persons ON public.persons;
+CREATE POLICY deny_authenticated_persons ON public.persons AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+
+ALTER TABLE public.person_sources ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_sources ON public.person_sources;
+CREATE POLICY deny_anon_person_sources ON public.person_sources AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_sources ON public.person_sources;
+CREATE POLICY deny_authenticated_person_sources ON public.person_sources AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+
+ALTER TABLE public.person_roles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_roles ON public.person_roles;
+CREATE POLICY deny_anon_person_roles ON public.person_roles AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_roles ON public.person_roles;
+CREATE POLICY deny_authenticated_person_roles ON public.person_roles AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+
+ALTER TABLE public.person_claims ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_claims ON public.person_claims;
+CREATE POLICY deny_anon_person_claims ON public.person_claims AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_claims ON public.person_claims;
+CREATE POLICY deny_authenticated_person_claims ON public.person_claims AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+
+ALTER TABLE public.person_aliases ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_aliases ON public.person_aliases;
+CREATE POLICY deny_anon_person_aliases ON public.person_aliases AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_aliases ON public.person_aliases;
+CREATE POLICY deny_authenticated_person_aliases ON public.person_aliases AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+
+-- -----------------------------------------------------------------------------
+-- 7. updated_at maintenance.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.touch_person_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -400,4 +445,7 @@ COMMIT;
 --   DROP TABLE IF EXISTS public.person_sources;
 --   DROP TABLE IF EXISTS public.persons;
 --   COMMIT;
+--
+--   (Dropping a table also drops its policies and the RLS enablement; no
+--   separate REVOKE or policy cleanup is needed.)
 -- =============================================================================
