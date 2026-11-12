@@ -1,0 +1,33 @@
+{
+  "source": "docs/identity/identity-decisions.csv (branch grzhurrryimfylvwmeev)",
+  "total_candidate_pairs": 5915,
+  "clusters_total": 4582,
+  "by_decision": {
+    "approved_to_merge": 0,
+    "manual_review": 5908,
+    "rejected_do_not_merge": 7
+  },
+  "by_recommended_action": {
+    "manual_review": 4881,
+    "merge": 1027,
+    "do_not_merge_conflict": 7
+  },
+  "by_confidence": {
+    "none": 2941,
+    "high": 1027,
+    "low": 1940,
+    "conflict": 7
+  },
+  "protected_conflicts": 7,
+  "merge_eligible_total": 1027,
+  "merge_eligible_in_2_record_clusters": 50,
+  "merge_eligible_in_multi_record_clusters": 977,
+  "clusters_multi_record": 939,
+  "records_in_multi_record_clusters": 2272,
+  "phase2c_scope_recommendation": {
+    "batch_1_two_record_clusters": 50,
+    "batch_2_multi_record_clusters": "deferred to Phase 2D (whole-cluster resolution)",
+    "batch_3_manual_review": 5908,
+    "never_merge": 7
+  }
+}
