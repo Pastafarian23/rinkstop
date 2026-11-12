@@ -1011,3 +1011,30 @@ DROP TABLE IF EXISTS public.person_sources;
 DROP TABLE IF EXISTS public.persons;
 COMMIT;
 ```
+
+---
+
+## 2026-11-12 — Phase 2A (BRANCH ONLY — production NOT touched)
+
+Applied to the **isolated branch** `grzhurrryimfylvwmeev` via
+`scripts/_branch-sql.mjs`. **Production was NOT modified** — `person_roles` is still 5,072
+there, `person_identity_*` tables do not exist there, and `identity_state='merged'` is 0.
+
+| File | Branch | Production |
+|---|---|---|
+| `2026-11-12_person_identity_phase2a_player_roles.sql` | ✅ applied | ❌ **not applied** |
+| `2026-11-12_person_identity_phase2a_candidate_pairs.sql` | ✅ applied | ❌ **not applied** |
+| `2026-11-12_person_identity_phase2b_merge_procedure.sql` | ✅ applied (function only) | ❌ **not applied** |
+
+Branch state after Phase 2A:
+- `person_roles` 5,072 → **11,424** (+6,352 `rinkstop_players` roles)
+- `person_identity_candidates` **5,915** rows
+- `person_identity_clusters` **4,582** rows (939 with >2 records)
+- `person_identity_decisions` **5,915** rows — 5,908 `manual_review`, 7 `rejected_do_not_merge`, **0 approved**
+- `person_merge_audit` — empty (merges only tested inside rolled-back transactions)
+- `persons` / `person_sources` / `players` / `nhl_players` / `profiles` — **unchanged**
+
+**NOTE — Gate 23 now fails on production.** The new per-namespace role-completeness assertion
+reports `rinkstop_players: 6352 of 6352 source rows have no person_roles row`. This is the
+correct, expected result: the role correction is authorized for the BRANCH only. Apply
+`2026-11-12_person_identity_phase2a_player_roles.sql` to production (Phase 2B) to clear it.

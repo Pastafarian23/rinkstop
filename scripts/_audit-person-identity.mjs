@@ -305,6 +305,71 @@ if (roleOrphans > 0) {
   note(`${roles.length} person_roles rows, all referencing a real person`);
 }
 
+// ── 7b. PER-NAMESPACE ROLE COMPLETENESS ───────────────────────────────────
+//
+// Added 2026-11-12 (Phase 2A). The Phase 1 backfill wrote person rows and
+// person_sources rows for the `rinkstop_players` namespace but never wrote a
+// matching person_roles row — so all 6,352 players had zero roles. The
+// existing gate did not catch it because it only checked that roles POINT AT
+// real persons, not that every professional source row HAS a role.
+//
+// A source row represents a professional identity. If a namespace has a
+// person + a source row but no role row, the person is invisible to anything
+// that reasons about roles (Phase 2's merge logic, the future public
+// person's role list, the coach/player role resolution).
+//
+// The `profiles_account` namespace is deliberately EXCLUDED: an account is
+// not a professional role. A fan account legitimately has no role.
+const ROLE_BEARING_NAMESPACES = [
+  'rinkstop_players',
+  'nhl_players',
+  'nhl_coaching_staff',
+  'team_members',
+  'coach_profiles',
+];
+
+console.log('[audit-person-identity] checking per-namespace role completeness...');
+
+const sourcesByNamespace = new Map();
+for (const s of await fetchAll('person_sources', 'person_id,source,source_id')) {
+  if (!sourcesByNamespace.has(s.source)) sourcesByNamespace.set(s.source, []);
+  sourcesByNamespace.get(s.source).push(s);
+}
+
+const rolesBySource = new Map();
+for (const r of roles) {
+  const key = `${r.source}:${r.source_id}`;
+  if (!rolesBySource.has(key)) rolesBySource.set(key, r);
+}
+
+for (const ns of ROLE_BEARING_NAMESPACES) {
+  const rows = sourcesByNamespace.get(ns) ?? [];
+  const missing = rows.filter((s) => !rolesBySource.has(`${s.source}:${s.source_id}`));
+  if (missing.length > 0) {
+    fail(
+      `${ns}: ${missing.length} of ${rows.length} source rows have no person_roles row — ` +
+        `every professional source record must carry a role`,
+    );
+  } else {
+    note(`${ns}: ${rows.length}/${rows.length} source rows have a role (complete)`);
+  }
+}
+
+// A role that is not backed by a person_sources row is an orphan in the
+// other direction — it would mean a role was invented without provenance.
+const sourceKeys = new Set();
+for (const [ns, rows] of sourcesByNamespace) {
+  for (const s of rows) sourceKeys.add(`${s.source}:${s.source_id}`);
+}
+const roleWithoutSource = roles.filter(
+  (r) => !sourceKeys.has(`${r.source}:${r.source_id}`),
+).length;
+if (roleWithoutSource > 0) {
+  fail(`${roleWithoutSource} person_roles rows have no matching person_sources row`);
+} else {
+  note('every person_roles row is backed by a person_sources row');
+}
+
 // ── report ──────────────────────────────────────────────────────────────────
 console.log('');
 for (const n of notes) console.log(`  ok  ${n}`);
