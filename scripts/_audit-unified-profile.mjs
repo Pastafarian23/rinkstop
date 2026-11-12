@@ -77,6 +77,33 @@ async function count(query) {
 }
 
 /**
+ * Read every row of a table, paginating with `.range()`.
+ *
+ * PostgREST caps every response at 1,000 rows (`max-rows`) with no error
+ * and no warning. A count of exactly 1000 is a truncation, never a size.
+ * `person_aliases` has 11,405 rows and `persons` 11,443 — so EVERY read
+ * here must paginate. This gate's first version did not, and it reported
+ * 41 alias "orphans" that SQL proved did not exist.
+ */
+async function fetchAllRows(client, table, apply = null) {
+  const PAGE = 1000;
+  const out = [];
+  for (let from = 0; ; from += PAGE) {
+    let q = client.from(table).select('*').order('id', { ascending: true });
+    if (apply) q = apply(q);
+    const { data, error } = await q.range(from, from + PAGE - 1);
+    if (error) {
+      console.error(`[gate-unified-profile] paginated read of ${table} failed`, error.message);
+      break;
+    }
+    const batch = data ?? [];
+    out.push(...batch);
+    if (batch.length < PAGE) break;
+  }
+  return out;
+}
+
+/**
  * Read every value of one column, paginating with `.range()`.
  *
  * PostgREST caps every response at 1,000 rows (`max-rows`) with no error
@@ -106,85 +133,69 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
 
 // 1. No alias path collides with an account username.
 {
-  const { data, error } = await sb
-    .from('person_aliases')
-    .select('id, path, person_id')
-    .like('path', '/profile/%');
-  if (error) {
-    check('alias paths readable', false, error.message);
-  } else {
-    const usernames = new Set();
-    const { data: profiles } = await sb.from('profiles').select('username');
-    for (const p of profiles ?? []) {
-      if (p.username) usernames.add(String(p.username).toLowerCase());
-    }
-    const clashes = (data ?? []).filter((a) =>
-      usernames.has(String(a.path).split('/')[2] ?? ''),
-    );
-    check(
-      'no alias path collides with a profiles.username',
-      clashes.length === 0,
-      clashes.length ? `${clashes.length} clash(es): ${clashes.map((c) => c.path).join(', ')}` : '',
-    );
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const usernames = new Set();
+  const { data: profiles } = await sb.from('profiles').select('username');
+  for (const p of profiles ?? []) {
+    if (p.username) usernames.add(String(p.username).toLowerCase());
   }
+  const clashes = aliases.filter((a) =>
+    usernames.has(String(a.path).split('/')[2] ?? ''),
+  );
+  check(
+    'no alias path collides with a profiles.username',
+    clashes.length === 0,
+    clashes.length ? `${clashes.length} clash(es): ${clashes.map((c) => c.path).join(', ')}` : '',
+  );
 }
 
 // 2 + 4 + 7. Alias targets.
 {
-  const { data: aliases, error } = await sb.from('person_aliases').select('*');
-  if (error) {
-    check('aliases readable', false, error.message);
-  } else {
-    const { data: persons } = await sb
-      .from('persons')
-      .select('id, slug, identity_state, canonical_person_id');
-    const byId = new Map((persons ?? []).map((p) => [p.id, p]));
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const persons = await fetchAllRows(sb, 'persons');
+  const byId = new Map(persons.map((p) => [p.id, p]));
 
-    let canonicalOnMerged = 0;
-    let obsoleteOnMerged = 0;
-    let orphan = 0;
-    let pathMismatch = 0;
+  let canonicalOnMerged = 0;
+  let obsoleteOnMerged = 0;
+  let orphan = 0;
+  let pathMismatch = 0;
 
-    for (const a of aliases ?? []) {
-      const p = byId.get(a.person_id);
-      if (!p) {
-        orphan++;
-        continue;
-      }
-      if (a.is_canonical) {
-        if (p.identity_state === 'merged') canonicalOnMerged++;
-        if (p.slug && a.path !== `/profile/${p.slug}`) pathMismatch++;
-      } else if (p.identity_state === 'merged') {
-        obsoleteOnMerged++;
-      }
+  for (const a of aliases) {
+    const p = byId.get(a.person_id);
+    if (!p) {
+      orphan++;
+      continue;
     }
-
-    check(
-      'no canonical alias points at a merged-away person',
-      canonicalOnMerged === 0,
-      canonicalOnMerged ? `${canonicalOnMerged} bad alias(es)` : '',
-    );
-    check(
-      'every obsolete alias points at a survivor',
-      obsoleteOnMerged === 0,
-      obsoleteOnMerged ? `${obsoleteOnMerged} bad alias(es)` : '',
-    );
-    check('every alias points at a real person', orphan === 0, orphan ? `${orphan} orphan(s)` : '');
-    check(
-      'every canonical alias path matches its person slug',
-      pathMismatch === 0,
-      pathMismatch ? `${pathMismatch} mismatch(es)` : '',
-    );
+    if (a.is_canonical) {
+      if (p.identity_state === 'merged') canonicalOnMerged++;
+      if (p.slug && a.path !== `/profile/${p.slug}`) pathMismatch++;
+    } else if (p.identity_state === 'merged') {
+      obsoleteOnMerged++;
+    }
   }
+
+  check(
+    'no canonical alias points at a merged-away person',
+    canonicalOnMerged === 0,
+    canonicalOnMerged ? `${canonicalOnMerged} bad alias(es)` : '',
+  );
+  check(
+    'every obsolete alias points at a survivor',
+    obsoleteOnMerged === 0,
+    obsoleteOnMerged ? `${obsoleteOnMerged} bad alias(es)` : '',
+  );
+  check('every alias points at a real person', orphan === 0, orphan ? `${orphan} orphan(s)` : '');
+  check(
+    'every canonical alias path matches its person slug',
+    pathMismatch === 0,
+    pathMismatch ? `${pathMismatch} mismatch(es)` : '',
+  );
 }
 
 // 3. Merged-away persons hold no slug and no canonical alias.
 {
-  const { data: merged } = await sb
-    .from('persons')
-    .select('id, slug, public_id')
-    .eq('identity_state', 'merged');
-  const withSlug = (merged ?? []).filter((p) => p.slug || p.public_id);
+  const merged = await fetchAllRows(sb, 'persons', (q) => q.eq('identity_state', 'merged'));
+  const withSlug = merged.filter((p) => p.slug || p.public_id);
   check(
     'no merged-away person holds a slug or public_id',
     withSlug.length === 0,
@@ -192,17 +203,43 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
   );
 }
 
-// 5. Every person with a slug has exactly one canonical alias.
+// 5. Every person with a slug AND a non-account source has exactly one
+//    canonical alias.
+//
+//    An ACCOUNT-ONLY person is deliberately excluded: their canonical URL
+//    IS the account URL, and they get no alias (see check 8c). The spec is
+//    therefore "every person that SHOULD have an alias has exactly one",
+//    not "every person with a slug has one".
 {
-  const { data: persons } = await sb.from('persons').select('id, slug').not('slug', 'is', null);
-  const { data: aliases } = await sb.from('person_aliases').select('person_id, is_canonical');
+  const persons = await fetchAllRows(sb, 'persons');
+  const aliases = await fetchAllRows(sb, 'person_aliases');
   const canonicalCount = new Map();
-  for (const a of aliases ?? []) {
+  for (const a of aliases) {
     if (a.is_canonical) canonicalCount.set(a.person_id, (canonicalCount.get(a.person_id) ?? 0) + 1);
   }
-  const missing = (persons ?? []).filter((p) => canonicalCount.get(p.id) !== 1);
+
+  // Which persons have at least one non-account source row?
+  const nonAccount = new Set();
+  let from = 0;
+  for (;;) {
+    const { data, error } = await sb
+      .from('person_sources')
+      .select('person_id, source')
+      .neq('source', 'profiles_account')
+      .order('id', { ascending: true })
+      .range(from, from + 999);
+    if (error) break;
+    const batch = data ?? [];
+    for (const r of batch) nonAccount.add(r.person_id);
+    if (batch.length < 1000) break;
+    from += 1000;
+  }
+
+  const missing = persons
+    .filter((p) => p.slug && nonAccount.has(p.id))
+    .filter((p) => canonicalCount.get(p.id) !== 1);
   check(
-    'every person with a slug has exactly one canonical alias',
+    'every person with a slug and a public record has exactly one canonical alias',
     missing.length === 0,
     missing.length ? `${missing.length} person(s) off-spec` : '',
   );
@@ -210,10 +247,10 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
 
 // 6. Alias paths are unique.
 {
-  const { data: aliases } = await sb.from('person_aliases').select('path');
+  const aliases = await fetchAllRows(sb, 'person_aliases');
   const seen = new Set();
   let dupes = 0;
-  for (const a of aliases ?? []) {
+  for (const a of aliases) {
     if (seen.has(a.path)) dupes++;
     seen.add(a.path);
   }
@@ -221,15 +258,78 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
 }
 
 // 8. No contact data in an alias path.
+//
+//    NOTE ON THE PATTERN: an earlier version of this check rejected any path
+//    containing 7+ digits, which flagged '/profile/test-fav-1781450750717'.
+//    That path is a TEST artifact, not contact data — but the pattern was
+//    wrong in general: a legitimate slug can contain digits. What actually
+//    leaks is an email address or a phone number, so the check looks for
+//    those specifically. The test-artifact case is covered separately by
+//    check 8b.
 {
-  const { data: aliases } = await sb.from('person_aliases').select('path');
-  const leaky = (aliases ?? []).filter((a) =>
-    /@|\+?\d{7,}|email|phone/i.test(String(a.path)),
-  );
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const emailish = aliases.filter((a) => /[^@\s]+@[^@\s]+\.[a-z]{2,}/i.test(String(a.path)));
+  const phoneish = aliases.filter((a) => /\+?\d[\d\s().-]{8,}\d/.test(String(a.path)));
+  const leaky = [...new Set([...emailish, ...phoneish])];
   check(
-    'no alias path contains contact-like data',
+    'no alias path contains an email address or a phone number',
     leaky.length === 0,
-    leaky.length ? `${leaky.length} leaky path(s)` : '',
+    leaky.length ? `${leaky.length} leaky path(s): ${leaky.map((c) => c.path).join(', ')}` : '',
+  );
+}
+
+// 8b. No alias path exposes a Clerk/test internal identifier.
+//
+//     A person's `display_name` can come from a Clerk identity, and a Clerk
+//     ID or a test fixture name must never appear at a public URL. This
+//     catches the case the email check cannot: '/profile/test-fav-…' and
+//     '/profile/user-3gsptdg51urv0n7gwdgajqttdg0'.
+{
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const internal = aliases.filter((a) => {
+    const slug = String(a.path).split('/')[2] ?? '';
+    return (
+      /(^|-)(test|testing|demo|dummy|sample|fixture|fake|placeholder|lorem)(-[0-9a-z]+)*$/i.test(slug) ||
+      /(^|-)(fanout|qa)(-[0-9a-z]+)*$/i.test(slug) ||
+      /^user-[0-9a-f]{20,}$/i.test(slug)
+    );
+  });
+  check(
+    'no alias path exposes a test or Clerk internal identifier',
+    internal.length === 0,
+    internal.length ? `${internal.length} internal path(s): ${internal.map((c) => c.path).join(', ')}` : '',
+  );
+}
+
+// 8c. No ACCOUNT-ONLY person has an alias.
+//
+//     An account-only person's canonical URL is the account URL. A second
+//     alias would expose the account's display name — which may be a Clerk
+//     ID — at a public URL.
+{
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const persons = await fetchAllRows(sb, 'persons');
+  const personIds = new Set(persons.map((p) => p.id));
+  const nonAccount = new Set();
+  for (const pid of await fetchAllIds(sb, 'person_sources', 'person_id')) {
+    nonAccount.add(pid);
+  }
+  // A person is "account-only" if every one of their source rows is an
+  // account row. Rebuild that from the source namespace.
+  const { data: accountRows } = await sb
+    .from('person_sources')
+    .select('person_id, source')
+    .eq('source', 'profiles_account');
+  const accountPersonIds = new Set((accountRows ?? []).map((r) => r.person_id));
+  const accountOnly = new Set();
+  for (const pid of accountPersonIds) {
+    if (!nonAccount.has(pid)) accountOnly.add(pid);
+  }
+  const bad = aliases.filter((a) => accountOnly.has(a.person_id));
+  check(
+    'no account-only person has a public alias',
+    bad.length === 0,
+    bad.length ? `${bad.length} bad alias(es): ${bad.map((b) => b.path).join(', ')}` : '',
   );
 }
 

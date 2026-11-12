@@ -207,3 +207,47 @@ export async function getStaffRecord(id: string): Promise<StaffRecord | null> {
 }
 
 export { formatNhlStaff, formatCommunityCoach, COACH_ROLES };
+
+/**
+ * Resolve a staff route id to the (source namespace, source row id) that
+ * `person_sources` is keyed on.
+ *
+ * WHY THIS IS NEEDED
+ *   The staff detail route uses `nhl-<id>` and `team-<uuid>`, but those
+ *   ids live in DIFFERENT id spaces per namespace:
+ *     - `nhl_players.id`        → a large integer (8477967)
+ *     - `nhl_coaching_staff.id` → a small integer (118)
+ *     - `team_members.id`       → a uuid
+ *   Guessing the namespace from the id shape would resolve the WRONG person
+ *   — `nhl-118` is Aaron Schneekloth in `nhl_coaching_staff`, and there is
+ *   no `nhl_players` row 118. So this asks the data instead.
+ *
+ *   The order matters: `nhl_coaching_staff` first, because its id space is
+ *   small and would be ambiguous against `nhl_players` otherwise.
+ */
+export async function getStaffSourceRef(
+  id: string,
+): Promise<{ source: string; sourceId: string }> {
+  const rawId = id.replace(/^(nhl|team)-/, '');
+
+  const candidates: Array<{ source: string; sourceId: string }> = id.startsWith('team-')
+    ? [{ source: 'team_members', sourceId: rawId }]
+    : [
+        { source: 'nhl_coaching_staff', sourceId: rawId },
+        { source: 'nhl_players', sourceId: rawId },
+      ];
+
+  for (const candidate of candidates) {
+    const { data, error } = await supabaseAdmin
+      .from('person_sources')
+      .select('id')
+      .eq('source', candidate.source)
+      .eq('source_id', candidate.sourceId)
+      .maybeSingle();
+    if (!error && data) return candidate;
+  }
+
+  // Nothing matched — return the first candidate so the caller renders a
+  // link that resolves to nothing rather than throwing.
+  return candidates[0];
+}

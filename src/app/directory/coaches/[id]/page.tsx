@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getStaffRecord } from '@/lib/staff-record';
+import { getStaffRecord, getStaffSourceRef } from '@/lib/staff-record';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import UnifiedProfileLink from '@/components/profile/UnifiedProfileLink';
 
@@ -129,8 +129,13 @@ export default async function CoachPage({ params }: Props) {
   // The staff record's source namespace and row id, for the unified-profile
   // link. `nhl-<id>` covers both nhl_players and nhl_coaching_staff rows;
   // `team-<id>` covers team_members.
-  const staffSource = record.source === 'nhl' ? 'nhl_players' : 'team_members';
-  const staffSourceId = record.source === 'nhl' ? id.replace(/^nhl-/, '') : id.replace(/^team-/, '');
+  //
+  // The two NHL namespaces have DIFFERENT id spaces: `nhl_players.id` is a
+  // big integer (8477967) and `nhl_coaching_staff.id` is a small integer
+  // (118). Guessing which one the route id belongs to would resolve the
+  // wrong person — or none. So the link resolves the namespace by asking
+  // the loader, not by guessing. `getStaffSourceRef` tries both.
+  const staffSourceRef = await getStaffSourceRef(id);
 
   return (
     <>
@@ -224,7 +229,7 @@ export default async function CoachPage({ params }: Props) {
                 unless the flag is on AND this record maps to a person with a
                 canonical profile slug. */}
             <div style={{ marginBottom: '0.75rem' }}>
-              <UnifiedProfileLink source={staffSource} sourceId={staffSourceId} />
+              <UnifiedProfileLink source={staffSourceRef.source} sourceId={staffSourceRef.sourceId} />
             </div>
 
             <div

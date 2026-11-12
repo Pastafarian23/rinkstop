@@ -225,6 +225,11 @@ export default async function PlayerPage({ params }: Props) {
     getFollowersCount('player', id),
   ]);
 
+  // The player's UUID — needed by anything keyed on the source row's
+  // original primary key (the unified person profile resolves through
+  // `person_sources.source_id`, which is the UUID, not the route slug).
+  const playerSourcesId = (playerTyped?.id as string) ?? '';
+
   // 2026-10-14 (Phase 4): recent team games for this player. We
   // pick the most recent team from hockey_player_team_history and
   // pull the last 5 completed fixtures. Skipped silently if the
@@ -456,9 +461,15 @@ export default async function PlayerPage({ params }: Props) {
       />
       {/* Unified person profile (feature-flagged). Renders nothing unless
           PERSON_IDENTITY_ENABLED is true AND this player maps to a person
-          with a canonical profile slug. */}
+          with a canonical profile slug.
+
+          NOTE: `playerSourcesId` is the player's UUID, NOT the route's `id`.
+          The route param is a SLUG on a slug URL (/directory/players/thatcher-demko),
+          but `person_sources.source_id` holds the source row's original
+          primary key. Passing the slug found nothing — the link silently
+          rendered nothing at all. */}
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
-        <UnifiedProfileLink source="rinkstop_players" sourceId={id} />
+        <UnifiedProfileLink source="rinkstop_players" sourceId={playerSourcesId} />
       </div>
       <PlayerSEOCopy player={playerTyped} career={{}} />
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>

@@ -264,6 +264,28 @@ UPDATE public.persons p
  WHERE p.slug IS NULL
    AND p.identity_state <> 'merged';
 
+-- TEST / FIXTURE IDENTIFIERS MUST NOT BECOME PUBLIC URLS.
+--
+--   A person whose name is a test fixture ('Test Player', 'Jake Demo
+--   Player') would otherwise get a public URL like /profile/test-player.
+--   These are not real humans and they must not be crawlable. They still
+--   get a slug (so the person stays addressable internally), but the slug
+--   is replaced with an opaque, non-descriptive handle.
+--
+--   The patterns are deliberately narrow: they match a fixture WORD as a
+--   whole segment, so a real name like 'Testosterone' or 'Demolition
+--   Crew' is not affected.
+UPDATE public.persons p
+   SET slug = 'p-' || substr(md5(p.id::text), 1, 12)
+ WHERE p.identity_state <> 'merged'
+   AND p.slug IS NOT NULL
+   AND (
+     p.slug ~ '(^|-)(test|testing|demo|dummy|sample|fixture|fake|placeholder|lorem)(-[0-9a-z]+)*$'
+     OR p.slug ~ '(^|-)(fanout|qa)(-[0-9a-z]+)*$'
+     -- A Clerk user id leaked into the name.
+     OR p.slug ~ '^user-[0-9a-f]{20,}$'
+   );
+
 -- A merged-away person must NEVER hold a slug.
 UPDATE public.persons
    SET slug = NULL, public_id = NULL
@@ -291,6 +313,22 @@ UPDATE public.persons
 -- -----------------------------------------------------------------------------
 
 -- 4a. canonical profile alias for every surviving person with a slug.
+--
+--     EXCLUSION — ACCOUNT-ONLY PERSONS GET NO ALIAS.
+--     A person whose ONLY source row is `profiles_account` IS the account.
+--     Its canonical URL is the account URL `/profile/<username>`, which the
+--     resolver checks FIRST. Giving it a second alias would:
+--       - create a second, competing public URL for the same human
+--       - expose a `display_name` that came from a Clerk/test identity
+--         (e.g. 'user_3GSptDg51uRv0n7GwdgajqtTdg0', 'test_fav_1781450750717')
+--         at a public URL, which is exactly the kind of internal identifier
+--         a public profile must not surface
+--     So an account-only person keeps its slug (harmless, and it keeps the
+--     person addressable internally) but gets NO public alias.
+--
+--     A person who ALSO has a non-account source row (a player record, a
+--     staff record) DOES get an alias — that person has hockey content to
+--     show, and the account URL is still protected by the resolution order.
 INSERT INTO public.person_aliases
   (person_id, path, alias_type, is_canonical, source, source_id)
 SELECT
@@ -313,6 +351,12 @@ SELECT
 FROM public.persons p
 WHERE p.slug IS NOT NULL
   AND p.identity_state <> 'merged'
+  -- NOT an account-only person: they must have at least one non-account
+  -- source row, otherwise their canonical URL IS the account URL.
+  AND EXISTS (
+    SELECT 1 FROM public.person_sources s
+     WHERE s.person_id = p.id AND s.source <> 'profiles_account'
+  )
   -- Never shadow an account URL (requirement 2).
   AND p.slug NOT IN (SELECT username FROM public.profiles WHERE username IS NOT NULL)
   -- The path must be free.
@@ -377,6 +421,8 @@ DECLARE
   v_alias_not_person  bigint;
   v_merged_alias_bad  bigint;
   v_obsolete          bigint;
+  v_account_only_aliased bigint;
+  v_internal_alias     bigint;
 BEGIN
   -- No merged-away person holds a slug or a public_id.
   SELECT count(*) INTO v_no_slug_merged
@@ -405,16 +451,42 @@ BEGIN
     RAISE EXCEPTION 'phase3 verify: % surviving persons lack a slug or public_id', v_missing_slug;
   END IF;
 
-  -- Every surviving person has a canonical alias.
+  -- Every surviving person with a non-account source has a canonical alias.
   SELECT count(*) INTO v_missing_alias
     FROM public.persons p
    WHERE p.identity_state <> 'merged'
      AND p.slug IS NOT NULL
+     AND EXISTS (
+       SELECT 1 FROM public.person_sources s
+        WHERE s.person_id = p.id AND s.source <> 'profiles_account')
      AND NOT EXISTS (
        SELECT 1 FROM public.person_aliases a
         WHERE a.person_id = p.id AND a.is_canonical AND a.path = '/profile/' || p.slug);
   IF v_missing_alias <> 0 THEN
     RAISE EXCEPTION 'phase3 verify: % surviving persons lack a canonical alias', v_missing_alias;
+  END IF;
+
+  -- NO alias path may expose a test fixture or a Clerk user id.
+  SELECT count(*) INTO v_internal_alias
+    FROM public.person_aliases a
+   WHERE split_part(a.path, '/', 3) ~
+     '(^|-)(test|testing|demo|dummy|sample|fixture|fake|placeholder|lorem)(-[0-9a-z]+)*$'
+     OR split_part(a.path, '/', 3) ~ '(^|-)(fanout|qa)(-[0-9a-z]+)*$'
+     OR split_part(a.path, '/', 3) ~ '^user-[0-9a-f]{20,}$';
+  IF v_internal_alias <> 0 THEN
+    RAISE EXCEPTION 'phase3 verify: % alias paths expose a test/Clerk identifier', v_internal_alias;
+  END IF;
+
+  -- An ACCOUNT-ONLY person must have NO alias — their canonical URL is the
+  -- account URL, and a second URL would expose a Clerk/test display name.
+  SELECT count(*) INTO v_account_only_aliased
+    FROM public.person_aliases a
+    JOIN public.persons p ON p.id = a.person_id
+   WHERE NOT EXISTS (
+     SELECT 1 FROM public.person_sources s
+      WHERE s.person_id = p.id AND s.source <> 'profiles_account');
+  IF v_account_only_aliased <> 0 THEN
+    RAISE EXCEPTION 'phase3 verify: % account-only persons have an alias', v_account_only_aliased;
   END IF;
 
   -- No alias shadows a `profiles.username`.
