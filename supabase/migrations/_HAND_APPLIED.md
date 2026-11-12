@@ -1087,3 +1087,51 @@ SELECT id, person_id, role_type, role_detail, team_id, league_id, season,
 FROM public.person_roles_backup_20260712;
 COMMIT;
 ```
+
+---
+
+## 2026-11-12 — Phase 2C: production execution of the 38 approved identity merges
+
+Applied directly via the Supabase Management API against
+**production** (`yszheonqyyskkjoxoexk`).
+
+Authorized by Arnel Larracas 2026-11-12 — "one atomic transaction for all 38
+approved merges", with the two prerequisite migrations applied separately,
+a secure pre-merge backup, a Gate 25 re-confirmation, and a compensating
+rollback preserved.
+
+| File | Applied to prod | Notes |
+|---|---|---|
+| `2026-11-12_person_identity_phase2a_candidate_pairs.sql` | ✅ | candidate/cluster/decision tables + RLS at creation |
+| `2026-11-12_person_identity_phase2b_merge_procedure.sql` | ✅ | `person_merge_audit` + `person_merge_identities(uuid,uuid)` |
+| `2026-07-12_person_identity_merge_backup.sql` | ✅ | pre-merge snapshot, 34,310 rows, immutable |
+
+**Timeline (UTC):**
+- `13:25:56.954480` — secure backup written to `public.person_identity_merge_backup` (34,310 rows)
+- `13:27:53.483669` — all 38 merges applied in **ONE transaction** (38 distinct `merge_id`s, 38 distinct `decision_id`s, **1 distinct `xmin`**, **1 distinct timestamp**)
+
+**Atomicity proof:** 114 audit rows = 38 "merge applied" + 38 `person_sources` re-points + 38 `person_roles` re-points. 0 reverted. One `xmin` across all 114 rows proves a single transaction — a multi-transaction run would show several distinct `xmin` values.
+
+**Verification (all live against production, after commit):**
+- 17/17 Phase 2A invariants PASS
+- persons 11,443 · person_sources 11,443 · person_roles 11,424 (all unchanged)
+- players 6,352 · nhl_players 4,917 (unchanged) · profiles 19 · claims 0 · aliases 0
+- 38 merged persons, every one traceable to `person_merge_audit`; 0 orphans
+- RLS enabled on `person_identity_candidates`, `person_identity_clusters`, `person_identity_decisions`, `person_merge_audit`, `person_identity_merge_backup`, `person_roles_backup_20260712`; anon/authenticated SELECT denied on all of them
+- `person_merge_identities(uuid,uuid)` is SECURITY DEFINER with a pinned `search_path`; EXECUTE granted to `service_role` only
+- Backup immutable: `trg_person_identity_merge_backup_immutable` refused a direct UPDATE and a direct DELETE
+- Backup-vs-live diff is exactly the 38 merged persons/sources/roles; 0 source rows missing
+- Gate 25 (cluster completeness) re-run against production: **PASS** — 38 approved decisions, all 76 source rows resolve, no source row touched twice
+- Gate 23 (person identity) after the merge-aware fix: **PASS**
+- All 38 affected player pages return HTTP 200
+
+**Exclusions honored (0 of each):** Slafkovský (still 4 separate persons, all 4 source rows intact) · the 977 multi-record-cluster pairs · claims · aliases · every unrelated record.
+
+**Compensating rollback:** `scripts/rollback-2c-identity-merge.sql` — tested in a rolled-back sandbox against production: `merged=0`, `open_audit=0`, `src_not_restored=0`, `role_not_restored=0`, `origin_mismatch=0`, `persons=11443 / sources=11443 / roles=11424`.
+
+```bash
+cd /root/.openclaw/workspace/rinkstop-platform
+IDENTITY_TARGET_REF=yszheonqyyskkjoxoexk IDENTITY_ALLOW_PRODUCTION=1 \
+  node scripts/_branch-sql.mjs scripts/rollback-2c-identity-merge.sql \
+    --branch yszheonqyyskkjoxoexk
+```
