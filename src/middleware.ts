@@ -86,6 +86,90 @@ async function lookupEntitySlugByUuid(
   }
 }
 
+/**
+ * Obsolete person-alias redirect: /profile/<old-slug> → /profile/<canonical>.
+ *
+ * 2026-11-12 (Phase 3B): the Phase 2C merge gave each merged pair ONE
+ * canonical profile slug. For 9 of the 38 pairs, the survivor's slug is the
+ * name-only form while the OLD player-page URL carried a team suffix:
+ *
+ *   /profile/tim-st-tzle-ott  →  /profile/tim-st-tzle
+ *
+ * Those 9 paths are registered as NON-canonical `person_aliases` rows that
+ * point at the survivor. This lookup finds them and 308s to the canonical
+ * URL, so a visitor (or a crawler) holding the old URL lands on the live
+ * profile instead of a 404.
+ *
+ * WHY IN THE MIDDLEWARE, NOT ONLY IN THE PAGE
+ *   The page handler can also redirect, but `redirect()` in Next.js issues a
+ *   307 (temporary), and it renders the page before redirecting. A 308 from
+ *   middleware is a true permanent redirect, is served without a render, and
+ *   is the same mechanism the site already uses for every other slug
+ *   migration (`/news`, `/directory/teams`, UUID → slug).
+ *
+ * SAFETY
+ *   • Only paths that are NOT a canonical alias redirect. A canonical path
+ *     is returned as null here, so it renders normally.
+ *   • Only non-canonical aliases are considered — a canonical alias never
+ *     produces a redirect, so there can be no loop.
+ *   • The account check runs first in the page handler, so an account
+ *     username is never affected by this layer.
+ *   • Gated on PERSON_IDENTITY_ENABLED, so with the flag off the site
+ *     behaves exactly as it did before.
+ */
+async function lookupObsoletePersonAlias(
+  path: string,
+): Promise<string | null> {
+  if (process.env.PERSON_IDENTITY_ENABLED !== 'true') return null;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+
+  try {
+    // Find the non-canonical alias for this path, and the canonical path of
+    // the SAME person. Two round trips would be wasteful, so the canonical
+    // path is fetched in the same request via an embedded resource.
+    const endpoint =
+      `${url}/rest/v1/person_aliases` +
+      `?path=eq.${encodeURIComponent(path)}` +
+      `&is_canonical=eq.false` +
+      `&select=person_id,person_aliases!inner(person_id)` +
+      `&limit=1`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(500),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ person_id: string }>;
+    if (rows.length === 0) return null;
+
+    const personId = rows[0].person_id;
+
+    // Now find that person's CANONICAL path.
+    const canonicalEndpoint =
+      `${url}/rest/v1/person_aliases` +
+      `?person_id=eq.${encodeURIComponent(personId)}` +
+      `&is_canonical=eq.true` +
+      `&select=path&limit=1`;
+    const canonicalRes = await fetch(canonicalEndpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(500),
+    });
+    if (!canonicalRes.ok) return null;
+    const canonicalRows = (await canonicalRes.json()) as Array<{ path: string }>;
+    if (canonicalRows.length === 0) return null;
+
+    const canonicalPath = canonicalRows[0].path;
+    // Guard against a self-redirect (would be an infinite loop).
+    if (!canonicalPath || canonicalPath === path) return null;
+    return canonicalPath;
+  } catch (e) {
+    console.error('[middleware] obsolete person alias lookup failed:', e);
+    return null;
+  }
+}
+
 // Team slug redirect: handles renames of user-created teams.
 // Affects both the team hub (/dashboard/team/[slug]) and the public
 // profile (/directory/teams/[slug]). Public SELECT RLS means anyone can
@@ -366,6 +450,21 @@ export default clerkMiddleware(async (auth, request) => {
       const toSlug = await lookupSlugRedirect(slug);
       if (toSlug && toSlug !== slug) {
         const dest = new URL(`/news/${toSlug}`, request.url);
+        return NextResponse.redirect(dest, 308);
+      }
+    }
+  }
+
+  // Obsolete person-alias redirect: /profile/<old-slug> → /profile/<canonical>.
+  // Phase 3B (2026-11-12). Runs BEFORE the page handler so the redirect is a
+  // real 308 served without a render, and so the page handler never has to
+  // decide between a redirect and a 404.
+  if (path.startsWith('/profile/') && path.length > '/profile/'.length) {
+    const slug = path.slice('/profile/'.length).split('/')[0];
+    if (slug && !slug.includes('.') && !slug.includes('%')) {
+      const canonicalPath = await lookupObsoletePersonAlias(path);
+      if (canonicalPath) {
+        const dest = new URL(canonicalPath, request.url);
         return NextResponse.redirect(dest, 308);
       }
     }

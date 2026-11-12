@@ -203,6 +203,138 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
   );
 }
 
+// 4b. Every obsolete alias must redirect to a REAL, LIVE canonical path.
+//
+//     An obsolete alias is a merged-away person's old URL. It must point at
+//     a person that is NOT merged away, and that person must have exactly
+//     one canonical alias whose path differs from the obsolete one. If the
+//     two paths are the same, the "redirect" would be a self-loop.
+//
+//     2026-11-12 (Phase 3B): the 9 real obsolete aliases were restored from
+//     the pre-merge backup's `players.slug`. The other 29 merged pairs had
+//     the SAME slug on both sides, so there is no separate path to redirect
+//     and no alias is created for them — inserting one would be a self-loop
+//     that the UNIQUE constraint on `path` forbids.
+{
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const byPerson = new Map();
+  for (const a of aliases) {
+    if (!byPerson.has(a.person_id)) byPerson.set(a.person_id, []);
+    byPerson.get(a.person_id).push(a);
+  }
+
+  let selfLoop = 0;
+  let noCanonical = 0;
+  let chain = 0;
+  const obsoletePaths = new Set();
+
+  for (const a of aliases) {
+    if (a.is_canonical) continue;
+    obsoletePaths.add(a.path);
+
+    const siblings = byPerson.get(a.person_id) ?? [];
+    const canonical = siblings.find((c) => c.is_canonical);
+    if (!canonical) {
+      noCanonical++;
+      continue;
+    }
+    if (canonical.path === a.path) selfLoop++;
+  }
+
+  // A chain would be: obsolete path A -> person's canonical path B, where B
+  // is ITSELF an obsolete alias of some other person.
+  const obsoleteSet = new Set(obsoletePaths);
+  for (const a of aliases) {
+    if (a.is_canonical) continue;
+    const canonical = (byPerson.get(a.person_id) ?? []).find((c) => c.is_canonical);
+    if (canonical && obsoleteSet.has(canonical.path)) chain++;
+  }
+
+  check(
+    'no obsolete alias points at its own canonical path (self-loop)',
+    selfLoop === 0,
+    selfLoop ? `${selfLoop} self-loop(s)` : '',
+  );
+  check(
+    'every obsolete alias has a canonical target',
+    noCanonical === 0,
+    noCanonical ? `${noCanonical} without a target` : '',
+  );
+  check(
+    'no obsolete alias chains to another obsolete alias',
+    chain === 0,
+    chain ? `${chain} chain(s)` : '',
+  );
+}
+
+// 4c. The obsolete aliases must cover the pre-merge source slugs.
+//
+//     The whole point of Phase 3B is that a visitor holding the OLD
+//     player-page URL (with its team suffix) lands on the live profile.
+//     This asserts that for every merged pair whose pre-merge slug
+//     DIFFERS from the survivor's canonical slug, an obsolete alias exists
+//     at that exact path — and that no extra obsolete aliases were invented.
+{
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const obsolete = aliases.filter((a) => !a.is_canonical).map((a) => a.path);
+
+  // The pre-merge slugs live in the backup snapshot. Read them directly.
+  const expected = new Set();
+  // Read the WHOLE backup table, paginated. `person_identity_merge_backup`
+  // has 11,443 rows for person_sources alone — PostgREST caps every response
+  // at 1,000 rows.
+  const backupRows = await fetchAllRows(sb, 'person_identity_merge_backup', (q) =>
+    q.eq('backup_of', 'person_sources'),
+  );
+  const merged = await fetchAllRows(sb, 'persons', (q) => q.eq('identity_state', 'merged'));
+  const mergedIds = new Set(merged.map((m) => m.id));
+
+  // The survivor's slug, for each merged person.
+  const survivorIds = Array.from(new Set(merged.map((m) => m.canonical_person_id).filter(Boolean)));
+  const survivorSlug = new Map();
+  for (let i = 0; i < survivorIds.length; i += 100) {
+    const chunk = survivorIds.slice(i, i + 100);
+    const { data: survivors } = await sb
+      .from('persons')
+      .select('id, slug')
+      .in('id', chunk);
+    for (const s of survivors ?? []) survivorSlug.set(s.id, s.slug);
+  }
+
+  // `original_person_id` is the person the row belonged to BEFORE the merge
+  // — that is the merged-away person.
+  const mergedById = new Map(merged.map((m) => [m.id, m]));
+  for (const b of backupRows) {
+    const src = b.row_data?.source;
+    const oldSlug = b.row_data?.source_slug;
+    if (src !== 'rinkstop_players' || !oldSlug) continue;
+    const mergedPerson = mergedById.get(b.original_person_id);
+    if (!mergedPerson) continue;
+    const slug = survivorSlug.get(mergedPerson.canonical_person_id);
+    // Only the pairs whose old slug DIFFERS need an obsolete alias.
+    if (slug && oldSlug !== slug) expected.add(`/profile/${oldSlug}`);
+  }
+
+  const missing = [...expected].filter((p) => !obsolete.includes(p));
+  const extra = obsolete.filter((p) => !expected.has(p));
+
+  check(
+    'every merged pair with a changed slug has an obsolete alias',
+    missing.length === 0,
+    missing.length ? `missing: ${missing.join(', ')}` : '',
+  );
+  check(
+    'there are no obsolete aliases beyond the merged pairs',
+    extra.length === 0,
+    extra.length ? `extra: ${extra.join(', ')}` : '',
+  );
+  check(
+    `the expected number of obsolete aliases exists (${expected.size})`,
+    obsolete.length === expected.size,
+    `got ${obsolete.length}`,
+  );
+}
+
 // 5. Every person with a slug AND a non-account source has exactly one
 //    canonical alias.
 //
