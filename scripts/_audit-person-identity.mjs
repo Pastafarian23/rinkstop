@@ -195,11 +195,49 @@ const allPersonIds = new Set(
 const personsWithSource = new Set(
   (await fetchAll('person_sources', 'person_id')).map((s) => s.person_id),
 );
-const trueOrphans = [...allPersonIds].filter((id) => !personsWithSource.has(id));
+const persons = await fetchAll('persons', 'id,origin_key,identity_state,canonical_person_id');
+// mergedId -> survivorId. The survivors are the persons REFERENCED as a
+// merged person's canonical_person_id. A survivor itself carries
+// canonical_person_id = NULL (it is unmerged), so it is NOT identified by
+// "has a pointer".
+const survivorOf = new Map(
+  persons
+    .filter((p) => p.identity_state === 'merged' && p.canonical_person_id)
+    .map((p) => [p.id, p.canonical_person_id]),
+);
+const survivorIds = new Set(survivorOf.values());
+// A MERGED-AWAY person legitimately holds ZERO source rows: the merge
+// re-pointed them to the survivor, and the person is retained as the
+// provenance record (identity_state='merged' + canonical_person_id).
+//
+// So the orphan test is: every person with no source row must BE a merged
+// person whose survivor exists. Anything else is a genuine orphan.
+const mergedPersonIds = new Set(
+  persons.filter((p) => p.identity_state === 'merged').map((p) => p.id),
+);
+const trueOrphans = [...allPersonIds].filter(
+  (id) => !personsWithSource.has(id) && !mergedPersonIds.has(id),
+);
+// A merged-away person must (a) hold NO source rows — they were re-pointed
+// to the survivor — and (b) point at a LIVE survivor that exists.
+const badMerged = [...mergedPersonIds].filter(
+  (id) =>
+    personsWithSource.has(id) ||
+    !survivorOf.has(id) ||
+    !survivorIds.has(survivorOf.get(id)),
+);
 if (trueOrphans.length > 0) {
-  fail(`${trueOrphans.length} persons have no person_sources row`);
+  fail(`${trueOrphans.length} persons have no person_sources row and are not merged`);
 } else {
-  note(`0 orphan persons (${allPersonIds.size} persons, ${personsWithSource.size} with a source)`);
+  note(
+    `0 orphan persons (${allPersonIds.size} persons, ${personsWithSource.size} with a source, ` +
+      `${mergedPersonIds.size} merged-away retained)`,
+  );
+}
+if (badMerged.length > 0) {
+  fail(
+    `${badMerged.length} merged-away persons still hold source rows, or their survivor is missing`,
+  );
 }
 if (orphanSubqueryCount !== null && orphanSubqueryCount !== 0 && trueOrphans.length === 0) {
   // PostgREST's empty `in ()` filter matches every row, so this number is
@@ -216,37 +254,110 @@ if (orphanSubqueryCount !== null && orphanSubqueryCount !== 0 && trueOrphans.len
 // ── 4. origin_key agrees with the source row ───────────────────────────────
 console.log('[audit-person-identity] checking origin_key integrity...');
 
-const persons = await fetchAll('persons', 'id,origin_key,identity_state,canonical_person_id');
 const sourcesByPerson = new Map();
 for (const s of await fetchAll('person_sources', 'person_id,source,source_id')) {
-  sourcesByPerson.set(s.person_id, s);
+  if (!sourcesByPerson.has(s.person_id)) sourcesByPerson.set(s.person_id, []);
+  sourcesByPerson.get(s.person_id).push(s);
 }
 
-let originMismatch = 0;
+// A person may hold SEVERAL source rows after a merge (the survivor holds
+// its own plus the merged-in one), so origin_key is compared against the
+// SET of that person's source keys, not against a single row.
+//
+// A merged-away person holds zero source rows (they were re-pointed to the
+// survivor) but KEEPS its origin_key as the provenance of what it was.
+// That is correct and is not a mismatch.
+const originMismatch = [];
+const mergedOriginMissing = [];
 for (const p of persons) {
-  const s = sourcesByPerson.get(p.id);
-  if (!s) continue;
-  const expected = `${s.source}:${s.source_id}`;
-  if (p.origin_key !== expected) originMismatch++;
+  const rows = [...(sourcesByPerson.get(p.id) ?? [])];
+  const keys = new Set(rows.map((s) => `${s.source}:${s.source_id}`));
+  if (p.identity_state === 'merged') {
+    // merged-away: must retain its origin_key, and its source rows must have
+    // moved to the survivor
+    if (!p.origin_key) mergedOriginMissing.push(p.id);
+    if (rows.length > 0) originMismatch.push(p.id);
+    continue;
+  }
+  if (!keys.has(p.origin_key)) originMismatch.push(p.id);
 }
-if (originMismatch > 0) {
-  fail(`${originMismatch} persons whose origin_key disagrees with their person_sources row`);
+if (originMismatch.length > 0) {
+  fail(
+    `${originMismatch.length} persons whose origin_key disagrees with their person_sources rows`,
+  );
 } else {
   note('origin_key agrees with person_sources for every person');
 }
+if (mergedOriginMissing.length > 0) {
+  fail(`${mergedOriginMissing.length} merged-away persons lost their origin_key`);
+} else if (mergedPersonIds.size > 0) {
+  note(`all ${mergedPersonIds.size} merged-away persons retained their origin_key`);
+}
 
-// ── 5. no auto-merge, no auto-claim ────────────────────────────────────────
+// ── 5. merge + claim state ─────────────────────────────────────────────────
+//
+// PHASE 2C (2026-07-12): merges ARE now authorized — 38 identities were
+// merged in one transaction under explicit authorization, after Gate 25
+// passed and a hardened pre-merge backup was taken.
+//
+// So this check no longer asserts "no merges". It asserts that every merge
+// is WELL-FORMED and traceable:
+//   • every merged person has a canonical pointer to a live, unmerged person
+//   • no pointer chains (a merged person's survivor is never itself merged)
+//   • no self-pointers
+//   • every merged person is accounted for by a person_merge_audit record
+//   • the count of merges matches the count of audit records
+//
+// An UNAUTHORIZED merge (one with no audit trail) still fails.
 console.log('[audit-person-identity] checking merge/claim state...');
 
-const merged = persons.filter((p) => p.identity_state === 'merged').length;
-const withPointer = persons.filter((p) => p.canonical_person_id !== null).length;
-if (merged > 0 || withPointer > 0) {
+const merged = persons.filter((p) => p.identity_state === 'merged');
+const withPointer = persons.filter((p) => p.canonical_person_id !== null);
+const mergedIds = new Set(merged.map((p) => p.id));
+const pointerSurvivorIds = new Set(withPointer.map((p) => p.canonical_person_id));
+
+if (merged.length !== withPointer.length) {
   fail(
-    `${merged} persons marked 'merged' / ${withPointer} with a canonical pointer — ` +
-      `merging requires separate Phase 2 authorization`,
+    `${merged.length} persons marked 'merged' but ${withPointer.length} carry a canonical pointer — ` +
+      `every merge needs exactly one pointer`,
+  );
+}
+
+const badPointer = merged.filter(
+  (p) => !p.canonical_person_id || !allPersonIds.has(p.canonical_person_id),
+);
+if (badPointer.length > 0) {
+  fail(`${badPointer.length} merged persons point at a nonexistent survivor`);
+}
+
+const chained = merged.filter((p) => mergedIds.has(p.canonical_person_id));
+if (chained.length > 0) {
+  fail(`${chained.length} merged persons point at another merged person (a merge chain)`);
+}
+
+const selfPointed = persons.filter((p) => p.canonical_person_id === p.id);
+if (selfPointed.length > 0) {
+  fail(`${selfPointed.length} persons point at themselves`);
+}
+
+// Every merge must be traceable to the audit ledger.
+const auditRows = await fetchAll('person_merge_audit', 'id,merge_id,survivor_id,merged_id,note');
+const auditedMerges = new Set(
+  auditRows.filter((a) => a.note && a.note.startsWith('merge applied')).map((a) => a.merged_id),
+);
+const unaudited = merged.filter((p) => !auditedMerges.has(p.id));
+if (unaudited.length > 0) {
+  fail(
+    `${unaudited.length} merged persons have NO person_merge_audit record — ` +
+      `an unauthorized merge cannot be distinguished from a legitimate one`,
+  );
+} else if (merged.length > 0) {
+  note(
+    `${merged.length} merged identities, all traceable to person_merge_audit ` +
+      `(${auditedMerges.size} audit records)`,
   );
 } else {
-  note('no persons merged (Phase 2 not authorized)');
+  note('no persons merged');
 }
 
 const claimCount = await exactCount('person_claims');

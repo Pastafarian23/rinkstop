@@ -245,6 +245,50 @@ CREATE INDEX IF NOT EXISTS idx_pid_cluster ON public.person_identity_decisions (
 CREATE INDEX IF NOT EXISTS idx_pid_decision ON public.person_identity_decisions (decision);
 
 -- -----------------------------------------------------------------------------
+-- 3b. RLS — these tables carry the identity mapping and the evidence
+--     (birth dates, nationalities) plus the decision and WHO made it. None of
+--     it is public data.
+--
+--     Added 2026-07-12 after the Phase 2C production dry-run: this migration
+--     originally created the three tables WITHOUT RLS and WITHOUT revoking
+--     privileges, so anon inherited full SELECT/INSERT/UPDATE/DELETE and an
+--     anonymous REST request returned rows. Same defect class as the Phase 2B
+--     backup table.
+--
+--     The protection is applied HERE, at creation, so a fresh deployment never
+--     has an unprotected window.
+-- -----------------------------------------------------------------------------
+ALTER TABLE public.person_identity_candidates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_identity_candidates ON public.person_identity_candidates;
+CREATE POLICY deny_anon_person_identity_candidates
+  ON public.person_identity_candidates AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_identity_candidates ON public.person_identity_candidates;
+CREATE POLICY deny_authenticated_person_identity_candidates
+  ON public.person_identity_candidates AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+REVOKE ALL ON public.person_identity_candidates FROM anon, authenticated;
+REVOKE ALL ON public.person_identity_candidates FROM PUBLIC;
+
+ALTER TABLE public.person_identity_clusters ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_identity_clusters ON public.person_identity_clusters;
+CREATE POLICY deny_anon_person_identity_clusters
+  ON public.person_identity_clusters AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_identity_clusters ON public.person_identity_clusters;
+CREATE POLICY deny_authenticated_person_identity_clusters
+  ON public.person_identity_clusters AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+REVOKE ALL ON public.person_identity_clusters FROM anon, authenticated;
+REVOKE ALL ON public.person_identity_clusters FROM PUBLIC;
+
+ALTER TABLE public.person_identity_decisions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS deny_anon_person_identity_decisions ON public.person_identity_decisions;
+CREATE POLICY deny_anon_person_identity_decisions
+  ON public.person_identity_decisions AS RESTRICTIVE FOR ALL TO anon USING (false);
+DROP POLICY IF EXISTS deny_authenticated_person_identity_decisions ON public.person_identity_decisions;
+CREATE POLICY deny_authenticated_person_identity_decisions
+  ON public.person_identity_decisions AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+REVOKE ALL ON public.person_identity_decisions FROM anon, authenticated;
+REVOKE ALL ON public.person_identity_decisions FROM PUBLIC;
+
+-- -----------------------------------------------------------------------------
 -- 4. Populate the candidate table.
 --
 --    Placeholder normalization: a birth date whose month and day are both 1 is
