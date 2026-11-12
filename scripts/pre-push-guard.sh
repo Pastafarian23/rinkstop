@@ -439,6 +439,33 @@ if ! node scripts/_audit-person-identity.mjs 2>&1 | tail -40; then
   exit 1
 fi
 
+# ─────────────────────────────────────────────────────────────────────────
+# Gate 24: UNIFIED PUBLIC PROFILE — the person profile must never shadow
+#            an account URL.
+#
+# 2026-11-12 (Arnel approved the unified /profile/ architecture): Phase 3
+# assigns persons.slug / persons.public_id and populates person_aliases so
+# /profile/<slug> resolves to a person.
+#
+# The resolution order in src/lib/unified-profile.ts puts the ACCOUNT check
+# first, so an alias can never override a profiles.username. But that ordering
+# lives in application code, and a code change can invert it. This gate
+# asserts the INVARIANT directly against the live database, so an inverted
+# order fails the push rather than shipping.
+#
+# It also asserts:
+#   - no canonical alias points at a merged-away person
+#   - every obsolete alias points at a SURVIVOR
+#   - no account-only person has a public alias
+#   - no alias path exposes an email, a phone number, or a test/Clerk id
+#   - person_sources and person_roles counts are unchanged
+# ─────────────────────────────────────────────────────────────────────────
+echo "[24/24] auditing the unified public profile invariants..."
+if ! node scripts/_audit-unified-profile.mjs 2>&1 | tail -40; then
+  echo "FAIL: the unified profile can shadow an account URL, or the identity data drifted (see above)"
+  exit 1
+fi
+
 echo ""
 echo "=== ALL GATES PASSED ==="
 echo "Safe to push: git push origin $BRANCH"
