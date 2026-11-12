@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getStaffRecord } from '@/lib/staff-record';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import UnifiedProfileLink from '@/components/profile/UnifiedProfileLink';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -125,6 +126,12 @@ export default async function CoachPage({ params }: Props) {
 
   const teamName = record.current_team_name;
 
+  // The staff record's source namespace and row id, for the unified-profile
+  // link. `nhl-<id>` covers both nhl_players and nhl_coaching_staff rows;
+  // `team-<id>` covers team_members.
+  const staffSource = record.source === 'nhl' ? 'nhl_players' : 'team_members';
+  const staffSourceId = record.source === 'nhl' ? id.replace(/^nhl-/, '') : id.replace(/^team-/, '');
+
   return (
     <>
       <main
@@ -212,6 +219,13 @@ export default async function CoachPage({ params }: Props) {
               {teamName ? ` · ${teamName}` : ''}
               {record.league_name ? ` · ${record.league_name}` : ''}
             </p>
+
+            {/* Unified person profile (feature-flagged). Renders nothing
+                unless the flag is on AND this record maps to a person with a
+                canonical profile slug. */}
+            <div style={{ marginBottom: '0.75rem' }}>
+              <UnifiedProfileLink source={staffSource} sourceId={staffSourceId} />
+            </div>
 
             <div
               style={{

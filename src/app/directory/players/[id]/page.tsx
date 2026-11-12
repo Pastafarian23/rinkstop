@@ -19,6 +19,7 @@ import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildPlayerFAQs } from '@/lib/player-context';
 import { supabaseAdmin } from '@/lib/supabase';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
+import UnifiedProfileLink from '@/components/profile/UnifiedProfileLink';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -453,6 +454,12 @@ export default async function PlayerPage({ params }: Props) {
         initialPlayer={playerTyped}
         unifiedStats={unifiedStats}
       />
+      {/* Unified person profile (feature-flagged). Renders nothing unless
+          PERSON_IDENTITY_ENABLED is true AND this player maps to a person
+          with a canonical profile slug. */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <UnifiedProfileLink source="rinkstop_players" sourceId={id} />
+      </div>
       <PlayerSEOCopy player={playerTyped} career={{}} />
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
         <ClaimThisListingMount entityType="player" entityId={id} />

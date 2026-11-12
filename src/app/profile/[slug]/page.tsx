@@ -3,7 +3,13 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { isIdentityVerified, isIdentityVerifiedFromProfile } from '@/lib/identity-verified';
+import {
+  resolveProfileSlug,
+  type UnifiedPerson,
+} from '@/lib/unified-profile';
+import UnifiedPersonProfile from '@/components/profile/UnifiedPersonProfile';
 import { getTierLabel } from '@/lib/pricing';
 import { TierBadge } from '@/components/TierBadge';
 import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
@@ -208,6 +214,44 @@ async function fetchProfile(slug: string): Promise<{
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+
+  // ── UNIFIED PERSON PROFILE ──────────────────────────────────────────────
+  // Resolve FIRST, and only fall through to the account loader when the slug
+  // is not a person. The account check inside resolveProfileSlug() runs
+  // BEFORE the alias lookup, so an account URL always wins — its metadata,
+  // its canonical and its rendering are untouched.
+  const resolution = await resolveProfileSlug(slug);
+  if (resolution?.kind === 'person') {
+    const p = resolution.person;
+    const title = `${p.displayName} · Hockey profile | RinkStop`;
+    const roleSummary = p.roles.length
+      ? p.roles
+          .map((r) => r.roleType)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(' · ')
+      : 'hockey identity';
+    const description = `${p.displayName} — ${roleSummary} on RinkStop. ${p.sources.length} source record${p.sources.length === 1 ? '' : 's'}.`;
+    const profileUrl = `https://rinkstop.com${p.canonicalPath}`;
+    return {
+      title,
+      description,
+      alternates: { canonical: profileUrl },
+      openGraph: {
+        title,
+        description,
+        url: profileUrl,
+        type: 'profile',
+        images: p.photoUrl ? [p.photoUrl] : undefined,
+      },
+      twitter: {
+        card: 'summary',
+        title,
+        description,
+        images: p.photoUrl ? [p.photoUrl] : undefined,
+      },
+    };
+  }
+
   const data = await fetchProfile(slug);
   if (!data) {
     return {
@@ -245,6 +289,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProfileBySlugPage({ params }: PageProps) {
   const { slug } = await params;
+
+  // ── UNIFIED PERSON PROFILE ──────────────────────────────────────────────
+  // The account path is unchanged. A person slug renders the unified
+  // profile. An obsolete (merged-away) person path 301s to the survivor.
+  const resolution = await resolveProfileSlug(slug);
+  if (resolution?.kind === 'person') {
+    const person: UnifiedPerson = resolution.person;
+    // An obsolete alias (a merged-away person's old URL) redirects to the
+    // surviving canonical URL. Permanent, so search engines collapse it.
+    if (person.canonicalPath !== `/profile/${slug}`) {
+      redirect(person.canonicalPath);
+    }
+    return <UnifiedPersonProfile person={person} />;
+  }
+
   const data = await fetchProfile(slug);
   if (!data) notFound();
 
