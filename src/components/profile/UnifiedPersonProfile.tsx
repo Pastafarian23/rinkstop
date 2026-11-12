@@ -111,7 +111,7 @@ function RoleCard({ role }: { role: UnifiedRole }) {
   const inner = (
     <>
       <span
-        aria-hidden
+        aria-hidden="true"
         style={{
           width: '2.25rem',
           height: '2.25rem',
@@ -178,7 +178,7 @@ function SourceCard({ record }: { record: UnifiedSourceRecord }) {
   const inner = (
     <>
       <span
-        aria-hidden
+        aria-hidden="true"
         style={{
           width: '2.25rem',
           height: '2.25rem',
@@ -255,7 +255,9 @@ export default function UnifiedPersonProfile({ person }: { person: UnifiedPerson
   const facts: Array<{ label: string; value: string }> = [];
   if (person.birthDate) facts.push({ label: 'Born', value: person.birthDate });
   if (person.nationality) facts.push({ label: 'Nationality', value: person.nationality });
-  if (person.publicId) facts.push({ label: 'Public ID', value: person.publicId });
+  // NOTE: `public_id` is deliberately NOT shown. It is an internal stable
+  // handle (md5 of the person uuid), not a user-facing identifier. It is
+  // carried on the record for API/lookup use, not for display.
 
   const playerRoles = person.roles.filter((r) => r.roleType === 'player');
   const otherRoles = person.roles.filter((r) => r.roleType !== 'player');
@@ -293,7 +295,7 @@ export default function UnifiedPersonProfile({ person }: { person: UnifiedPerson
           }}
         >
           <span
-            aria-hidden
+            aria-hidden="true"
             style={{
               fontFamily: "'Bebas Neue', Impact, sans-serif",
               fontSize: 'clamp(2.5rem, 9vw, 4.5rem)',
