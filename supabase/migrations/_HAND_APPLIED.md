@@ -961,3 +961,53 @@ assets exist today.
 **Conclusion:** the 64 warnings are the Supabase linter being conservative
 about SECURITY DEFINER + EXECUTE-to-anon. The functions themselves
 authenticate. The real, actionable issue is the single ERROR.
+
+---
+
+## 2026-11-12 — Person identity Phase 0 + Phase 1
+
+Applied directly via the Supabase Management API
+(`POST /v1/projects/yszheonqyyskkjoxoexk/database/query`).
+
+| File | Applied | Rows written |
+|---|---|---|
+| `2026-11-12_person_identity_phase0.sql` | ✅ 2026-11-12 | 0 (schema only) |
+| `2026-11-12_person_identity_phase1_backfill.sql` | ✅ 2026-11-12 (×3, idempotent) | 11,443 persons · 11,443 person_sources · 5,072 person_roles |
+
+**Phase 0** created 5 tables — `persons`, `person_sources`, `person_roles`,
+`person_claims`, `person_aliases` — with 33 indexes, 34 constraints, 8 FKs,
+3 `updated_at` triggers, and RLS enabled with `deny_anon_*` /
+`deny_authenticated_*` policies (service-role only).
+
+**Phase 1** backfilled 11,443 people from 6 legacy source tables:
+`players` (6,352) · `nhl_players` (4,917) · `nhl_coaching_staff` (152) ·
+`team_members` (2) · `coach_profiles` (1) · `profiles` (19).
+
+**No merges. No claims.** `identity_state` is `unverified` for all 11,443.
+`person_claims` and `person_aliases` are empty (Phases 5 and 3).
+
+**If a future `supabase db push` runs, SKIP both files** — the schema and
+data already exist. Re-running either is a no-op (verified: Phase 1 run
+three times, zero row delta).
+
+**Rollback:**
+```sql
+-- Phase 1 only (keeps schema):
+BEGIN;
+TRUNCATE public.person_aliases, public.person_claims, public.person_roles,
+         public.person_sources, public.persons;
+COMMIT;
+
+-- Full removal (Phase 0 verbatim):
+BEGIN;
+DROP TRIGGER IF EXISTS trg_persons_touch ON public.persons;
+DROP TRIGGER IF EXISTS trg_person_roles_touch ON public.person_roles;
+DROP TRIGGER IF EXISTS trg_person_claims_touch ON public.person_claims;
+DROP FUNCTION IF EXISTS public.touch_person_updated_at();
+DROP TABLE IF EXISTS public.person_aliases;
+DROP TABLE IF EXISTS public.person_claims;
+DROP TABLE IF EXISTS public.person_roles;
+DROP TABLE IF EXISTS public.person_sources;
+DROP TABLE IF EXISTS public.persons;
+COMMIT;
+```
