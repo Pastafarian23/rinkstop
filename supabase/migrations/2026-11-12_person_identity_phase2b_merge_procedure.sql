@@ -70,6 +70,33 @@ COMMENT ON TABLE public.person_merge_audit IS
   'Every row movement performed by person_merge_identities(). Makes a merge '
   'mechanically reversible: each moved row is recorded with its original owner.';
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- RLS. The merge audit records every row movement, including which person
+-- owned each source row BEFORE the merge. That is the inverse mapping — the
+-- recovery path — and it is internal data.
+--
+-- The Phase 2B lesson applies: a table that is "only used by the migration"
+-- is still a public API surface. The Phase 2B backup table shipped without
+-- RLS and the post-migration audit proved anon could SELECT, DELETE, UPDATE
+-- and INSERT it through the public REST API.
+--
+-- So the protection is applied HERE, at creation, not retrofitted later.
+-- Verified in the production dry-run: without this block the table lands with
+-- relrowsecurity=false and anon SELECT=true.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE public.person_merge_audit ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS deny_anon_person_merge_audit ON public.person_merge_audit;
+CREATE POLICY deny_anon_person_merge_audit
+  ON public.person_merge_audit AS RESTRICTIVE FOR ALL TO anon USING (false);
+
+DROP POLICY IF EXISTS deny_authenticated_person_merge_audit ON public.person_merge_audit;
+CREATE POLICY deny_authenticated_person_merge_audit
+  ON public.person_merge_audit AS RESTRICTIVE FOR ALL TO authenticated USING (false);
+
+REVOKE ALL ON public.person_merge_audit FROM anon, authenticated;
+REVOKE ALL ON public.person_merge_audit FROM PUBLIC;
+
 CREATE INDEX IF NOT EXISTS idx_pma_merge ON public.person_merge_audit (merge_id);
 CREATE INDEX IF NOT EXISTS idx_pma_survivor ON public.person_merge_audit (survivor_id);
 CREATE INDEX IF NOT EXISTS idx_pma_merged ON public.person_merge_audit (merged_id);

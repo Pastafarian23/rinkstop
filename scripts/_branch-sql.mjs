@@ -33,10 +33,32 @@ if (!file) {
   process.exit(1);
 }
 
-if (branch === PROD_REF) {
-  console.error('REFUSED: this helper refuses to run against the production project.');
-  console.error('Phase 2A is branch-only. Use the Management API directly for prod.');
+// Production is reachable, but ONLY with two explicit opt-ins.
+//
+// The original helper hard-refused production, which was correct while the
+// whole workstream was branch-only. Phase 2C needs a way to execute the
+// approved merges against production, and the safe way to do that is the same
+// pattern the other two scripts use:
+//   IDENTITY_TARGET_REF=<prod>   — which project to talk to
+//   IDENTITY_ALLOW_PRODUCTION=1   — an explicit acknowledgement
+//
+// A typo in the ref therefore cannot silently hit production: it fails to
+// authenticate against a project that does not exist, and the second opt-in
+// is still required.
+if (branch === PROD_REF && process.env.IDENTITY_ALLOW_PRODUCTION !== '1') {
+  console.error('REFUSED: this helper refuses to run against the production project');
+  console.error('without an explicit opt-in.');
+  console.error('');
+  console.error('  For the staging branch:  (default)');
+  console.error('  For production:            IDENTITY_ALLOW_PRODUCTION=1');
+  console.error('');
+  console.error('Production writes are a separate, explicit authorization. Do not set');
+  console.error('this unless the merge authorization names production.');
   process.exit(1);
+}
+
+if (branch === PROD_REF) {
+  console.error('[branch-sql] *** PRODUCTION MODE *** — writes are live.');
 }
 
 const sql = readFileSync(file, 'utf8');
