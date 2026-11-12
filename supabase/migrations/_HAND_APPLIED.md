@@ -1038,3 +1038,52 @@ Branch state after Phase 2A:
 reports `rinkstop_players: 6352 of 6352 source rows have no person_roles row`. This is the
 correct, expected result: the role correction is authorized for the BRANCH only. Apply
 `2026-11-12_person_identity_phase2a_player_roles.sql` to production (Phase 2B) to clear it.
+
+---
+
+## 2026-11-12 — Phase 2B: production `rinkstop_players` role correction
+
+Applied directly via the Supabase Management API against
+**production** (`yszheonqyyskkjoxoexk`, host `db.yszheonqyyskkjoxoexk.supabase.co`).
+
+Authorized by Arnel Larracas 2026-11-12 — Phase 2B, production role correction ONLY.
+
+| File | Applied to prod | Notes |
+|---|---|---|
+| `2026-11-12_person_identity_phase2b_apply.sql` | ✅ | backup + correction + reconcile, ONE transaction |
+| `2026-11-12_person_identity_phase2b_backup_roles.sql` | ✅ (logic included in the apply file) | standalone reference |
+
+**Before:** `person_roles` 5,072 · `rinkstop_players` roles 0 · persons 11,443 · sources 11,443
+**After:**  `person_roles` **11,424** · `rinkstop_players` roles **6,352** · persons 11,443 · sources 11,443
+
+Created `public.person_roles_backup_20260712` — **5,072 rows**, the exact pre-correction
+snapshot of `person_roles`. Self-contained rollback (PITR is disabled on this project).
+
+**Verification:** 24/24 baseline checks MATCH before · 30/30 post-apply checks MATCH ·
+dry-run predicted exactly 6,352 rows · idempotent (3 runs, zero delta) ·
+Gate 23 PASS including per-namespace role completeness ·
+rollback proven in a rolled-back sandbox (restores exactly 5,072).
+
+**NOT changed:** no person merges (0 merged) · no archival/deletion · `persons` and
+`person_sources` counts unchanged · `profiles` 19 · `claims` 0 · `managed_profiles` 1 ·
+`didit_sessions` 1 · `person_claims` 0 · `person_aliases` 0 · no route/URL/sitemap/SEO change ·
+`PERSON_IDENTITY_ENABLED` still unset in Vercel.
+
+**Rollback (surgical, preferred):**
+```sql
+BEGIN;
+DELETE FROM public.person_roles WHERE source = 'rinkstop_players';
+COMMIT;
+```
+**Rollback (full restore, only if person_roles was damaged by another cause):**
+```sql
+BEGIN;
+TRUNCATE public.person_roles;
+INSERT INTO public.person_roles
+  (id, person_id, role_type, role_detail, team_id, league_id, season,
+   jersey_number, position, source, source_id, created_at, updated_at)
+SELECT id, person_id, role_type, role_detail, team_id, league_id, season,
+       jersey_number, position, source, source_id, created_at, updated_at
+FROM public.person_roles_backup_20260712;
+COMMIT;
+```
