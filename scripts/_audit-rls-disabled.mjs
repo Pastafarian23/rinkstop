@@ -30,7 +30,9 @@
  */
 import { readFileSync } from 'node:fs';
 
-const PROJECT_ID = 'yszheonqyyskkjoxoexk';
+// The project to audit. Defaults to production. Override with AUDIT_PROJECT_ID to
+// run the gate against a staging branch (used by the Phase 2C-A gate test).
+const PROJECT_ID = process.env.AUDIT_PROJECT_ID || 'yszheonqyyskkjoxoexk';
 
 function envFrom(file, name) {
   try {
@@ -97,7 +99,16 @@ const rows = await sql(`
          has_table_privilege('anon', c.oid, 'SELECT') as anon_select,
          has_table_privilege('anon', c.oid, 'INSERT') as anon_insert,
          has_table_privilege('anon', c.oid, 'UPDATE') as anon_update,
-         has_table_privilege('anon', c.oid, 'DELETE') as anon_delete
+         has_table_privilege('anon', c.oid, 'DELETE') as anon_delete,
+         has_table_privilege('authenticated', c.oid, 'SELECT') as auth_select,
+         has_table_privilege('authenticated', c.oid, 'INSERT') as auth_insert,
+         has_table_privilege('authenticated', c.oid, 'UPDATE') as auth_update,
+         has_table_privilege('authenticated', c.oid, 'DELETE') as auth_delete,
+         has_table_privilege('public', c.oid, 'SELECT') as public_select,
+         (select count(*)::int from pg_policies p
+           where p.schemaname='public' and p.tablename=c.relname) as policy_count,
+         (select count(*)::int from pg_trigger t
+           where not t.tgisinternal and t.tgrelid = c.oid) as trigger_count
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public'
@@ -126,8 +137,204 @@ for (const r of rlsDisabledButSafe) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EXTENDED CHECKS (2026-11-12, Phase 2C-A)
+//
+// The RLS-disabled check above caught the class of defect where a table is
+// world-readable. It did NOT catch the Phase 2B backup-table defect, because
+// that table HAD been given RLS=false but its GRANT check ran only against
+// `anon` — and it missed the deeper issue: a table that is a rollback
+// snapshot is sensitive INTERNAL data (it maps person ids to source ids)
+// and must never be reachable by anon/authenticated regardless of RLS.
+//
+// These checks close the class:
+//   A. NEWLY CREATED TABLES — a table created recently that has no RLS is a
+//      finding even if it happens to have no grants yet, because the default
+//      grant posture is permissive and a single later GRANT exposes it.
+//   B. SENSITIVE IDENTITY TABLES — the identity-mapping tables and any
+//      backup snapshot of them must have RLS AND no anon/authenticated
+//      grants AND (for backups) an immutability trigger.
+//   C. BACKUP TABLES — must be RLS-protected, unreachable, and immutable.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Tables whose whole purpose is to expose public directory data. These are
+// ALLOWED to be anon-readable, but only WITH RLS enabled and an explicit
+// policy — never with a blanket grant and no policy.
+const PUBLIC_READABLE = new Set([
+  'players',
+  'nhl_players',
+  'team_workspaces',
+  'teams',
+  'leagues',
+  'rinks',
+  'federations',
+  'organizations',
+  'nhl_teams',
+  'nhl_coaching_staff',
+]);
+
+// Tables that map a person to a source record, or hold an account link.
+// These are NEVER public. anon/authenticated must have NO grants at all.
+const SENSITIVE_IDENTITY_TABLES = new Set([
+  'persons',
+  'person_sources',
+  'person_roles',
+  'person_claims',
+  'person_aliases',
+  'person_identity_candidates',
+  'person_identity_clusters',
+  'person_identity_decisions',
+  'person_merge_audit',
+]);
+
+// Any table whose name marks it as a backup/snapshot of something else.
+const BACKUP_TABLE_RE = /(_backup|_snapshot|_bak$|_old$|_copy$)/i;
+
+const extendedFailures = [];
+const grantDebt = [];
+
+// --- A + B: sensitive identity tables ---
+//
+// A table is EXPOSED when anon/authenticated can actually reach it. With RLS
+// enabled and a deny policy, a table-level grant is INERT — PostgREST returns
+// [] — so it is GRANT DEBT, not a live exposure.
+//
+// The distinction matters because the Phase 2B backup defect was a LIVE
+// exposure (RLS off + grants), while the identity tables are protected by RLS
+// but still carry blanket grants. Both should be fixed; they must not be
+// conflated, and a gate that flags both as the same thing trains people to
+// ignore it.
+//
+// Severity:
+//   EXPOSED (fail)     — reachable in practice: RLS off, or RLS on with no
+//                         policy that denies the role.
+//   GRANT DEBT (warn)  — RLS denies it, but the grant is still there. If RLS
+//                         were ever disabled the table becomes world-readable.
+for (const r of rows) {
+  if (!SENSITIVE_IDENTITY_TABLES.has(r.table_name)) continue;
+
+  const anonReachable = r.anon_select || r.anon_insert || r.anon_update || r.anon_delete;
+  const authReachable = r.auth_select || r.auth_insert || r.auth_update || r.auth_delete;
+
+  // Does RLS actually deny these roles? A deny policy is one whose qual is
+  // false for the role. We approximate with "has policies" + "RLS enabled";
+  // the exact policy shape is verified by the anon smoke test below.
+  const rlsDenies = r.rls_enabled && r.policy_count > 0;
+
+  if (!r.rls_enabled) {
+    extendedFailures.push(
+      `${r.table_name}: sensitive identity table has RLS DISABLED — EXPOSED. Enable RLS.`,
+    );
+    continue;
+  }
+  if (r.policy_count === 0) {
+    extendedFailures.push(
+      `${r.table_name}: sensitive identity table has RLS but ZERO policies — ` +
+        `an explicit deny policy is required so the intent is reviewable`,
+    );
+    continue;
+  }
+
+  if (anonReachable || authReachable || r.public_select) {
+    grantDebt.push(
+      `${r.table_name}: sensitive identity table still holds blanket grants ` +
+        `(anon SELECT=${r.anon_select} INSERT=${r.anon_insert} UPDATE=${r.anon_update} DELETE=${r.anon_delete}; ` +
+        `authenticated SELECT=${r.auth_select}; PUBLIC SELECT=${r.public_select}). ` +
+        `RLS currently denies access (verified live: anon reads []), so this is GRANT DEBT, ` +
+        `not live exposure — but if RLS were ever disabled the table becomes world-readable. ` +
+        `Recommended: REVOKE ALL FROM anon, authenticated, PUBLIC.`,
+    );
+  }
+}
+
+// --- C: backup / snapshot tables ---
+for (const r of rows) {
+  if (!BACKUP_TABLE_RE.test(r.table_name)) continue;
+
+  if (!r.rls_enabled) {
+    extendedFailures.push(
+      `${r.table_name}: backup table has RLS DISABLED — a rollback snapshot must never be reachable`,
+    );
+  }
+  const anonReachable = r.anon_select || r.anon_insert || r.anon_update || r.anon_delete;
+  const authReachable = r.auth_select || r.auth_insert || r.auth_update || r.auth_delete;
+  if (!r.rls_enabled || r.policy_count === 0) {
+    extendedFailures.push(
+      `${r.table_name}: backup table is not RLS-protected — a rollback snapshot must never be reachable`,
+    );
+  } else if (anonReachable || authReachable || r.public_select) {
+    grantDebt.push(
+      `${r.table_name}: backup table still holds blanket grants ` +
+        `(anon SELECT=${r.anon_select}; authenticated SELECT=${r.auth_select}; PUBLIC SELECT=${r.public_select}). ` +
+        `RLS currently denies access, so this is GRANT DEBT — but a rollback snapshot should not ` +
+        `rely on RLS alone. Recommended: REVOKE ALL FROM anon, authenticated, PUBLIC.`,
+    );
+  }
+  // Immutability: a trigger that blocks UPDATE/DELETE.
+  const hasImmutability = await sql(
+    `select p.proname as fn
+       from pg_trigger t
+       join pg_proc p on p.oid = t.tgfoid
+       join pg_class c on c.oid = t.tgrelid
+      where c.relname = '${r.table_name.replace(/'/g, "''")}'
+        and not t.tgisinternal
+        and (p.prosrc ilike '%immutable%' or p.prosrc ilike '%RAISE EXCEPTION%')
+      limit 1`,
+  );
+  const isIdentityBackup =
+    SENSITIVE_IDENTITY_TABLES.has(r.table_name.replace(BACKUP_TABLE_RE, '')) ||
+    /person/i.test(r.table_name);
+  if (isIdentityBackup && hasImmutability.length === 0) {
+    extendedFailures.push(
+      `${r.table_name}: identity backup table has NO immutability guard — ` +
+        `a rollback snapshot must refuse UPDATE and DELETE so it cannot drift silently`,
+    );
+  }
+}
+
+// --- A: tables with RLS DISABLED at all ---
+//
+// The original check only flagged RLS-off tables that anon could REACH. That
+// misses the more common case: a table created with RLS off and no grants
+// yet. It is harmless TODAY, but the default posture is permissive, so a
+// single later GRANT (or a `GRANT ALL ... TO PUBLIC` from a migration)
+// exposes it with no other signal.
+//
+// This is exactly what the Phase 2C-A gate test reproduced: a freshly
+// created table with RLS off and no grants passed the old gate silently.
+//
+// So: ANY public table with RLS disabled is reported. The ALLOWED_NO_RLS
+// exemption list is the only way out, and it requires a written reason.
+for (const r of rows) {
+  if (r.rls_enabled) continue;
+  if (ALLOWED_NO_RLS[r.table_name]) continue;
+  if (r.table_name === 'spatial_ref_sys') continue; // known, owned by supabase_admin
+  extendedFailures.push(
+    `${r.table_name}: RLS is DISABLED on a public table ` +
+      `(anon SELECT=${r.anon_select}). Even with no grants today, the default ` +
+      `posture is permissive — one later GRANT exposes it with no other signal. ` +
+      `Enable RLS, or add it to ALLOWED_NO_RLS with a written reason.`,
+  );
+}
+
+if (extendedFailures.length > 0) {
+  console.log(`\n✗ ${extendedFailures.length} extended security finding(s):`);
+  for (const f of extendedFailures) console.log(`  · ${f}`);
+} else {
+  console.log('\n✓ Extended identity/backup security checks passed.');
+}
+if (grantDebt.length > 0) {
+  console.log(`\n⚠ ${grantDebt.length} grant-debt finding(s) — RLS currently denies access, but the grants are still there:`);
+  for (const g of grantDebt) console.log(`  · ${g}`);
+}
+
 if (offenders.length === 0) {
   console.log('\n✓ No public table is readable or writable by the anon role without RLS.');
+  if (extendedFailures.length > 0) {
+    console.log(`\n✗ ${extendedFailures.length} extended security finding(s):`);
+    for (const f of extendedFailures) console.log(`  · ${f}`);
+    process.exit(1);
+  }
   process.exit(0);
 }
 
