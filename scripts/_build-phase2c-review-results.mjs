@@ -48,37 +48,52 @@ const TIER1_APPROVE = '2CB-001..2CB-017';
 const DEFER_IDS = new Set(['2CB-026']);
 
 // Shared-birth-date caveats, preserved on every row that has one.
+//
+// CORRECTED WORDING (2026-07-12, reviewer instruction).
+//
+// The earlier wording claimed "no attribute is shared with the competing
+// person" and "nationalities differ". BOTH CLAIMS ARE FALSE for two of the
+// five cases: Dakota Joshua / Jalen Chatfield and Kiefer Sherwood / Trevor
+// Moore share the nationality USA. Two further cases have no nationality
+// recorded for the competing person at all, so nothing can be said about it.
+//
+// The corrected wording states, per case, exactly which attributes differ and
+// which are shared — no more. Verified against the live branch data
+// (nhl_players rows for both sides):
+//
 const CAVEAT_NOTE = {
   '2CB-019':
-    'Birth date 1996-05-15 is shared with a DIFFERENT person (Jalen Chatfield, USA/CAR). ' +
-    'The date alone would NOT identify this candidate; the identical name plus team (TOR) ' +
-    'and nationality (USA/USA) identify him, and no attribute is shared with the competing person.',
+    'Birth date 1996-05-15 is shared with a DIFFERENT person (Jalen Chatfield, nhl id 8478970). ' +
+    'The date alone would NOT identify this candidate. Nationality is SHARED (both USA); ' +
+    'the names differ (Dakota Joshua vs Jalen Chatfield) and the teams differ (TOR vs CAR).',
   '2CB-021':
-    'Birth date 2001-02-01 is shared with a DIFFERENT person (Juuso Parssinen, FIN/NYR). ' +
-    'The date alone would NOT identify this candidate; the identical name plus team (PIT) ' +
-    'and nationality (RUS) identify him, and no attribute is shared with the competing person.',
+    'Birth date 2001-02-01 is shared with a DIFFERENT person (Juuso Parssinen, nhl id 73019312). ' +
+    'The date alone would NOT identify this candidate. Nationality differs (RUS vs FIN), ' +
+    'the names differ (Egor Chinakhov vs Juuso Parssinen) and the teams differ (PIT vs NYR).',
   '2CB-027':
-    'Birth date 1995-04-28 is shared with a DIFFERENT person (Connor Clifton, -/PIT). ' +
-    'The date alone would NOT identify this candidate; the identical name plus team (VAN) ' +
-    'and nationality (FIN) identify him, and no attribute is shared with the competing person.',
+    'Birth date 1995-04-28 is shared with a DIFFERENT person (Connor Clifton, nhl id 8477365). ' +
+    'The date alone would NOT identify this candidate. The competing nationality is NOT RECORDED, ' +
+    'so no nationality comparison is available; the names differ (Kevin Lankinen vs Connor Clifton) ' +
+    'and the teams differ (VAN vs PIT).',
   '2CB-028':
-    'Birth date 1995-03-31 is shared with a DIFFERENT person (Trevor Moore, USA/LAK). ' +
-    'The date alone would NOT identify this candidate; the identical name plus team (SJS) ' +
-    'and nationality (USA/USA) identify him, and no attribute is shared with the competing person.',
+    'Birth date 1995-03-31 is shared with a DIFFERENT person (Trevor Moore, nhl id 8479675). ' +
+    'The date alone would NOT identify this candidate. Nationality is SHARED (both USA); ' +
+    'the names differ (Kiefer Sherwood vs Trevor Moore) and the teams differ (SJS vs LAK).',
   '2CB-035':
-    'Birth date 1996-10-30 is shared with a DIFFERENT person (Dennis Gilbert, -/OTT). ' +
-    'The date alone would NOT identify this candidate; the identical name plus team (MTL) ' +
-    'and nationality (CAN) identify him, and no attribute is shared with the competing person.',
+    'Birth date 1996-10-30 is shared with a DIFFERENT person (Dennis Gilbert, nhl id 8478502). ' +
+    'The date alone would NOT identify this candidate. The competing nationality is NOT RECORDED, ' +
+    'so no nationality comparison is available; the names differ (Samuel Montembeault vs Dennis Gilbert) ' +
+    'and the teams differ (MTL vs OTT).',
   '2CB-010':
-    'Birth date 1995-12-30 is shared with a DIFFERENT person (Igor Shesterkin, RUS/NYR). ' +
+    'Birth date 1995-12-30 is shared with a DIFFERENT person (Igor Shesterkin). ' +
     'IMMATERIAL to the Tier-1 conclusion — the identical authoritative Highlightly id ' +
-    '(' + '65867627' + ') is the primary evidence and resolves it independently of any date.',
+    '(65867627) is the primary evidence and resolves it independently of any date.',
   '2CB-011':
-    'Birth date 1996-08-19 is shared with a DIFFERENT person (Joey Daccord, USA/SEA). ' +
+    'Birth date 1996-08-19 is shared with a DIFFERENT person (Joey Daccord). ' +
     'IMMATERIAL to the Tier-1 conclusion — the identical authoritative Highlightly id ' +
     '(77595587) is the primary evidence and resolves it independently of any date.',
   '2CB-017':
-    'Birth date 2000-09-25 is shared with a DIFFERENT person (Raphael Lavoie, -/VGK). ' +
+    'Birth date 2000-09-25 is shared with a DIFFERENT person (Raphael Lavoie). ' +
     'IMMATERIAL to the Tier-1 conclusion — the identical authoritative Highlightly id ' +
     '(68815037) is the primary evidence and resolves it independently of any date.',
 };
@@ -186,7 +201,7 @@ const out = sheet.map((r) => {
   row.review_caveats = caveats || origCaveat;
   row.review_caveat_flag = caveats || origCaveat ? 'true' : 'false';
   row.review_outcome = outcome;
-  row.reviewed_by = 'Arnel (independent review)';
+  row.reviewed_by = 'ChatGPT independent review (requested by Arnel)';
   row.review_source = 'docs/identity/phase-2c-review-results — Phase 2C-C human review';
   return row;
 });

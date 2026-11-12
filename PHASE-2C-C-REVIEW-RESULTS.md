@@ -2,7 +2,8 @@
 
 **Date:** 2026-07-12 · **Scope:** review-results preparation — **NO MERGES, NO APPROVALS**
 **Branch:** `grzhurrryimfylvwmeev` · **Production:** not modified
-**Source:** Arnel's independent review of `docs/identity/phase-2c-decision-sheet.csv`.
+**Source:** an independent review of `docs/identity/phase-2c-decision-sheet.csv`,
+**requested by Arnel** and conducted by ChatGPT (see `reviewed_by`).
 
 > **The original decision sheet was NOT modified.** Every row in it still reads
 > `decision = 'pending_human_review'`. This is a **separate** review-results artifact.
@@ -28,7 +29,7 @@
 | `review_caveats` | the explicit caveats, where applicable |
 | `review_outcome` | `recommended_for_approval` · `deferred_pending_cluster_resolution` |
 | `review_caveat_flag` | `true` / `false` |
-| `reviewed_by` | `Arnel (independent review)` |
+| `reviewed_by` | `ChatGPT independent review (requested by Arnel)` |
 | `review_source` | provenance of the review |
 
 ---
@@ -115,9 +116,25 @@ the upstream id resolves it independently of any date — but preserved as an ex
 | **2CB-028** | Kiefer Sherwood | 1995-03-31 | **Trevor Moore** (USA/LAK) |
 | **2CB-035** | Samuel Montembeault | 1996-10-30 | **Dennis Gilbert** (–/OTT) |
 
-**Caveat text carried on each row:** the birth date is shared with a different person; the date
-alone would **not** identify the candidate; the identical name plus team and nationality identify
-him, and **no attribute is shared with the competing person**.
+**Caveat text carried on each row (corrected 2026-07-12):** the birth date is shared with a
+different person; the date alone would **not** identify the candidate; and for each case, exactly
+which attributes differ and which are shared.
+
+| Approval ID | Nationality | Names | Teams |
+|---|---|---|---|
+| 2CB-019 Dakota Joshua / Jalen Chatfield | **SHARED (both USA)** | differ | differ (TOR vs CAR) |
+| 2CB-021 Egor Chinakhov / Juuso Parssinen | differ (RUS vs FIN) | differ | differ (PIT vs NYR) |
+| 2CB-027 Kevin Lankinen / Connor Clifton | **competing nationality NOT RECORDED** | differ | differ (VAN vs PIT) |
+| 2CB-028 Kiefer Sherwood / Trevor Moore | **SHARED (both USA)** | differ | differ (SJS vs LAK) |
+| 2CB-035 Samuel Montembeault / Dennis Gilbert | **competing nationality NOT RECORDED** | differ | differ (MTL vs OTT) |
+
+> **Correction note.** The earlier wording of these five caveats claimed that *no attribute is
+> shared* with the competing person and that *the nationalities differ*. Both claims were wrong for
+> two of the five cases: Dakota Joshua / Jalen Chatfield and Kiefer Sherwood / Trevor Moore **share
+> the nationality USA**, and for Kevin Lankinen / Connor Clifton and Samuel Montembeault /
+> Dennis Gilbert **the competing nationality is not recorded at all**, so nothing can be said about
+> it. The wording above was corrected against the live `nhl_players` rows for both sides of each
+> pair (competing nhl ids 8478970, 73019312, 8477365, 8479675, 8478502).
 
 ### 3.3 The three Tier-1 caveats (also preserved)
 
