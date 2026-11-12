@@ -1135,3 +1135,77 @@ IDENTITY_TARGET_REF=yszheonqyyskkjoxoexk IDENTITY_ALLOW_PRODUCTION=1 \
   node scripts/_branch-sql.mjs scripts/rollback-2c-identity-merge.sql \
     --branch yszheonqyyskkjoxoexk
 ```
+
+---
+
+## 2026-11-12 — Phase 3: person slugs + `person_aliases` (unified profile)
+
+Applied directly via the Supabase Management API against
+**production** (`yszheonqyyskkjoxoexk`).
+
+Authorized by Arnel Larracas 2026-11-12 — "the unified /profile/ architecture
+is approved. Move into implementation."
+
+| File | Applied to prod | Notes |
+|---|---|---|
+| `2026-11-12_person_identity_phase3_slugs_aliases.sql` | ✅ | assigns `persons.slug` + `persons.public_id`, populates `person_aliases` |
+
+**Result:** 11,405 slugs · 11,405 public_ids · 11,386 canonical aliases ·
+0 obsolete aliases · 0 account-username clashes · 0 merged-away persons
+holding a slug.
+
+### The four approved requirements, as implemented
+
+1. **Merged identity handling.** A merged-away person (`identity_state='merged'`)
+   gets **no** slug and **no** public_id — only survivors get a canonical
+   profile. The survivor's slug comes from its own name, so a merged pair
+   resolves to ONE URL with TWO source records (verified live:
+   `/profile/thatcher-demko` renders 2 roles + 2 source records under one
+   canonical). The obsolete path of a merged-away person is registered as a
+   **non-canonical** alias pointing at the survivor, so the old URL 301s to
+   the surviving canonical URL instead of 404ing.
+
+2. **Account URL protection.** `resolveProfileSlug()` checks
+   `profiles.username` **before** `person_aliases`, so an alias can never
+   override an account URL. The migration also refuses to generate an alias
+   for a slug that collides with a `profiles.username`. **Account-only
+   persons get no alias at all** — their canonical URL IS the account URL,
+   and a second alias would expose a Clerk/test display name
+   (`user_3GSptDg51uRv0n7GwdgajqtTdg0`, `test_fav_1781450750717`) at a public
+   URL. 19 persons affected.
+
+3. **Stable person URLs.** The slug base is the person's **NAME**. It never
+   incorporates team, league, jersey, nationality or position — a player who
+   changes teams keeps their URL forever. A name collision is broken by the
+   person's own source-slug tail when it has one (`connor-brown` →
+   `connor-brown-edm`, matching the slug the player page already uses), else
+   by a short hash of the origin key. `public_id` is `p_` + md5(uuid), so it
+   is stable and name-independent.
+
+4. **Ownership.** `person_claims` was **not** touched. No claim was created.
+   No automatic account ownership was introduced. `managed_profiles` (1 row),
+   `claims` (0 rows) and `profiles` (19 rows) are unchanged.
+
+### Also excluded
+
+- **Test fixtures** (`Test Player`, `Jake Demo Player`) get an opaque
+  `p-<hash>` handle instead of a public URL. The pattern matches a fixture
+  WORD as a whole segment, so a real name like `Testosterone` is unaffected.
+- **`/people/`** was not introduced. The only new URL shape is
+  `/profile/<person-slug>`.
+
+### Rollout state
+
+`PERSON_IDENTITY_ENABLED` is **OFF** in production. It is not set in Vercel,
+so `isPersonIdentityEnabled()` returns false and every existing route
+behaves exactly as it did before. Staging deployments with the flag ON were
+validated on `staging/unified-profile-preview`; the flag is NOT to be turned
+on globally until that validation is accepted.
+
+### Gate 24 — `scripts/_audit-unified-profile.mjs`
+
+14 checks, all PASS against production: no alias shadows a
+`profiles.username` · no canonical alias points at a merged-away person ·
+every obsolete alias points at a survivor · no account-only person has a
+public alias · no alias path exposes an email, a phone number, or a
+test/Clerk id · `person_sources` 11,443 and `person_roles` 11,424 unchanged.
