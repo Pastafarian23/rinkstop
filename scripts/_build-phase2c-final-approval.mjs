@@ -307,7 +307,18 @@ const pkg = included.map((r, i) => {
     );
   }
 
-  // Survivor: the side with more corroborating attributes.
+  // Survivor selection.
+  //
+  // The merge re-points person_sources rows. It NEVER touches the `players`
+  // or `nhl_players` TABLE rows, so the public URL, the slug, the headshot,
+  // the biography and the claimable flag are unaffected either way. VERIFIED
+  // on the staging branch with a real merge (2026-11-12): the players row
+  // still exists, and its slug / claimable / headshot are unchanged.
+  //
+  // Given that, the survivor is chosen on DATA QUALITY: whichever side has
+  // the richer identity attributes, because the survivor's display name and
+  // attributes are what the public person page would show. Ties go to the
+  // `players` side, which owns the canonical public slug.
   const nhlScore =
     (r.nhl_birth_live ? 2 : 0) + (r.nhl_nat_live ? 1 : 0) + (r.nhl_position ? 1 : 0) +
     (r.nhl_team ? 1 : 0) + (r.nhl_jersey ? 1 : 0);
@@ -316,6 +327,10 @@ const pkg = included.map((r, i) => {
     (r.players_team ? 1 : 0) + (r.players_jersey ? 1 : 0) +
     (r.players_highlightly_id ? 2 : 0);
   const survivor = plScore > nhlScore ? 'players' : 'nhl';
+  const survivorRationale =
+    survivor === 'players'
+      ? `players side holds the richer identity (score ${plScore} vs ${nhlScore}) and owns the canonical public slug`
+      : `nhl_players side holds the richer identity (score ${nhlScore} vs ${plScore})`;
 
   const explanation =
     tier === 'T1'
@@ -395,6 +410,10 @@ const pkg = included.map((r, i) => {
     proposed_merged_person_id: survivor === 'players' ? r.nhl_person_id : r.players_person_id,
     survivor_attribute_score: survivor === 'players' ? plScore : nhlScore,
     merged_attribute_score: survivor === 'players' ? nhlScore : plScore,
+    survivor_rationale: survivorRationale,
+    public_listing_unaffected_by_merge:
+      'VERIFIED on staging: the merge re-points person_sources rows only. The players/nhl_players TABLE rows, ' +
+      'their slugs, headshots, bios and the claimable flag are unchanged, so no public URL moves.',
     // narrative
     supporting_evidence: evidence.join(' '),
     conflicting_information: conflicts.join(' ') || 'none identified',
