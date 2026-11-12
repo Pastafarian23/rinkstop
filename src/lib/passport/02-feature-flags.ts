@@ -92,6 +92,31 @@ export const PASSPORT_FLAGS = {
   // Requires PASSPORT_ENABLED (per Workstream 1 Rule 5).
   // Defaults false — production stays unchanged until Arnel enables it.
   REFEREE_TOOLS_ENABLED: false,
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // WS5 — Central person identity (2026-11-12).
+  //
+  // Gates the unified person-identity subsystem: the central `persons`
+  // table plus `person_sources` / `person_roles` / `person_claims` /
+  // `person_aliases`.
+  //
+  // PHASE 0/1 SHIPPED WITH THIS FLAG OFF, DELIBERATELY.
+  //   Phase 0 created the five tables (empty). Phase 1 backfilled 11,443
+  //   people from 6 legacy source tables (players, nhl_players,
+  //   nhl_coaching_staff, team_members, coach_profiles, profiles).
+  //   The data exists; NOTHING reads it yet. Every existing directory route
+  //   still resolves exactly as it did before, so production behavior is
+  //   unchanged.
+  //
+  //   This flag exists so that Phase 3 (alias resolution + the central
+  //   person page) can be switched on deliberately, and switched OFF again
+  //   instantly if anything misbehaves. Do not enable it before Phase 3
+  //   ships its routes and its own audit gate.
+  //
+  //   Read via src/lib/person-identity.ts -> isPersonIdentityEnabled().
+  // Defaults false — production stays unchanged until Arnel enables it.
+  // ─────────────────────────────────────────────────────────────────────────
+  PERSON_IDENTITY_ENABLED: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;

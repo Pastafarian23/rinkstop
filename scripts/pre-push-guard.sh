@@ -417,6 +417,28 @@ else
   echo "[22/22] build-cost gate skipped (no Vercel token)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────
+# Gate 23: PERSON IDENTITY — the central person identity must be
+#            internally consistent, and no legacy source record lost.
+#
+# 2026-11-12 (Arnel authorized Phase 0 + Phase 1): five additive tables
+# (persons, person_sources, person_roles, person_claims, person_aliases)
+# and a backfill of 11,443 people from 6 legacy source tables.
+#
+# The tables are populated but NOTHING reads them yet — the existing
+# directory resolution is untouched. That makes this gate the only
+# tripwire: without it, a future migration could drop or duplicate a
+# mapping and nothing would notice, because no app path depends on it yet.
+#
+# It also asserts the account layer is untouched: profiles, claims,
+# managed_profiles and didit_sessions must keep their exact row counts.
+# ─────────────────────────────────────────────────────────────────────────
+echo "[23/23] auditing central person identity consistency..."
+if ! node scripts/_audit-person-identity.mjs 2>&1 | tail -40; then
+  echo "FAIL: person identity is inconsistent or a source record was lost (see above)"
+  exit 1
+fi
+
 echo ""
 echo "=== ALL GATES PASSED ==="
 echo "Safe to push: git push origin $BRANCH"

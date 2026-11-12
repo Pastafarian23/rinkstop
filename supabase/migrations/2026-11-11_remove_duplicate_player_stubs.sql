@@ -1,4 +1,42 @@
+-- =============================================================================
+-- ⚠️ SUPERSEDED — DO NOT APPLY. Historical file, retained for the record.
+-- =============================================================================
+--
 -- Migration: remove duplicate player stub rows (2026-11-11)
+--
+-- ⚠️⚠️ SUPERSEDED 2026-11-12 BY THE CENTRAL PERSON IDENTITY MIGRATION ⚠️⚠️
+--
+--   Status: NOT APPLIED. Never has been. The `players_dup_backup` table does
+--   not exist in the live database, which proves this migration never ran.
+--
+--   Superseded by:
+--     supabase/migrations/2026-11-12_person_identity_phase0.sql
+--     supabase/migrations/2026-11-12_person_identity_phase1_backfill.sql
+--
+--   WHY IT IS SUPERSEDED:
+--   This migration DELETES 817 player rows. The person-identity migration
+--   achieves the same outcome — one visible person per real human — by
+--   MERGING and ARCHIVING rather than deleting: the duplicate row is
+--   retained and linked to the surviving person via person_sources, so the
+--   mapping stays reversible (a TRUNCATE restores the exact prior state).
+--
+--   Deleting is irreversible on this project's free plan: PITR is disabled
+--   (verified 2026-11-11, `pitr_enabled=false`), so recovery depends on a
+--   Supabase physical backup restored via support. Archiving does not.
+--
+--   It also conflicts with the Phase 1 design: Phase 1 maps EVERY source
+--   row to a person, including the 4,457 name-only stubs. If this migration
+--   deleted 817 of them first, those source rows would have no person and
+--   the backfill would be incomplete.
+--
+--   DECISION (Arnel, 2026-11-11): "Supersede 2026-11-11_remove_duplicate_player_stubs.sql.
+--   Do not apply it or delete its historical migration file. Clearly mark it
+--   as superseded."
+--
+--   The duplicate-resolution work itself is NOT dropped — it moves to
+--   Phase 2 (merging), which requires separate authorization and which
+--   merges on upstream id with corroborating attributes, never on name.
+-- =============================================================================
 --
 -- WHY:
 --   A May 26, 2026 import created 4,493 player rows that contain NOTHING but
