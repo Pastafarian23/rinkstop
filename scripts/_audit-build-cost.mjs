@@ -74,11 +74,31 @@ try {
 
 // Only real builds count. A rollback or a re-deploy of an existing build
 // does not burn build minutes.
+//
+// STAGING / PREVIEW BUILDS DO NOT COUNT (2026-11-12).
+//   The Vercel API returns EVERY deployment for the project, including
+//   `target: 'staging'` previews, `target: 'preview'` branch deploys, and
+//   branch builds that come back with `target: null`. A staging build costs
+//   Vercel money but it does NOT consume the production alias, does NOT
+//   re-prender the live site for real users, and does NOT count toward the
+//   daily push budget that this gate exists to protect.
+//
+//   The bug it caused: the Phase 3 staging validation produced 6 staging
+//   builds in 30 minutes, which pushed the 24h count to 13 and blocked the
+//   production push — with a "commit built more than 1 time" failure for
+//   commits that were NEVER deployed to production. The gate was
+//   penalising exactly the validation work it should have encouraged.
+//
+//   The production target string on this project is 'production'. Anything
+//   else ('staging', 'preview', null) is a branch build.
+const PRODUCTION_TARGET = 'production';
 const builds = [];
 for (const dep of deployments) {
   const b = dep.buildingAt;
   const r = dep.ready;
   if (!b || !r) continue;
+  const target = dep.target ?? null;
+  if (target !== PRODUCTION_TARGET) continue;
   const meta = dep.meta || {};
   builds.push({
     at: b,
