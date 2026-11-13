@@ -66,7 +66,7 @@ export function ClaimIntentPanel({
     statusLine = `Your ${currentTier} tier covers this claim. Confirm to continue.`;
     statusColor = '#14B8A6';
   } else {
-    statusLine = `Confirm to claim — this is free. Upgrade to ${upgradeT ? upgradeT.label : 'a paid plan'} if you want extra tools like photos, lead capture and payments.`;
+    statusLine = `Confirm to claim — this is free. Upgrade to ${upgradeT ? upgradeT.label : 'a paid plan'} if you want extra tools like roster management, payments and analytics.`;
     statusColor = '#14B8A6';
   }
 
@@ -370,7 +370,7 @@ export function parseClaimIntentForClaims(
   //
   // THE TRUTH: claiming is FREE. `LISTING_CLAIMS_PER_TIER` grants
   // `free` → 1 claim and `org_free` → 1 claim. Paid tiers buy TOOLS
-  // (photos, lead capture, payments, multiple workspaces), never the ability
+  // (photos, roster management, payments, multiple workspaces), never the ability
   // to claim.
   const ENTITY_TO_TIER: Record<string, TierName> = {
     rink: 'free',

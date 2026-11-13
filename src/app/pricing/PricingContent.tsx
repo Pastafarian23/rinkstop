@@ -690,7 +690,7 @@ export default function PricingContent({
             <p style={{ margin: '0 0 0.5rem' }}>
               Claiming itself is free on every account — one claim per free account, five on
               Organization Plus. What costs money is the owner tooling that sits behind the claim:
-              lead capture, roster management, and payment collection all start at Organization Plus.
+              roster management, payment collection, and lead management all start at Organization Plus.
               To prevent squatting, RinkStop checks that the claiming account looks like a real
               person or organisation first — a government ID and selfie check, which is also free and
               takes about a minute. Once approved, you keep the claim while your account stays active.

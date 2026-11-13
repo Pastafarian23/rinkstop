@@ -158,7 +158,7 @@ export default function StateProvincePageContent({
           >
             <div style={{ color: textMain, fontSize: '0.9375rem', lineHeight: 1.5 }}>
               <strong style={{ color: red }}>Run a rink or team in {regionName}?</strong>{' '}
-              Claim your listing to get a verified checkmark, lead capture, and direct messages from coaches and parents.
+              Claim your listing for free to edit your details and keep them accurate. Organization Plus adds lead management and roster tools.
             </div>
             <Link
               href={`/claim-your-listing?type=${countryCode === 'CA' ? 'rink' : 'rink'}`}

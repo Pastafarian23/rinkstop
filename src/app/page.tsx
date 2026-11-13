@@ -880,7 +880,7 @@ export default async function Home() {
                 ADD YOUR TEAM, RINK, OR LEAGUE
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
-                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league for free; paid tiers add photos, schedules, contact info, lead capture, and updates.
+                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league for free; paid tiers add photos, schedules, contact info, roster tools, and analytics.
               </p>
             </div>
             <div className="cta-btns">
@@ -906,7 +906,7 @@ export default async function Home() {
               START FREE, UPGRADE WHEN YOU OUTGROW IT
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
-              Every RinkStop account starts with a free claim and free identity verification. Paid tiers add roster tools, lead capture, and analytics — pick one when you need it, not before.
+              Every RinkStop account starts with a free claim and free identity verification. Paid tiers add roster tools, lead management, and analytics — pick one when you need it, not before.
             </p>
           </div>
 
@@ -946,7 +946,7 @@ export default async function Home() {
                 color: '#14B8A6',
                 bg: 'rgba(20,184,166,0.06)',
                 border: 'rgba(20,184,166,0.4)',
-                tagline: 'Verified business listing with contact, lead capture, and analytics.',
+                tagline: 'Verified business listing with contact, roster tools, and analytics.',
                 cta: 'See Business plans',
                 href: '/pricing?for=rink',
                 popular: false,

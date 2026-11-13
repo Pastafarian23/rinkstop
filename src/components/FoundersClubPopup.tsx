@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { formatTierPrice } from '@/lib/pricing';
+import { hasConsentDecision } from '@/lib/consent-state';
 import {
   FOUNDING_PROMO_CODE,
   FOUNDING_PROMO_MAX_REDEMPTIONS,
@@ -41,6 +42,39 @@ const SUPPRESS_PREFIXES = [
 ];
 
 /**
+ * 2026-11-13 (growth sprint): LISTING PAGES DEFERRAL.
+ *
+ * The promo popup is a FULL-SCREEN modal (position:fixed, inset:0, z-index
+ * 1000, backdrop-blur). On a listing page it covered the ENTIRE page —
+ * including the "Claim this rink" CTA, which is the single highest-value
+ * conversion path on the site (852 humans hit /claim-your-listing in 30
+ * days; rink pages carry 70% of organic clicks).
+ *
+ * A first-visit promotional modal is a LOW-intent surface. A listing page
+ * is where the visitor has already decided they care about this rink.
+ * So on `/directory/*` the popup is DEFERRED: the visitor sees the listing
+ * and the free claim opportunity first. The popup still fires on the rest
+ * of the site (homepage, pricing, guides), which is where a first-visit
+ * promo belongs.
+ *
+ * This does not change the promotion configuration (50% off, code, cap) —
+ * only WHERE the popup is allowed to open.
+ */
+const DEFERRED_PREFIXES = ['/directory'];
+
+/**
+ * Delay before the popup opens on pages where it IS allowed.
+ *
+ * 2026-11-13 (growth sprint): the popup used to open on the first paint.
+ * With the cookie consent banner also mounting on first paint, a first-time
+ * visitor saw a full-screen promo modal over a cookie banner over a page
+ * they had not read yet. The delay lets the page render and the visitor
+ * start reading; the modal then interrupts at a moment when they have
+ * seen what the site is.
+ */
+const SHOW_DELAY_MS = 2500;
+
+/**
  * localStorage key for the Founding Member promo popup.
  *
  * CHANGED 2026-11-07 from `rinkstop_founders_popup_seen` to a new key when
@@ -73,40 +107,67 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
       return;
     }
 
-    if (frequency === 'always') {
-      setShowPopup(true);
+    // 2026-11-13 (growth sprint): LISTING PAGES DEFERRAL.
+    // The promo modal is a full-screen overlay. On a listing page it covered
+    // the "Claim this rink" CTA — the highest-value conversion path on the
+    // site. The visitor has already signalled intent by opening a specific
+    // rink, so the listing and the free claim come first, and the promo
+    // waits for a page where it is the primary thing on screen.
+    if (DEFERRED_PREFIXES.some(p => path.startsWith(p))) {
       return;
     }
-    if (frequency === 'once') {
-      // The Founding Member promo popup shows on a first visit.
-      //
-      // Gated on the PROMO key ONLY. The legacy `rinkstop_founders_popup_seen`
-      // key was deliberately NOT consulted: that flag was set by the old
-      // "Get your Hockey Passport" popup, which offered a DIFFERENT deal.
-      // Honouring it would mean every existing visitor — the exact people
-      // this promotion targets — would never see the founding offer.
-      //
-      // Verified in a browser: with the legacy key present and the promo key
-      // absent, the popup was correctly hidden (the visitor already saw the
-      // old offer). Clearing both keys shows the popup with all three facts.
-      let promoSeen: string | null = null;
-      try {
-        promoSeen = localStorage.getItem(PROMO_SEEN_KEY);
-      } catch {
-        // Storage unavailable — show the popup rather than hide the offer.
-      }
-      const hasSeen = promoSeen === 'true';
-      setShowPopup(!hasSeen);
+
+    // 2026-11-13 (growth sprint): CONSENT PRECEDENCE.
+    // The cookie consent banner is a legal prompt; the promo is a
+    // commercial one. A full-screen promo modal opening on top of an
+    // unanswered consent banner is the worst possible first impression, so
+    // the promo waits until consent has been answered.
+    //
+    // A DECLINE counts as answered — the banner is gone either way.
+    if (!hasConsentDecision()) {
       return;
     }
-    if (frequency === 'weekly') {
-      const lastSeen = localStorage.getItem('rinkstop_founders_popup_weekly');
-      const weekMs = 7 * 24 * 60 * 60 * 1000;
-      if (!lastSeen || (Date.now() - parseInt(lastSeen)) >= weekMs) {
+
+    // 2026-11-13 (growth sprint): let the page render before the modal
+    // interrupts. The popup used to open on the very first paint.
+    const timer = window.setTimeout(() => {
+      if (frequency === 'always') {
         setShowPopup(true);
-        localStorage.setItem('rinkstop_founders_popup_weekly', Date.now().toString());
+        return;
       }
-    }
+      if (frequency === 'once') {
+        // The Founding Member promo popup shows on a first visit.
+        //
+        // Gated on the PROMO key ONLY. The legacy `rinkstop_founders_popup_seen`
+        // key was deliberately NOT consulted: that flag was set by the old
+        // "Get your Hockey Passport" popup, which offered a DIFFERENT deal.
+        // Honouring it would mean every existing visitor — the exact people
+        // this promotion targets — would never see the founding offer.
+        //
+        // Verified in a browser: with the legacy key present and the promo key
+        // absent, the popup was correctly hidden (the visitor already saw the
+        // old offer). Clearing both keys shows the popup with all three facts.
+        let promoSeen: string | null = null;
+        try {
+          promoSeen = localStorage.getItem(PROMO_SEEN_KEY);
+        } catch {
+          // Storage unavailable — show the popup rather than hide the offer.
+        }
+        const hasSeen = promoSeen === 'true';
+        setShowPopup(!hasSeen);
+        return;
+      }
+      if (frequency === 'weekly') {
+        const lastSeen = localStorage.getItem('rinkstop_founders_popup_weekly');
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
+        if (!lastSeen || (Date.now() - parseInt(lastSeen)) >= weekMs) {
+          setShowPopup(true);
+          localStorage.setItem('rinkstop_founders_popup_weekly', Date.now().toString());
+        }
+      }
+    }, SHOW_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
   }, [frequency, isSignedIn, isLoaded]);
 
   /**

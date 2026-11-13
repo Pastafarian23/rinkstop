@@ -103,7 +103,7 @@ export function ClaimButton({ href, rinkId, rinkSlug, query, priceTier = 'org_pl
           Kept as a separate muted line so it cannot be read as a price for
           the claim itself (Arnel-flagged 2026-10-30). */}
       <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
-        Optional: {upgradeName} {price}/yr adds photos, hours &amp; lead capture
+        Optional: {upgradeName} {price}/yr adds photos, hours &amp; roster tools
       </span>
     </div>
   );

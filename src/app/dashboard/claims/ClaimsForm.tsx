@@ -3,6 +3,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
+import {
+  FOUNDING_PROMO_MAX_REDEMPTIONS,
+  FOUNDING_PROMO_PERCENT_OFF,
+} from '@/lib/founding-promo';
 
 function formatRelativeTime(d: Date): string {
   const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
@@ -402,8 +406,17 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
           <p style={{ color: '#FFB81C', fontSize: '0.95rem', margin: '0 0 1rem', fontWeight: 600 }}>
             Free claim used — upgrade for more
           </p>
-          <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
+          <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
             You&apos;ve used your 1 free claim. Hockey Passport is {formatTierPrice('verified_identity')}/year (unlimited roles under one identity), Hockey Passport Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Organization Plus is {formatTierPrice('org_plus')}/year (1 listing + team management), Organization Pro is {formatTierPrice('org_pro')}/year (multiple listings + featured placement + reporting), and Organization Enterprise is custom for larger organizations.
+          </p>
+          {/* 2026-11-13 (growth sprint): the Founding Member offer at the
+              upgrade decision point. This is where a user who has already
+              claimed for free is deciding whether to pay for more claims —
+              the offer was not visible here before. */}
+          <p style={{ color: 'rgba(255,184,28,0.85)', fontSize: '0.8125rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
+            New members get {FOUNDING_PROMO_PERCENT_OFF}% off their first year
+            (first {FOUNDING_PROMO_MAX_REDEMPTIONS} members). Your second year renews
+            at the standard price.
           </p>
           <Link
             href={`/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}

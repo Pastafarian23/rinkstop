@@ -36,22 +36,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { CONSENT_STORAGE_KEY, readConsent, type ConsentValue } from '@/lib/consent-state';
 
-type ConsentValue = 'accepted' | 'declined';
-const STORAGE_KEY = 'cookie_consent';
-
-function readConsent(): ConsentValue | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === 'accepted' || v === 'declined') return v;
-    return null;
-  } catch {
-    // localStorage blocked (private mode, quota, etc.). Treat as
-    // un-prompted so the user can still see the banner.
-    return null;
-  }
-}
+const STORAGE_KEY = CONSENT_STORAGE_KEY;
 
 function writeConsent(v: ConsentValue): void {
   if (typeof window === 'undefined') return;
@@ -87,7 +74,16 @@ export default function ConsentBanner() {
         position: 'fixed',
         left: 16,
         right: 16,
-        bottom: 16,
+        // 2026-11-13 (growth sprint): the consent banner used to sit at
+        // bottom:16 with z-index 1000 — it physically covered the
+        // bottom-fixed IntentBanner (z-index 100), so a visitor could
+        // neither read nor dismiss the signup bar. The two stacked on top
+        // of each other at the bottom of the viewport.
+        //
+        // The consent banner now sits ABOVE the IntentBanner (bottom: 84px)
+        // so both are visible and independently dismissible. On short
+        // viewports the media query pulls it back to the bottom.
+        bottom: 84,
         zIndex: 1000,
         background: 'rgba(4,30,66,0.96)',
         color: '#fff',
@@ -104,6 +100,14 @@ export default function ConsentBanner() {
         lineHeight: 1.5,
       }}
     >
+      <style>{`
+        @media (max-width: 700px) {
+          [data-testid="consent-banner"] { bottom: 16px !important; }
+        }
+        @media (max-height: 560px) {
+          [data-testid="consent-banner"] { bottom: 16px !important; }
+        }
+      `}</style>
       <div style={{ flex: '1 1 320px', minWidth: 0 }}>
         <strong style={{ display: 'block', marginBottom: 4, fontSize: 15 }}>
           We use cookies

@@ -1,6 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import {
+  FOUNDING_PROMO_MAX_REDEMPTIONS,
+  FOUNDING_PROMO_PERCENT_OFF,
+} from '@/lib/founding-promo';
 
 interface UpgradePromptProps {
   /** Which pricing tab to send them to */
@@ -64,6 +68,18 @@ export function UpgradePrompt({
       >
         View plans →
       </Link>
+      {/* 2026-11-13 (growth sprint): the Founding Member offer at the actual
+          upgrade decision point. This banner is what a signed-in user sees
+          when they hit a tool their plan does not include — the moment they
+          are deciding whether to pay. Before this, the best incentive we
+          had (50% off the first year) was only visible on the pricing page
+          and a first-visit modal, never here. */}
+      <div style={{ flexBasis: '100%', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45 }}>
+        Claiming is always free — this is for the management tools, not for the
+        claim. New members get {FOUNDING_PROMO_PERCENT_OFF}% off their first year
+        (first {FOUNDING_PROMO_MAX_REDEMPTIONS} members); the second year renews at
+        the standard price.
+      </div>
     </div>
   );
 }

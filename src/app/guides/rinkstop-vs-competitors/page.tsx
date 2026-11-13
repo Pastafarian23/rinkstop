@@ -430,7 +430,7 @@ export default function RinkStopVsCompetitors() {
             lineHeight: 1.7,
           }}
         >
-          <strong style={{ color: '#009650' }}>Worth it.</strong> Organization Plus includes a lead-capture form on your rink page. If that form gets you 3-5 league or tournament inquiries per year, and each inquiry converts to one booking worth $300-$2,000 in ice-time revenue, the listing pays for itself with the first booking. Compared to Yelp&apos;s $360-$720/yr for a general-audience listing, RinkStop&apos;s $99/yr reaches the audience that actually books ice time.
+          <strong style={{ color: '#009650' }}>Worth it.</strong> Every claimed rink page gets a lead-capture form. Organization Plus adds lead management, roster, and payments so you can act on what comes in. If a form gets you 3-5 league or tournament inquiries per year, and each inquiry converts to one booking worth $300-$2,000 in ice-time revenue, the listing pays for itself with the first booking. Compared to Yelp&apos;s $360-$720/yr for a general-audience listing, RinkStop&apos;s $99/yr reaches the audience that actually books ice time.
         </p>
       </section>
 
@@ -641,7 +641,7 @@ export default function RinkStopVsCompetitors() {
             margin: '0 auto 1.5rem',
           }}
         >
-          Search for your rink, team, or player profile and claim it on RinkStop. Verified listings get a checkmark, lead capture form, and featured rotation in their city.
+          Search for your rink, team, or player profile and claim it on RinkStop. Claiming is free. Claimed listings get a contact form so coaches and parents can reach you directly, and Organization Plus adds lead management, roster, and payments.
         </p>
         <Link
           href="/claim-your-listing"

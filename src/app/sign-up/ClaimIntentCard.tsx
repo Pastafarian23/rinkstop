@@ -12,8 +12,8 @@ import { TIERS, formatTierPricePerYear } from '@/lib/pricing';
  * grants `free` → 1 claim and `org_free` → 1 claim. A person or a club can
  * claim one listing with no card on file.
  *
- * What the paid tiers buy is TOOLS (photos, lead capture, payments, multiple
- * team workspaces, reporting) — never the ability to claim.
+ * What the paid tiers buy is TOOLS (photos, roster management, payments,
+ * multiple team workspaces, reporting) — never the ability to claim.
  *
  * So the funnel should show the FREE tier as required, and offer the paid
  * tier as an optional upgrade. The map below is therefore keyed to the free

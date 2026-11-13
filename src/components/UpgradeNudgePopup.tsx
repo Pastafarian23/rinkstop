@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatTierPricePerYear, TIERS, TierName } from '@/lib/pricing';
+import { hasConsentDecision } from '@/lib/consent-state';
+import {
+  FOUNDING_PROMO_MAX_REDEMPTIONS,
+  FOUNDING_PROMO_PERCENT_OFF,
+  foundingPromoFirstYearPrice,
+  foundingPromoRenewalSentence,
+} from '@/lib/founding-promo';
 
 interface UpgradeNudgePopupProps {
   /** When the popup should fire. 'once' = until dismissed; 'weekly' = 7-day cooldown. */
@@ -92,6 +99,16 @@ export default function UpgradeNudgePopup({
       return;
     }
 
+    // 2026-11-13 (growth sprint): CONSENT PRECEDENCE.
+    // This is a full-screen modal (z-index 1001). It must not open over an
+    // unanswered cookie-consent banner — the legal prompt outranks the
+    // commercial one. A DECLINE counts as answered; the banner is gone
+    // either way.
+    if (!hasConsentDecision()) {
+      setLoading(false);
+      return;
+    }
+
     // Cooldown check
     const lastSeen = localStorage.getItem('rinkstop_upgrade_nudge_last_seen');
     if (lastSeen) {
@@ -168,6 +185,22 @@ export default function UpgradeNudgePopup({
 
   // Top 4 features from pricing.ts (single source of truth)
   const features = PROMOTED.features.slice(0, 4);
+
+  // 2026-11-13 (growth sprint): THE FOUNDING OFFER BELONGS HERE.
+  //
+  // The 50%-off Founding Member offer was on the first-visit promo modal,
+  // the pricing page, the sign-up page, and a site-wide header bar. It was
+  // NOT on the surface where a signed-in free user is actually deciding
+  // whether to pay — the post-signup upgrade nudge. That popup showed the
+  // FULL annual price and nothing else, so the best incentive we have was
+  // invisible at the decision point.
+  //
+  // The price shown here is the discounted first-year price computed with
+  // `foundingPromoFirstYearPrice`, which FLOORS in integer cents exactly
+  // like Stripe does. Do NOT use Math.round here — Stripe bills $12.49 for
+  // the $24.99 tier, not $12.50.
+  const fullPriceUsd = PROMOTED.priceUsd;
+  const firstYearPrice = foundingPromoFirstYearPrice(PROMOTED_TIER, fullPriceUsd);
 
   return (
     <div
@@ -269,12 +302,31 @@ export default function UpgradeNudgePopup({
           }}
         >
           <div>
-            <div className="font-sport" style={{ fontSize: '1.75rem', color: '#FFB81C', lineHeight: 1 }}>
-              {formatTierPricePerYear(PROMOTED_TIER)}
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-              Annual plan · priced to stay
-            </div>
+            {firstYearPrice !== null ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                  <div className="font-sport" style={{ fontSize: '1.75rem', color: '#FFB81C', lineHeight: 1 }}>
+                    ${firstYearPrice.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.9375rem', color: 'rgba(255,255,255,0.45)', textDecoration: 'line-through' }}>
+                    {formatTierPricePerYear(PROMOTED_TIER)}
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: 2, lineHeight: 1.4 }}>
+                  First year with Founding Member — {FOUNDING_PROMO_PERCENT_OFF}% off.{' '}
+                  {foundingPromoRenewalSentence()} Only the first {FOUNDING_PROMO_MAX_REDEMPTIONS} new members.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="font-sport" style={{ fontSize: '1.75rem', color: '#FFB81C', lineHeight: 1 }}>
+                  {formatTierPricePerYear(PROMOTED_TIER)}
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                  Annual plan · priced to stay
+                </div>
+              </>
+            )}
           </div>
           <Link
             href={`/pricing?tier=${PROMOTED_TIER}`}
