@@ -379,7 +379,11 @@ async function handleUserCreated(data: ClerkUserPayload) {
     // matched an existing paid profile (rare; reserved for the
     // existing-account-recovery flow). Either way we count it as an
     // account created on this date for funnel reporting.
-    trackFreeAccountCreated(data.id, email, 'fresh');
+    //
+    // AWAITED (2026-11-13): this was fire-and-forget, so the row could be
+    // lost when the serverless function returned. Awaiting guarantees the
+    // registration event is written before the webhook responds.
+    await trackFreeAccountCreated(data.id, email, 'fresh');
     void sendEmail({
       to: email,
       subject: 'Welcome to RinkStop',
@@ -451,8 +455,28 @@ async function handleUserCreated(data: ClerkUserPayload) {
 // WS30 conversion overhaul (2026-10-01, Arnel directive): the top of the
 // acquisition funnel. A fresh Clerk account is the moment we lose track
 // of organic visitors, so logging it is critical for any "traffic →
-// account → claim → paid" report. Best-effort: never block the webhook.
-function trackFreeAccountCreated(userId: string, email: string | null, source: string): void {
+// account → claim → paid" report.
+//
+// 2026-11-13 (conversion assessment): this was fire-and-forget —
+// `void import(...).then(...)` with a `.catch(() => {})` that swallowed
+// every error. In a serverless function the response is returned as soon
+// as the handler resolves, so the dynamic import + insert could be
+// cut off before it ever reached the database. The result was that
+// `free_account_created` was 0 across ALL time even though the webhook
+// was demonstrably creating profile rows (verified live: a signed
+// user.created event produced a profiles row and NO analytics row).
+//
+// That made the registration step of the funnel structurally invisible.
+//
+// Fix: use the statically-imported supabaseAdmin (no dynamic import),
+// AWAIT the insert, and LOG any error instead of swallowing it. The
+// tracking call is awaited by the caller, so the webhook cannot return
+// before the row is written.
+async function trackFreeAccountCreated(
+  userId: string,
+  email: string | null,
+  source: string,
+): Promise<void> {
   try {
     const log = {
       name: 'free_account_created',
@@ -462,19 +486,19 @@ function trackFreeAccountCreated(userId: string, email: string | null, source: s
       ts: new Date().toISOString(),
     };
     console.log('[analytics]', JSON.stringify(log));
-    void import('@/lib/supabase').then(({ supabaseAdmin }) => {
-      const p = supabaseAdmin.from('analytics_events').insert({
-        name: log.name,
-        user_id: log.userId,
-        pathname: log.pathname,
-        props: log.props,
-      });
-      if (p && typeof (p as any).catch === 'function') {
-        (p as any).catch(() => {});
-      }
+    const { error } = await supabaseAdmin.from('analytics_events').insert({
+      name: log.name,
+      user_id: log.userId,
+      pathname: log.pathname,
+      props: log.props,
     });
-  } catch {
-    // ignore
+    if (error) {
+      // LOG, do not swallow. A silent failure here is exactly what made
+      // this event read 0 forever.
+      console.error('[clerk-webhook] free_account_created insert failed:', error.message);
+    }
+  } catch (e) {
+    console.error('[clerk-webhook] free_account_created threw:', e);
   }
 }
 
