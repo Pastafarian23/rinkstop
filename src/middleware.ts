@@ -128,13 +128,23 @@ async function lookupObsoletePersonAlias(
 
   try {
     // Find the non-canonical alias for this path, and the canonical path of
-    // the SAME person. Two round trips would be wasteful, so the canonical
-    // path is fetched in the same request via an embedded resource.
+    // the SAME person. The lookup is two round trips: the obsolete alias
+    // gives us the person id, then that person's canonical alias gives us
+    // the destination.
+    //
+    // 2026-11-12: the embed was `person_aliases!inner(person_id)` — a
+    // SELF-embed. PostgREST rejects it with PGRST200 ("Could not find a
+    // relationship between 'person_aliases' and 'person_aliases'"), so this
+    // function returned null on EVERY request and the middleware 308 never
+    // fired. The page handler's `redirect()` then served a 307 (temporary)
+    // instead — which is exactly what a permanent redirect must not be.
+    // The self-embed also bought nothing: `person_id` is already a column
+    // on the row. A plain `select=person_id` returns it directly.
     const endpoint =
       `${url}/rest/v1/person_aliases` +
       `?path=eq.${encodeURIComponent(path)}` +
       `&is_canonical=eq.false` +
-      `&select=person_id,person_aliases!inner(person_id)` +
+      `&select=person_id` +
       `&limit=1`;
     const res = await fetch(endpoint, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
