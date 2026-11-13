@@ -470,6 +470,32 @@ if ! npx tsx scripts/_audit-unified-profile.mjs 2>&1 | tail -60; then
   exit 1
 fi
 
+# ─────────────────────────────────────────────────────────────────────────
+# Gate 25: OBSOLETE-ALIAS REDIRECTS — the LIVE HTTP behaviour of every
+#            obsolete person-alias path.
+#
+# 2026-11-12: the middleware's PostgREST query used an invalid self-embed,
+# so the intended 308 never fired and the page handler served a 307
+# (temporary). A 307 does not collapse in search engines — which defeats
+# the purpose of the redirect layer.
+#
+# Gate 24 asserts the DATA invariants (every obsolete alias has a
+# survivor, no self-loop, no chain). It cannot assert the STATUS CODE,
+# because the bug lived in the edge middleware's query, not in the data.
+# Only a live HTTP check catches it.
+#
+# This gate hits production, so it only runs when the deploy is live —
+# it is therefore NOT part of the pre-push guard. It is run manually after
+# a deploy, and by the post-deploy cron.
+# ─────────────────────────────────────────────────────────────────────────
+if [ "${VERIFY_LIVE_REDIRECTS:-0}" = "1" ]; then
+  echo "[25/25] verifying live obsolete-alias redirects (308)..."
+  if ! npx tsx scripts/_verify-obsolete-redirects.mjs 2>&1 | tail -40; then
+    echo "FAIL: an obsolete person-alias path does not 308 to its canonical profile (see above)"
+    exit 1
+  fi
+fi
+
 echo ""
 echo "=== ALL GATES PASSED ==="
 echo "Safe to push: git push origin $BRANCH"
