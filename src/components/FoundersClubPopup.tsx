@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { formatTierPrice } from '@/lib/pricing';
-import { hasConsentDecision } from '@/lib/consent-state';
+import { hasConsentDecision, CONSENT_DECIDED_EVENT } from '@/lib/consent-state';
 import {
   FOUNDING_PROMO_CODE,
   FOUNDING_PROMO_MAX_REDEMPTIONS,
@@ -88,7 +88,18 @@ const PROMO_SEEN_KEY = 'rinkstop_founding_promo_seen_v1';
 
 export default function FoundersClubPopup({ frequency = 'once', entityType, entityId }: FoundersClubPopupProps) {
   const [showPopup, setShowPopup] = useState(false);
+  const [consentTick, setConsentTick] = useState(0);
   const { isSignedIn, isLoaded } = useUser();
+
+  // 2026-11-13 (growth sprint): the popup waits for cookie consent to be
+  // ANSWERED before it may open. Without this listener, a visitor who
+  // answered the consent prompt on this page would not see the promotion
+  // until they navigated away and back.
+  useEffect(() => {
+    const onDecided = () => setConsentTick(t => t + 1);
+    window.addEventListener(CONSENT_DECIDED_EVENT, onDecided);
+    return () => window.removeEventListener(CONSENT_DECIDED_EVENT, onDecided);
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -168,7 +179,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
     }, SHOW_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [frequency, isSignedIn, isLoaded]);
+  }, [frequency, isSignedIn, isLoaded, consentTick]);
 
   /**
    * Dismissal. Marks the promo as seen so the visitor is NOT shown it again.

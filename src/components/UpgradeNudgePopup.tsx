@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatTierPricePerYear, TIERS, TierName } from '@/lib/pricing';
-import { hasConsentDecision } from '@/lib/consent-state';
+import { hasConsentDecision, CONSENT_DECIDED_EVENT } from '@/lib/consent-state';
 import {
   FOUNDING_PROMO_MAX_REDEMPTIONS,
   FOUNDING_PROMO_PERCENT_OFF,
@@ -80,6 +80,17 @@ export default function UpgradeNudgePopup({
 }: UpgradeNudgePopupProps) {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [consentTick, setConsentTick] = useState(0);
+
+  // 2026-11-13 (growth sprint): this modal waits for cookie consent to be
+  // ANSWERED. Without this listener, a visitor who answered the consent
+  // prompt on this page would not see the upgrade nudge until they
+  // navigated away and back.
+  useEffect(() => {
+    const onDecided = () => setConsentTick(t => t + 1);
+    window.addEventListener(CONSENT_DECIDED_EVENT, onDecided);
+    return () => window.removeEventListener(CONSENT_DECIDED_EVENT, onDecided);
+  }, []);
 
   useEffect(() => {
     if (disabled) {
@@ -177,7 +188,7 @@ export default function UpgradeNudgePopup({
     return () => {
       cancelled = true;
     };
-  }, [frequency, showOnPaths, disabled]);
+  }, [frequency, showOnPaths, disabled, consentTick]);
 
   const dismiss = () => setShow(false);
 

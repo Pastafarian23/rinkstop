@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { hasConsentDecision, CONSENT_DECIDED_EVENT } from '@/lib/consent-state';
 
 type ViewState =
   | { kind: 'hidden' }                      // not the right surface or dismissed
@@ -70,6 +71,16 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
 
   const { isLoaded, isSignedIn } = useUser();
   const [state, setState] = useState<ViewState>({ kind: 'hidden' });
+  const [consentTick, setConsentTick] = useState(0);
+
+  // 2026-11-13 (growth sprint): re-evaluate when the visitor answers the
+  // consent prompt. Without this the banner stayed hidden until a full
+  // page load, because the effect below only re-runs on auth/path changes.
+  useEffect(() => {
+    const onDecided = () => setConsentTick(t => t + 1);
+    window.addEventListener(CONSENT_DECIDED_EVENT, onDecided);
+    return () => window.removeEventListener(CONSENT_DECIDED_EVENT, onDecided);
+  }, []);
 
   useEffect(() => {
     // 0. Suppress on auth/dashboard/etc. paths. The banner is a signup
@@ -77,6 +88,24 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
     // Use functional state update to avoid redundant re-renders.
     const path = currentPathProp || (typeof window !== 'undefined' ? window.location.pathname : '/');
     if (SUPPRESS_PREFIXES.some(p => path.startsWith(p))) {
+      setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' });
+      return;
+    }
+
+    // 2026-11-13 (growth sprint): CONSENT PRECEDENCE.
+    //
+    // This banner is position:fixed at bottom:0. The cookie consent
+    // banner is also fixed at the bottom. They physically covered each
+    // other: the consent banner (z-index 1000) sat ON TOP of this one
+    // (z-index 100), so a visitor could neither read nor dismiss the
+    // signup bar — and both were competing for the same pixels.
+    //
+    // Rather than trying to position two fixed bars apart (which breaks
+    // at any viewport shorter than the offset), this banner simply
+    // DEFERS while the consent banner is up. The consent banner is a
+    // legal prompt and gets the screen; the signup pitch is commercial
+    // and comes back once consent is answered (accepted OR declined).
+    if (!hasConsentDecision()) {
       setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' });
       return;
     }
@@ -138,7 +167,7 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
       ? { kind: 'anon_returning' }
       : { kind: 'hidden' };
     setState(prev => JSON.stringify(prev) === JSON.stringify(targetState) ? prev : targetState);
-  }, [isLoaded, isSignedIn, currentPathProp]);
+  }, [isLoaded, isSignedIn, currentPathProp, consentTick]);
 
   // (The original spec included a 4-second delay on the first view, but
   // the banner is more useful as a passive surface that appears on the

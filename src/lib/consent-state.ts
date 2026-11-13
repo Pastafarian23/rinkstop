@@ -19,6 +19,27 @@ export type ConsentValue = 'accepted' | 'declined';
 export const CONSENT_STORAGE_KEY = 'cookie_consent';
 
 /**
+ * Fired on `window` when the visitor answers the consent prompt.
+ *
+ * 2026-11-13 (growth sprint): surfaces that DEFER while consent is
+ * pending (the promo modal, the upgrade modal, the IntentBanner) need to
+ * know the moment the decision is made. Without this event they would
+ * stay hidden until the next full page load — so a visitor who clicked
+ * "Accept" would not see the signup banner until they navigated.
+ */
+export const CONSENT_DECIDED_EVENT = 'rinkstop:consent-decided';
+
+/** Announce that a consent decision was recorded. Safe to call repeatedly. */
+export function announceConsentDecision(value: ConsentValue): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new CustomEvent(CONSENT_DECIDED_EVENT, { detail: value }));
+  } catch {
+    // CustomEvent unavailable — the listener will pick it up on next mount.
+  }
+}
+
+/**
  * Returns the recorded consent choice, or null when the visitor has not
  * decided yet (or storage is unavailable).
  *
