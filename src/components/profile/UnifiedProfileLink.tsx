@@ -59,17 +59,32 @@ export async function getCanonicalProfilePath(
 
   const { data: person, error: personError } = await supabaseAdmin
     .from('persons')
-    .select('slug, identity_state')
+    .select('id, slug, identity_state, canonical_person_id')
     .eq('id', (data as any).person_id)
     .maybeSingle();
 
   if (personError || !person) return null;
 
-  // A merged-away person has no profile of its own — the survivor's is
-  // canonical, and the merged-away person's path is an obsolete alias.
-  if ((person as any).identity_state === 'merged') return null;
+  // A merged-away person has no profile of its own — the SURVIVOR's is
+  // canonical. Follow `canonical_person_id` so a merged identity links to
+  // the one surviving profile instead of to nothing.
+  let target = person as any;
+  if (target.identity_state === 'merged') {
+    const survivorId = target.canonical_person_id as string | null;
+    if (!survivorId) return null;
 
-  const slug = (person as any).slug as string | null;
+    const { data: survivor, error: survivorError } = await supabaseAdmin
+      .from('persons')
+      .select('id, slug, identity_state')
+      .eq('id', survivorId)
+      .maybeSingle();
+
+    if (survivorError || !survivor) return null;
+    if ((survivor as any).identity_state === 'merged') return null;
+    target = survivor as any;
+  }
+
+  const slug = target.slug as string | null;
   return slug ? `/profile/${slug}` : null;
 }
 

@@ -164,6 +164,58 @@ function formatCommunityCoach(
 }
 
 /**
+ * Format an `nhl_coaching_staff` row into the shared staff shape.
+ *
+ * WHY A SEPARATE FORMATTER (2026-11-12):
+ *   `nhl_coaching_staff` is a DIFFERENT table from `nhl_players`, with its
+ *   own id space (1–152) and its own columns (`name`, `role`, `season`,
+ *   `nhl_team_id`). It has no `first_name`/`last_name`, no `logo`, no
+ *   `jersey_number`. Reading those rows out of `nhl_players` returns
+ *   nothing, so 152 coaches had a profile link that 404'd.
+ */
+function formatNhlCoachingStaff(c: any, team: any): StaffRecord {
+  const name = c.name || 'Unknown';
+  const [first, ...rest] = name.split(' ');
+  const last = rest.join(' ');
+  return {
+    id: `nhl-${c.id}`,
+    source: 'nhl',
+    first_name: first || null,
+    last_name: last || null,
+    full_name: name,
+    slug: slugifyName(name),
+    position: c.role ?? null,
+    position_abbreviation: null,
+    jersey_number: null,
+    nationality: null,
+    birth_date: null,
+    height_cm: null,
+    weight_kg: null,
+    shoots: null,
+    headshot_url: team?.logo ?? null,
+    is_active: c.end_date == null,
+    role: c.role ?? 'coach',
+    was_player: false,
+    current_team_id: c.nhl_team_id ?? null,
+    current_team_abbreviation: team?.short_name ?? null,
+    current_team_name: team?.name ?? null,
+    current_team_logo: team?.logo ?? null,
+    league_name: team?.league_name ?? 'NHL',
+    teams: team?.name
+      ? {
+          name: team.name,
+          logo_url: team.logo ?? null,
+          league_id: team.league_id ?? 'NHL',
+          leagues: {
+            name: team.league_name ?? 'NHL',
+            slug: (team.league_name ?? 'nhl').toLowerCase(),
+          },
+        }
+      : null,
+  };
+}
+
+/**
  * Load one staff record by its public id.
  *
  * Returns `null` when the id is malformed or no record matches — the caller
@@ -178,6 +230,28 @@ export async function getStaffRecord(id: string): Promise<StaffRecord | null> {
     const rawId = id.replace(/^nhl-/, '');
     const numericId = Number(rawId);
     if (!Number.isFinite(numericId)) return null;
+
+    // `nhl_coaching_staff` is checked FIRST, matching the namespace order
+    // in `getStaffSourceRef`. Its id space is small (1–152) and a coaching
+    // staff id must never resolve against `nhl_players`.
+    const { data: coaching, error: coachingError } = await supabaseAdmin
+      .from('nhl_coaching_staff')
+      .select('id, name, role, season, nhl_team_id, end_date')
+      .eq('id', numericId)
+      .maybeSingle();
+
+    if (!coachingError && coaching) {
+      let team: any = null;
+      if (coaching.nhl_team_id) {
+        const { data: t } = await supabaseAdmin
+          .from('nhl_teams')
+          .select('id, name, short_name, logo, league_id, league_name')
+          .eq('id', String(coaching.nhl_team_id))
+          .maybeSingle();
+        team = t ?? null;
+      }
+      return formatNhlCoachingStaff(coaching, team);
+    }
 
     // `select('*')` — the column set on `nhl_players` has changed before
     // (headshot_url → logo). An explicit list is what broke this route.
@@ -206,7 +280,7 @@ export async function getStaffRecord(id: string): Promise<StaffRecord | null> {
   return formatCommunityCoach(member, tw?.name || null, tw?.short_name || null, tw?.avatar_url || null);
 }
 
-export { formatNhlStaff, formatCommunityCoach, COACH_ROLES };
+export { formatNhlStaff, formatCommunityCoach, formatNhlCoachingStaff, COACH_ROLES };
 
 /**
  * Resolve a staff route id to the (source namespace, source row id) that

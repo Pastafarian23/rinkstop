@@ -461,7 +461,11 @@ fi
 #   - person_sources and person_roles counts are unchanged
 # ─────────────────────────────────────────────────────────────────────────
 echo "[24/24] auditing the unified public profile invariants..."
-if ! node scripts/_audit-unified-profile.mjs 2>&1 | tail -40; then
+# `npx tsx`, not bare `node`: the gate imports src/lib/person-slug.ts and
+# src/lib/unified-profile.ts, and only tsx resolves the tsconfig path
+# aliases. Bare node fails with a module-resolution error that looks like a
+# product bug but is a harness problem.
+if ! npx tsx scripts/_audit-unified-profile.mjs 2>&1 | tail -60; then
   echo "FAIL: the unified profile can shadow an account URL, or the identity data drifted (see above)"
   exit 1
 fi

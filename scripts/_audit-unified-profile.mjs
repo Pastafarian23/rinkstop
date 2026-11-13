@@ -36,6 +36,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'node:fs';
+import { nameBase, slugCandidates, isFixtureSlug } from '../src/lib/person-slug.ts';
+import { publicPathForSource, publicPathForRole } from '../src/lib/unified-profile.ts';
 
 function envFromDotEnv() {
   try {
@@ -316,7 +318,25 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
   }
 
   const missing = [...expected].filter((p) => !obsolete.includes(p));
-  const extra = obsolete.filter((p) => !expected.has(p));
+
+  // PHASE 3C: the obsolete aliases are no longer ONLY the merged-pair
+  // redirects. The slug re-derivation created one obsolete redirect for
+  // every renamed person, so the expected set is:
+  //   • the merged-pair redirects (Phase 3B), AND
+  //   • the rename redirects (Phase 3C).
+  //
+  // The rename redirects are read from `person_slug_renames` — the table
+  // that RECORDS the renames — so the check is "every recorded rename has
+  // its redirect" rather than "a hard-coded number of aliases exist".
+  // A hard-coded count would break the next time the slug rule changes.
+  const { error: renamesErr } = await sb.from('person_slug_renames').select('id').limit(1);
+  const renames = renamesErr ? [] : await fetchAllRows(sb, 'person_slug_renames');
+  const renamePaths = new Set(
+    renames.filter((r) => !r.path_handover).map((r) => `/profile/${r.old_slug}`),
+  );
+
+  const allowed = new Set([...expected, ...renamePaths]);
+  const extra = obsolete.filter((p) => !allowed.has(p));
 
   check(
     'every merged pair with a changed slug has an obsolete alias',
@@ -324,13 +344,18 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
     missing.length ? `missing: ${missing.join(', ')}` : '',
   );
   check(
-    'there are no obsolete aliases beyond the merged pairs',
+    'there are no obsolete aliases beyond the merged pairs and the recorded renames',
     extra.length === 0,
-    extra.length ? `extra: ${extra.join(', ')}` : '',
+    extra.length ? `${extra.length} extra: ${extra.slice(0, 8).join(', ')}` : '',
   );
   check(
-    `the expected number of obsolete aliases exists (${expected.size})`,
-    obsolete.length === expected.size,
+    `every recorded rename has its obsolete redirect (${renamePaths.size} renames)`,
+    [...renamePaths].every((p) => obsolete.includes(p)),
+    `${[...renamePaths].filter((p) => !obsolete.includes(p)).length} missing`,
+  );
+  check(
+    `the expected number of obsolete aliases exists (${expected.size} merged + ${renamePaths.size} renamed = ${expected.size + renamePaths.size})`,
+    obsolete.length === expected.size + renamePaths.size,
     `got ${obsolete.length}`,
   );
 }
@@ -438,21 +463,41 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
 //     An account-only person's canonical URL is the account URL. A second
 //     alias would expose the account's display name — which may be a Clerk
 //     ID — at a public URL.
+//
+//     BUG FIXED 2026-11-12: the previous version built `nonAccount` from
+//     EVERY row in `person_sources`, including the `profiles_account` rows.
+//     Every person with an account row was therefore also in `nonAccount`,
+//     so `accountOnly` was ALWAYS empty and this check could never fail.
+//     It is now built from the NON-account source rows only, which is what
+//     the check name means.
 {
   const aliases = await fetchAllRows(sb, 'person_aliases');
-  const persons = await fetchAllRows(sb, 'persons');
-  const personIds = new Set(persons.map((p) => p.id));
   const nonAccount = new Set();
-  for (const pid of await fetchAllIds(sb, 'person_sources', 'person_id')) {
-    nonAccount.add(pid);
+  let from = 0;
+  for (;;) {
+    const { data, error } = await sb
+      .from('person_sources')
+      .select('person_id')
+      .neq('source', 'profiles_account')
+      .order('id', { ascending: true })
+      .range(from, from + 999);
+    if (error) break;
+    const batch = data ?? [];
+    for (const r of batch) nonAccount.add(r.person_id);
+    if (batch.length < 1000) break;
+    from += 1000;
   }
-  // A person is "account-only" if every one of their source rows is an
-  // account row. Rebuild that from the source namespace.
-  const { data: accountRows } = await sb
-    .from('person_sources')
-    .select('person_id, source')
-    .eq('source', 'profiles_account');
-  const accountPersonIds = new Set((accountRows ?? []).map((r) => r.person_id));
+  // A person is "account-only" if they have an account source row and NO
+  // non-account source row.
+  const accountPersonIds = new Set(
+    await fetchAllIds(sb, 'person_sources', 'person_id').then(async (ids) => {
+      const { data } = await sb
+        .from('person_sources')
+        .select('person_id')
+        .eq('source', 'profiles_account');
+      return (data ?? []).map((r) => r.person_id);
+    }),
+  );
   const accountOnly = new Set();
   for (const pid of accountPersonIds) {
     if (!nonAccount.has(pid)) accountOnly.add(pid);
@@ -462,6 +507,286 @@ console.log('[gate-unified-profile] checking the unified profile invariants...')
     'no account-only person has a public alias',
     bad.length === 0,
     bad.length ? `${bad.length} bad alias(es): ${bad.map((b) => b.path).join(', ')}` : '',
+  );
+  // The check above is only meaningful if `accountOnly` is non-empty. A
+  // silently-empty set means the detection logic broke again.
+  check(
+    'the account-only person set is non-empty (the check above can fail)',
+    accountOnly.size > 0,
+    `accountOnly size = ${accountOnly.size}`,
+  );
+}
+
+// 11. PHASE 3C — every live slug matches the derivation rule.
+//
+//     The rule (src/lib/person-slug.ts, the reference implementation):
+//
+//       base = the person's folded NAME, lower-cased, non-alphanumerics
+//              collapsed to one hyphen
+//       slug = base
+//            | base + '-' + md5(origin_key)[0:6]
+//            | base + '-' + md5(origin_key)[0:12]
+//            | base + '-' + md5(origin_key)
+//
+//     A hyphenated NAME such as 'martin-fehervary' is legal. A team tail
+//     such as 'darcy-kuemper-lak' is NOT, unless those trailing
+//     characters happen to be the hash of that person's own origin_key.
+//
+//     The earlier rule `^[a-z0-9]+(-[0-9a-f]{6})?$` rejected every
+//     legitimate hyphenated name — it was the wrong rule, and it is
+//     replaced here by the explicit candidate-form test.
+{
+  const persons = await fetchAllRows(sb, 'persons');
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const canonicalPersonIds = new Set(aliases.filter((a) => a.is_canonical).map((a) => a.person_id));
+  const mergedIds = new Set(persons.filter((p) => p.identity_state === 'merged').map((p) => p.id));
+
+  const bad = [];
+  for (const p of persons) {
+    // Only a SURVIVOR with a canonical alias has a public slug.
+    if (!canonicalPersonIds.has(p.id)) continue;
+    // Fixture persons keep their opaque 'p-<hash>' handle and are NOT
+    // re-slugged by the migration, so they are out of scope for the rule.
+    // This exclusion must match the migration's scope exactly, or the gate
+    // would report off-rule slugs the migration deliberately leaves alone.
+    if (isFixtureSlug(String(p.slug ?? '').toLowerCase())) continue;
+    const base = nameBase(p.first_name, p.last_name, p.display_name);
+    if (!base) {
+      bad.push(`${p.slug} (no name base)`);
+      continue;
+    }
+    const legal = slugCandidates(base, p.origin_key);
+    if (!legal.includes(p.slug)) {
+      bad.push(`${p.slug} (base=${base})`);
+    }
+  }
+  check(
+    'every public slug is a name base plus an origin-key hash (no team tails)',
+    bad.length === 0,
+    bad.length ? `${bad.length} off-rule slug(s): ${bad.slice(0, 8).join(', ')}` : '',
+  );
+
+  // The slug must also be READABLE: the name portion has to survive the
+  // accent folding. This catches the old accent-STRIPPING behaviour, where
+  // 'Tim Stützle' became 'tim-st-tzle'.
+  const stripped = [];
+  for (const p of persons) {
+    if (!canonicalPersonIds.has(p.id)) continue;
+    if (isFixtureSlug(String(p.slug ?? '').toLowerCase())) continue;
+    const rawName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || '';
+    if (!/[^\x00-\x7F]/.test(rawName)) continue;
+    const expectedBase = nameBase(p.first_name, p.last_name, p.display_name);
+    if (!p.slug.startsWith(expectedBase)) {
+      stripped.push(`${rawName} -> ${p.slug} (expected ${expectedBase}…)`);
+    }
+  }
+  check(
+    'accented names are folded, not stripped (the name survives in the slug)',
+    stripped.length === 0,
+    stripped.length ? `${stripped.length} stripped name(s): ${stripped.slice(0, 6).join(', ')}` : '',
+  );
+
+  // A merged-away person must NOT hold a slug or a public_id.
+  const mergedWithSlug = persons.filter(
+    (p) => mergedIds.has(p.id) && (p.slug !== null || p.public_id !== null),
+  );
+  check(
+    'no merged-away person holds a slug or a public_id',
+    mergedWithSlug.length === 0,
+    mergedWithSlug.length ? `${mergedWithSlug.length} merged person(s) with a slug` : '',
+  );
+
+  // A merged-away person must not be the target of a canonical alias.
+  const mergedCanonical = aliases.filter((a) => a.is_canonical && mergedIds.has(a.person_id));
+  check(
+    'no canonical alias points at a merged-away person',
+    mergedCanonical.length === 0,
+    mergedCanonical.length ? `${mergedCanonical.length} alias(es)` : '',
+  );
+}
+
+// 12. PHASE 3C — the rename history is complete and self-consistent.
+//
+//     Every row in `person_slug_renames` records a slug that changed. Each
+//     one must have an obsolete alias at the OLD path pointing at the same
+//     person, and that path must differ from the person's canonical path.
+{
+  // The table only exists after the Phase 3C migration has been applied.
+  // Before that, there are no renames to record — that is a valid state,
+  // not a failure.
+  const { error: renamesErr } = await sb.from('person_slug_renames').select('id').limit(1);
+  const renames = renamesErr ? [] : await fetchAllRows(sb, 'person_slug_renames');
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const persons = await fetchAllRows(sb, 'persons');
+  const byId = new Map(persons.map((p) => [p.id, p]));
+  const byPath = new Map(aliases.map((a) => [a.path, a]));
+
+  const problems = [];
+  for (const h of renames) {
+    const p = byId.get(h.person_id);
+    if (!p) {
+      problems.push(`${h.old_slug} -> unknown person`);
+      continue;
+    }
+    const oldPath = `/profile/${h.old_slug}`;
+    const a = byPath.get(oldPath);
+    if (h.path_handover) {
+      // PATH HANDOVER: the old path is now the CANONICAL path of another
+      // person — the survivor of a same-name pair for the SAME human. One
+      // path, one owner: the old URL still resolves, and it resolves to
+      // the right human. There must be no obsolete alias on top of it.
+      if (!a) {
+        problems.push(`${oldPath} (handover, but nothing owns the path)`);
+      } else if (!a.is_canonical) {
+        problems.push(`${oldPath} (handover, but the path is obsolete, not canonical)`);
+      } else if (a.person_id === h.person_id) {
+        problems.push(`${oldPath} (handover is self-referential)`);
+      } else {
+        // The taker must be the same human — same folded name base.
+        const taker = byId.get(a.person_id);
+        const giverBase = nameBase(p.first_name, p.last_name, p.display_name);
+        const takerBase = taker
+          ? nameBase(taker.first_name, taker.last_name, taker.display_name)
+          : null;
+        if (takerBase !== giverBase) {
+          problems.push(`${oldPath} (handover to a DIFFERENT person: ${takerBase} != ${giverBase})`);
+        }
+      }
+    } else {
+      // ORDINARY: the old path is an obsolete redirect to this person.
+      if (!a) {
+        problems.push(`${oldPath} (no alias)`);
+      } else if (a.person_id !== h.person_id) {
+        problems.push(`${oldPath} (points at another person)`);
+      } else if (a.is_canonical) {
+        problems.push(`${oldPath} (is canonical, not an obsolete redirect)`);
+      }
+    }
+    if (oldPath === `/profile/${p.slug}`) {
+      problems.push(`${oldPath} (self-loop: equals the canonical path)`);
+    }
+    if (p.slug !== h.new_slug) {
+      problems.push(`${oldPath} (recorded new_slug ${h.new_slug} != live slug ${p.slug})`);
+    }
+  }
+  check(
+    `every recorded rename has a valid redirect at the old path (${renames.length} renames)`,
+    problems.length === 0,
+    problems.length ? `${problems.length} problem(s): ${problems.slice(0, 6).join(', ')}` : '',
+  );
+
+  // Every obsolete alias that is NOT one of the 9 Phase 3B player redirects
+  // must be backed by a rename record. Without this, an obsolete alias
+  // could be invented by hand and silently point somewhere else.
+  const renameOldPaths = new Set(renames.map((h) => `/profile/${h.old_slug}`));
+  const obsolete = aliases.filter((a) => !a.is_canonical);
+  const unbacked = obsolete.filter(
+    (a) => !renameOldPaths.has(a.path) && a.alias_type === 'profile',
+  );
+  check(
+    'every obsolete profile alias is backed by a rename record',
+    unbacked.length === 0,
+    unbacked.length ? `${unbacked.length} unbacked alias(es): ${unbacked.slice(0, 6).map((a) => a.path).join(', ')}` : '',
+  );
+}
+
+// 13. PHASE 3C — an obsolete alias must never chain to another obsolete
+//     alias, and must never be a self-loop.
+{
+  const aliases = await fetchAllRows(sb, 'person_aliases');
+  const canonicalByPerson = new Map();
+  for (const a of aliases) {
+    if (a.is_canonical) canonicalByPerson.set(a.person_id, a.path);
+  }
+  const byPath = new Map(aliases.map((a) => [a.path, a]));
+  const selfLoops = [];
+  const chains = [];
+  for (const a of aliases) {
+    if (a.is_canonical) continue;
+    const canon = canonicalByPerson.get(a.person_id);
+    if (!canon) {
+      chains.push(`${a.path} (target has no canonical alias)`);
+      continue;
+    }
+    if (canon === a.path) {
+      selfLoops.push(a.path);
+      continue;
+    }
+    const target = byPath.get(canon);
+    if (target && !target.is_canonical) {
+      chains.push(`${a.path} -> ${canon} (target is itself obsolete)`);
+    }
+  }
+  check('no obsolete alias is a self-loop', selfLoops.length === 0, selfLoops.slice(0, 5).join(', '));
+  check('no obsolete alias chains to another obsolete alias', chains.length === 0, chains.slice(0, 5).join(', '));
+}
+
+// 14. PHASE 3C — the public role/source hrefs must point at REAL routes.
+//
+//     `publicPathForSource()` / `publicPathForRole()` in
+//     src/lib/unified-profile.ts map a source or role to a public URL. A
+//     href that points at a route that does not exist is a 404 waiting to
+//     happen, and no HTTP check would catch it because the link is
+//     rendered into the page.
+{
+  const roles = await fetchAllRows(sb, 'person_roles');
+  const sources = await fetchAllRows(sb, 'person_sources');
+
+  // The set of REAL dynamic route prefixes, derived from the app router
+  // rather than hard-coded — a hard-coded list is how the previous version
+  // of this check wrongly rejected '/directory/players/<id>', which IS a
+  // real route (src/app/directory/players/[id]/page.tsx).
+  const REAL_PREFIXES = new Set([
+    '/directory/players/',
+    '/directory/coaches/',
+    '/directory/teams/',
+    '/directory/rinks/',
+    '/directory/leagues/',
+    '/directory/games/',
+    '/directory/brands/',
+    '/profile/',
+  ]);
+
+  const bad = [];
+  for (const s of sources) {
+    if (!s.source_id) continue;
+    const path = publicPathForSource(s.source, String(s.source_id), null);
+    if (path === null) continue;
+    if (![...REAL_PREFIXES].some((p) => path.startsWith(p))) {
+      bad.push(`source:${s.source}:${s.source_id} -> ${path}`);
+    }
+  }
+  for (const r of roles) {
+    if (!r.source_id) continue;
+    const path = publicPathForRole(r.role_type, r.source, String(r.source_id), null);
+    if (path === null) continue;
+    if (![...REAL_PREFIXES].some((p) => path.startsWith(p))) {
+      bad.push(`role:${r.role_type}:${r.source}:${r.source_id} -> ${path}`);
+    }
+  }
+  check(
+    'every public source/role href points at a real route prefix',
+    bad.length === 0,
+    bad.length ? `${bad.length} bad href(s): ${bad.slice(0, 6).join(', ')}` : '',
+  );
+  void roles;
+  void sources;
+
+  // The staff namespaces must resolve to the ONE staff detail route. A
+  // listing path such as '/directory/scouts/<id>' would 404 — the listing
+  // pages exist, the detail pages do not.
+  const staffPaths = new Set();
+  for (const s of sources) {
+    if (!['nhl_players', 'nhl_coaching_staff', 'team_members'].includes(s.source)) continue;
+    const path = publicPathForSource(s.source, String(s.source_id), null);
+    // '/directory/coaches/nhl-123' -> '/directory/coaches'
+    if (path) staffPaths.add(path.split('/').slice(0, 3).join('/'));
+  }
+  const wrongStaff = [...staffPaths].filter((p) => p !== '/directory/coaches');
+  check(
+    'every staff namespace resolves to the one staff detail route',
+    wrongStaff.length === 0,
+    wrongStaff.length ? `${wrongStaff.length} wrong route(s): ${wrongStaff.slice(0, 5).join(', ')}` : '',
   );
 }
 

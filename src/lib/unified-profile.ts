@@ -198,6 +198,14 @@ async function fetchAll<T = any>(
  *
  * These are the SAME paths that already exist today. Nothing here creates a
  * new URL shape, and `/people/` does not exist.
+ *
+ * STAFF DETAIL ROUTE
+ *   There is ONE staff detail route — `/directory/coaches/[id]` — and it
+ *   serves coaches, scouts, officials and staff alike (see the ROLE_SEGMENT
+ *   map in that page). The listing pages `/directory/scouts`,
+ *   `/directory/officials` and `/directory/staff` have NO detail route of
+ *   their own, so a link to `/directory/scouts/<id>` is a 404. Every staff
+ *   namespace therefore resolves to `/directory/coaches/<id>`.
  */
 export function publicPathForSource(source: string, sourceId: string, slug: string | null): string | null {
   switch (source) {
@@ -244,9 +252,22 @@ export function publicPathForRole(
     if (source === 'coach_profiles') return null;
     return null;
   }
-  if (roleType === 'scout') return `/directory/scouts/nhl-${sourceId}`;
-  if (roleType === 'official') return `/directory/officials/nhl-${sourceId}`;
-  if (roleType === 'staff' || roleType === 'executive') return `/directory/staff/nhl-${sourceId}`;
+  // Scout / official / staff / executive / referee roles all resolve to the
+  // ONE staff detail route. The listing pages exist; the detail pages do
+  // not. Pointing at a listing path would 404.
+  if (
+    roleType === 'scout' ||
+    roleType === 'official' ||
+    roleType === 'staff' ||
+    roleType === 'executive' ||
+    roleType === 'referee'
+  ) {
+    if (source === 'nhl_players' || source === 'nhl_coaching_staff') {
+      return `/directory/coaches/nhl-${sourceId}`;
+    }
+    if (source === 'team_members') return `/directory/coaches/team-${sourceId}`;
+    return null;
+  }
   return null;
 }
 
@@ -324,21 +345,72 @@ export async function resolveProfileSlug(slug: string): Promise<ProfileResolutio
 }
 
 /**
+ * Resolve a person id to the person whose profile is CANONICAL for it.
+ *
+ *   2026-11-12 (Phase 3C): a merged-away person is not a profile of its
+ *   own — the SURVIVOR's profile is. So every entry point that starts from
+ *   a person id must follow `canonical_person_id` before it does anything
+ *   else. Previously `loadUnifiedPerson()` returned null for a merged row
+ *   and `UnifiedProfileLink` bailed out entirely, which meant a merged
+ *   identity resolved to NOTHING instead of to the one surviving profile.
+ *
+ *   Returns the id of the surviving person, or null when the row is
+ *   missing or the merge pointer is broken.
+ */
+export async function getSurvivorPersonId(personId: string): Promise<string | null> {
+  if (!personId) return null;
+
+  // Follow the pointer at most a few times. A merge chain longer than one
+  // hop would be a data defect; a bounded loop makes that a safe no-op
+  // instead of an infinite one.
+  let currentId = personId;
+  for (let hop = 0; hop < 5; hop++) {
+    const { data, error } = await supabaseAdmin
+      .from('persons')
+      .select('id, identity_state, canonical_person_id')
+      .eq('id', currentId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[unified-profile] survivor lookup failed', error);
+      return null;
+    }
+    if (!data) return null;
+
+    if ((data as any).identity_state !== 'merged') return currentId;
+
+    const next = (data as any).canonical_person_id as string | null;
+    if (!next || next === currentId) return null;
+    currentId = next;
+  }
+  return null;
+}
+
+/**
  * Load a person by its central UUID, with every source record and role.
  *
- * Returns null if the person does not exist, is merged away (a merged-away
- * person has no profile of its own — the survivor's is canonical), or the
- * load fails.
+ * A MERGED-AWAY person resolves to its SURVIVOR's profile (requirement 1:
+ * one merged identity, one profile). The returned record is the survivor's,
+ * so `canonicalPath` is the surviving canonical URL — the caller redirects
+ * the obsolete path there.
+ *
+ * Returns null if the person does not exist, if the merge pointer is
+ * broken, or if the load fails.
  */
 export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson | null> {
   if (!personId) return null;
+
+  // Follow `canonical_person_id` FIRST. A merged-away person has no
+  // profile of its own — the survivor's is canonical.
+  const survivorId = await getSurvivorPersonId(personId);
+  if (!survivorId) return null;
 
   const { data: person, error: personError } = await supabaseAdmin
     .from('persons')
     .select(
       'id, slug, public_id, display_name, first_name, last_name, birth_date, nationality, identity_state',
     )
-    .eq('id', personId)
+    .eq('id', survivorId)
     .maybeSingle();
 
   if (personError) {
@@ -347,16 +419,14 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
   }
   if (!person) return null;
 
-  // A merged-away person is NOT a profile. Its canonical path is the
-  // survivor's. This is the merged-identity rule: one person, one profile.
-  if ((person as any).identity_state === 'merged') return null;
+  const resolvedId = (person as any).id as string;
 
   const [sourceRows, roleRows] = await Promise.all([
     fetchAll<any>((from, to) =>
       supabaseAdmin
         .from('person_sources')
         .select('id, person_id, source, source_id, source_slug, source_name, merged_at')
-        .eq('person_id', personId)
+        .eq('person_id', resolvedId)
         .order('source', { ascending: true })
         .order('source_id', { ascending: true })
         .range(from, to),
@@ -367,7 +437,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
         .select(
           'id, person_id, role_type, role_detail, team_id, league_id, season, jersey_number, position, source, source_id',
         )
-        .eq('person_id', personId)
+        .eq('person_id', resolvedId)
         .order('role_type', { ascending: true })
         .order('source', { ascending: true })
         .range(from, to),
@@ -376,13 +446,17 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
 
   // ── Hydrate the source rows with their public, non-contact attributes ──
   const rsIds = sourceRows.filter((s) => s.source === 'rinkstop_players').map((s) => s.source_id);
-  const nhlIds = sourceRows
-    .filter((s) => s.source === 'nhl_players' || s.source === 'nhl_coaching_staff')
-    .map((s) => s.source_id)
-    .filter((v, i, a) => a.indexOf(v) === i);
+  // The two NHL namespaces are SEPARATE tables with separate id spaces.
+  // `nhl_players.id` is a big integer (8477967); `nhl_coaching_staff.id` is
+  // a small integer (152). They never overlap (verified: 0 of 152 coaching
+  // staff ids exist in nhl_players), so each namespace's ids are read from
+  // its OWN table. Reading coaching-staff ids out of `nhl_players` returns
+  // nothing, which left 152 coaches with no name and no photo.
+  const nhlPlayerIds = sourceRows.filter((s) => s.source === 'nhl_players').map((s) => s.source_id);
+  const nhlStaffIds = sourceRows.filter((s) => s.source === 'nhl_coaching_staff').map((s) => s.source_id);
   const tmIds = sourceRows.filter((s) => s.source === 'team_members').map((s) => s.source_id);
 
-  const [rsRows, nhlRows, tmRows] = await Promise.all([
+  const [rsRows, nhlRows, nhlStaffRows, tmRows] = await Promise.all([
     rsIds.length
       ? fetchAll<any>((from, to) =>
           supabaseAdmin
@@ -395,14 +469,23 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
             .range(from, to),
         )
       : Promise.resolve([] as any[]),
-    nhlIds.length
+    nhlPlayerIds.length
       ? fetchAll<any>((from, to) =>
           supabaseAdmin
             .from('nhl_players')
             // `logo` is the column — NOT `headshot_url`. Selecting a
             // non-existent column fails the WHOLE row with 42703.
             .select('id, full_name, first_name, last_name, logo, position, jersey_number, nationality, birth_date, current_team_name, league_name, role')
-            .in('id', nhlIds)
+            .in('id', nhlPlayerIds)
+            .range(from, to),
+        )
+      : Promise.resolve([] as any[]),
+    nhlStaffIds.length
+      ? fetchAll<any>((from, to) =>
+          supabaseAdmin
+            .from('nhl_coaching_staff')
+            .select('id, name, role, season, nhl_team_id')
+            .in('id', nhlStaffIds)
             .range(from, to),
         )
       : Promise.resolve([] as any[]),
@@ -419,6 +502,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
 
   const rsMap = new Map(rsRows.map((r) => [String(r.id), r]));
   const nhlMap = new Map(nhlRows.map((r) => [String(r.id), r]));
+  const nhlStaffMap = new Map(nhlStaffRows.map((r) => [String(r.id), r]));
   const tmMap = new Map(tmRows.map((r) => [String(r.id), r]));
 
   // ── Team and league names for the roles ──────────────────────────────────
@@ -467,7 +551,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
         if (row.nationality) facts.push({ label: 'Nationality', value: String(row.nationality) });
         if (row.birth_date) facts.push({ label: 'Born', value: String(row.birth_date) });
       }
-    } else if (source === 'nhl_players' || source === 'nhl_coaching_staff') {
+    } else if (source === 'nhl_players') {
       const row = nhlMap.get(sourceId);
       if (row) {
         name =
@@ -480,6 +564,13 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
         if (row.current_team_name) facts.push({ label: 'Team', value: String(row.current_team_name) });
         if (row.league_name) facts.push({ label: 'League', value: String(row.league_name) });
         if (row.role) facts.push({ label: 'Role', value: String(row.role) });
+      }
+    } else if (source === 'nhl_coaching_staff') {
+      const row = nhlStaffMap.get(sourceId);
+      if (row) {
+        name = (row.name as string) ?? name;
+        if (row.role) facts.push({ label: 'Role', value: String(row.role) });
+        if (row.season) facts.push({ label: 'Season', value: String(row.season) });
       }
     } else if (source === 'team_members') {
       const row = tmMap.get(sourceId);
@@ -517,12 +608,14 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
       sourceRows.find((s) => s.source === source && s.source_id === sourceId)?.source_slug ?? null;
     let name: string | null = null;
     if (source === 'rinkstop_players') name = playerDisplayName(rsMap.get(sourceId));
-    else if (source === 'nhl_players' || source === 'nhl_coaching_staff') {
+    else if (source === 'nhl_players') {
       const row = nhlMap.get(sourceId);
       name =
         row?.full_name ||
         [row?.first_name, row?.last_name].filter(Boolean).join(' ').trim() ||
         null;
+    } else if (source === 'nhl_coaching_staff') {
+      name = (nhlStaffMap.get(sourceId)?.name as string) ?? null;
     }
 
     return {
@@ -558,7 +651,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
   const slugValue = (person as any).slug as string | null;
 
   return {
-    id: personId,
+    id: resolvedId,
     slug: slugValue,
     publicId: (person as any).public_id as string | null,
     displayName: (person as any).display_name ?? 'RinkStop user',
@@ -570,7 +663,9 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
     photoUrl,
     sources,
     roles,
-    canonicalPath: slugValue ? `/profile/${slugValue}` : `/profile/${accountUsername ?? cleanFallback(personId)}`,
+    canonicalPath: slugValue
+      ? `/profile/${slugValue}`
+      : `/profile/${accountUsername ?? cleanFallback(resolvedId)}`,
     hasAccount: !!accountUsername,
     accountUsername,
   };
