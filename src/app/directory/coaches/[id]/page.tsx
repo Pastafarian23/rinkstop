@@ -137,6 +137,28 @@ export default async function CoachPage({ params }: Props) {
   // the loader, not by guessing. `getStaffSourceRef` tries both.
   const staffSourceRef = await getStaffSourceRef(id);
 
+  // WS30 conversion (2026-11-13): the coach page fired NO listing_viewed
+  // event, so 11,000+ coach pages were invisible to the conversion funnel
+  // even though the coach pages are one of the largest listing families.
+  // Fire it server-side, matching the rink / player / league pages, so the
+  // funnel does not depend on client JS.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/coaches/${id}`,
+      props: {
+        listing_type: 'coach',
+        listing_id: id,
+        listing_slug: record.full_name ?? null,
+        role: record.role ?? null,
+        team_name: teamName ?? null,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
       <main

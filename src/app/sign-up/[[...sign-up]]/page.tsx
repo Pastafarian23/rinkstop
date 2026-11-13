@@ -24,6 +24,18 @@ import {
 //
 // Safety: same isValidRedirectPath() body as /login. External URLs are silently
 // dropped to /dashboard.
+//
+// 2026-11-13 (conversion assessment): the pricing page sent guests to
+// `/sign-up?next=...`, but this handler only ever read `redirect_url`.
+// The `next` param was silently DROPPED, so a guest who clicked a paid
+// tier on /pricing signed up and landed on /dashboard — losing the tier,
+// the upgrade intent, and the Founding Member discount they had chosen.
+// Verified live: `/sign-up?next=/pricing?tier=verified_identity&intent=upgrade`
+// rendered `forceRedirectUrl: "/dashboard"`.
+//
+// Fix: accept `next` as an alias for `redirect_url`. Both names are now
+// honoured, and `redirect_url` wins when both are present (it is the
+// older, more specific contract used by /login and the claim flow).
 function isValidRedirectPath(p: string | null | undefined): p is string {
   if (!p || typeof p !== 'string') return false;
   if (!p.startsWith('/')) return false;          // must be relative
@@ -37,10 +49,12 @@ export default async function SignUpPage({
   searchParams,
 }: {
   // Next.js 14+: searchParams is a Promise. Await it.
-  searchParams: Promise<{ redirect_url?: string; intent?: string; entity?: string; id?: string; name?: string; tier?: string; upgrade?: string; source?: string }>;
+  searchParams: Promise<{ redirect_url?: string; next?: string; intent?: string; entity?: string; id?: string; name?: string; tier?: string; upgrade?: string; source?: string }>;
 }) {
   const sp = await searchParams;
-  const requested = sp?.redirect_url;
+  // `redirect_url` is the established contract (used by /login and the claim
+  // flow); `next` is the alias the pricing page has always sent. Accept both.
+  const requested = sp?.redirect_url ?? sp?.next;
   const safeRedirect = isValidRedirectPath(requested) ? requested : '/dashboard';
 
   // Phase 2: detect claim-intent deep links. When a user lands here from

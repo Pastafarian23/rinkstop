@@ -31,10 +31,14 @@ export default async function LoginPage({
   searchParams,
 }: {
   // Next.js 14+: searchParams is a Promise. Await it.
-  searchParams: Promise<{ redirect_url?: string }>;
+  searchParams: Promise<{ redirect_url?: string; next?: string }>;
 }) {
   const sp = await searchParams;
-  const requested = sp?.redirect_url;
+  // 2026-11-13: accept `next` as an alias for `redirect_url`. The pricing
+  // page sends guests to `/sign-up?next=...`; without this alias the guest's
+  // chosen tier + upgrade intent + Founding Member discount were dropped and
+  // they landed on /dashboard after authenticating.
+  const requested = sp?.redirect_url ?? sp?.next;
   const safeRedirect = isValidRedirectPath(requested) ? requested : '/dashboard';
 
   // Preserve redirect_url across the sign-in → sign-up round trip.

@@ -26,6 +26,16 @@ export const dynamic = 'force-dynamic';
 const COUNTED_EVENTS = [
   'homepage_search',
   'directory_search',
+  // 2026-11-13 (conversion assessment): the DIRECTORY search bar
+  // (CategorySearchBar, used on /directory/teams, /directory/leagues,
+  // /directory/rinks, /directory/players, /directory/free-agents) fires
+  // `search_query` — NOT `directory_search`. `directory_search` is only
+  // emitted by the CommandPalette/SearchBar island. So the snapshot was
+  // summing two event names that the directory never emits, and reading
+  // `searches_total: 0` every single day while 99 real directory
+  // searches happened. Counting `search_query` makes the snapshot
+  // reflect actual events.
+  'search_query',
   'listing_viewed',
   'tool_viewed',
   'calculator_used',
@@ -47,6 +57,7 @@ type CountedEvent = (typeof COUNTED_EVENTS)[number];
 const EVENT_COLUMN: Record<CountedEvent, string> = {
   homepage_search: 'searches_total',
   directory_search: 'searches_total',
+  search_query: 'searches_total',
   listing_viewed: 'listing_views_total',
   tool_viewed: 'tool_views',
   calculator_used: 'calculator_used',
@@ -85,24 +96,31 @@ export async function GET(req: NextRequest) {
   const dayEnd = new Date(today + 'T23:59:59.999Z');
 
   // Single query: group by event name for the day.
-  const { data, error } = await supabaseAdmin
-    .from('analytics_events')
-    .select('name')
-    .gte('ts', dayStart.toISOString())
-    .lte('ts', dayEnd.toISOString())
-    .in('name', [...COUNTED_EVENTS]);
-
-  if (error) {
-    return NextResponse.json({ ok: false, msg: error.message }, { status: 500 });
-  }
-
+  //
+  // 2026-11-13: this query had NO pagination. PostgREST caps every
+  // response at 1,000 rows, so on any day with more than 1,000 tracked
+  // events the result was silently truncated — the snapshot then
+  // reported a plausible-but-wrong number instead of the truth. Paginate
+  // explicitly, and use `count: 'exact'` per event name instead of
+  // counting rows, which is both exact and far cheaper.
   const counts: Record<CountedEvent, number> = Object.fromEntries(
     COUNTED_EVENTS.map((e) => [e, 0])
   ) as Record<CountedEvent, number>;
 
-  for (const row of data ?? []) {
-    const ev = row.name as CountedEvent;
-    if (counts[ev] !== undefined) counts[ev] += 1;
+  for (const ev of COUNTED_EVENTS) {
+    const { count, error: countErr } = await supabaseAdmin
+      .from('analytics_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('name', ev)
+      .gte('ts', dayStart.toISOString())
+      .lte('ts', dayEnd.toISOString());
+    if (countErr) {
+      return NextResponse.json(
+        { ok: false, msg: `count failed for ${ev}: ${countErr.message}` },
+        { status: 500 },
+      );
+    }
+    counts[ev] = count ?? 0;
   }
 
   // Build the row from counts using EVENT_COLUMN.

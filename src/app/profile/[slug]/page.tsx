@@ -10,6 +10,7 @@ import {
   type UnifiedPerson,
 } from '@/lib/unified-profile';
 import UnifiedPersonProfile from '@/components/profile/UnifiedPersonProfile';
+import ProfileClaimCta from '@/components/profile/ProfileClaimCta';
 import { getTierLabel } from '@/lib/pricing';
 import { TierBadge } from '@/components/TierBadge';
 import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
@@ -309,7 +310,43 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
     if (person.canonicalPath !== `/profile/${slug}`) {
       permanentRedirect(person.canonicalPath);
     }
-    return <UnifiedPersonProfile person={person} />;
+
+    // WS30 conversion (2026-11-13): the unified profile is the SECOND
+    // step of the funnel (search → profile view → claim CTA → claim
+    // submitted), exactly like the directory listing pages. It fired no
+    // listing_viewed event at all, so all 11,386 canonical profile pages
+    // were invisible to the funnel and could not be measured. Fire it
+    // server-side so it does not depend on client JS — the same pattern
+    // the rink / player / league pages use.
+    //
+    // `listing_type: 'person'` distinguishes the unified profile from
+    // the directory player page (`listing_type: 'player'`), which is a
+    // different surface with a different CTA set.
+    try {
+      const { trackEvent } = await import('@/lib/analytics');
+      await trackEvent({
+        name: 'listing_viewed',
+        pathname: `/profile/${slug}`,
+        props: {
+          listing_type: 'person',
+          listing_slug: slug,
+          listing_id: person.id,
+          canonical_path: person.canonicalPath,
+          role_count: person.roles.length,
+          source_count: person.sources.length,
+          has_account: person.hasAccount,
+        },
+      });
+    } catch {
+      // never block the page on tracking
+    }
+
+    return (
+      <>
+        <UnifiedPersonProfile person={person} />
+        <ProfileClaimCta person={person} />
+      </>
+    );
   }
 
   const data = await fetchProfile(slug);

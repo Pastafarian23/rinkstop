@@ -36,6 +36,7 @@ import RinkPageTabs from '@/components/rink/RinkPageTabs';
 import RinkGeoIntro from '@/components/rink/RinkGeoIntro';
 import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
 import RinkEventsTab from '@/components/events/RinkEventsTab';
+import ClaimCtaLink from '@/components/ClaimCtaLink';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -1748,8 +1749,13 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             Takes about 2 minutes to start.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', marginTop: '0.25rem' }}>
-            <Link
+            <ClaimCtaLink
               href={`/claim-your-listing?type=rink&id=${encodeURIComponent(rink.id)}`}
+              label="Claim this rink →"
+              entityType="rink"
+              entityId={rink.id}
+              entitySlug={rink.slug}
+              ctaLocation="rink_claim_banner"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1763,9 +1769,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 letterSpacing: '0.02em',
                 textDecoration: 'none',
               }}
-            >
-              Claim this rink →
-            </Link>
+            />
             <Link
               href={`/directory/rinks/${rink.slug}/edit`}
               style={{

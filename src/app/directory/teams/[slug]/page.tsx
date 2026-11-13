@@ -615,6 +615,28 @@ export default async function PublicTeamPage({ params }: PageProps) {
   }
   const teamJsonLdString = JSON.stringify(teamJsonLd).replace(/</g, '\\u003c');
 
+  // WS30 conversion (2026-11-13): the team page fired NO listing_viewed
+  // event, so 33,100 views in 30 days — 20% of all listing traffic — were
+  // invisible to the conversion funnel. Fire it server-side, matching the
+  // rink / player / league / coach pages.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/teams/${slug}`,
+      props: {
+        listing_type: 'team',
+        listing_id: team.id,
+        listing_slug: team.slug,
+        city: team.home_city ?? null,
+        country: team.home_country ?? null,
+        is_active: team.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
       {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}
