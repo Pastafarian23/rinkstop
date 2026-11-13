@@ -1,5 +1,6 @@
 import { SignIn } from '@clerk/nextjs';
 import { signInAppearance } from '@/lib/clerk-appearance';
+import { ClaimIntentCard, parseClaimIntent } from '../../sign-up/ClaimIntentCard';
 import styles from '../login.module.css';
 
 // Login page (Phase 4.2, 2026-06-16): preserve the user's intended destination
@@ -58,9 +59,41 @@ export default async function LoginPage({
     ? `/sign-up?redirect_url=${encodeURIComponent(safeRedirect)}`
     : '/sign-up';
 
+  // 2026-11-13 (growth sprint): an existing user who clicks "Claim it free"
+  // and then "Sign in" arrives here. The page used to say only "Welcome
+  // back — sign in to save players, track favorites, and unlock your
+  // dashboard", so the user had no idea they were signing in TO CLAIM A
+  // LISTING. The claim intent (entity type, id, name) is in the
+  // redirect_url, so we parse it and show the same context the sign-up
+  // page shows.
+  const claimIntent = parseClaimIntent(
+    (sp as Record<string, string | string[] | undefined> | undefined) ?? undefined,
+  );
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
+        {claimIntent ? (
+          <div style={{ padding: '1.25rem 1.5rem 0' }}>
+            <ClaimIntentCard
+              entity={claimIntent.entity}
+              entityName={claimIntent.entityName}
+              tier={claimIntent.tier}
+              upgradeTier={claimIntent.upgradeTier}
+            />
+            <div
+              style={{
+                marginTop: '-0.5rem',
+                marginBottom: '1.25rem',
+                fontSize: '0.8125rem',
+                color: 'rgba(255,255,255,0.65)',
+                lineHeight: 1.5,
+              }}
+            >
+              Sign in and we&rsquo;ll take you straight to this claim.
+            </div>
+          </div>
+        ) : null}
         <div className={styles.clerkWrap}>
           <SignIn
             path="/login"

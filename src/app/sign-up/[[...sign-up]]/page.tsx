@@ -1,4 +1,5 @@
 import { SignUp } from '@clerk/nextjs';
+import Link from 'next/link';
 import { signInAppearance } from '@/lib/clerk-appearance';
 import styles from '../../login/login.module.css';
 import { ClaimIntentCard, parseClaimIntent } from '../ClaimIntentCard';
@@ -130,6 +131,29 @@ export default async function SignUpPage({
               tier={claimIntent.tier}
               upgradeTier={claimIntent.upgradeTier}
             />
+            {/* 2026-11-13 (growth sprint): the anonymous claim CTA now lands
+                HERE (not /login), because a first-time claimant has no
+                account. Existing users need a visible way to resume the same
+                claim journey — Clerk's own "Sign in" link drops the
+                redirect_url, so we render one that preserves it. */}
+            <div
+              style={{
+                marginTop: '-0.5rem',
+                marginBottom: '1.25rem',
+                fontSize: '0.8125rem',
+                color: 'rgba(255,255,255,0.65)',
+                lineHeight: 1.5,
+              }}
+            >
+              Already have a RinkStop account?{' '}
+              <Link
+                href={`/login?redirect_url=${encodeURIComponent(safeRedirect)}`}
+                style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}
+              >
+                Sign in
+              </Link>{' '}
+              instead — you&rsquo;ll continue straight to your claim.
+            </div>
           </div>
         ) : null}
         <div className={styles.clerkWrap}>

@@ -17,12 +17,12 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 export const metadata: Metadata = {
   title: { absolute: 'Claim Your Listing on RinkStop' },
   description:
-    "Search for your rink or team's RinkStop listing and claim it. Claiming and verification are free; lead capture is an Organization Plus feature.",
+    "Search for your rink or team's RinkStop listing and claim it. Claiming and verification are free; roster and lead management tools start at Organization Plus.",
   alternates: { canonical: 'https://rinkstop.com/claim-your-listing' },
   robots: { index: true, follow: true },
   openGraph: withDefaultOg({
     title: 'Claim Your Listing on RinkStop',
-    description: "Search for your rink or team and claim your listing. Claiming and verification are free; lead capture is an Organization Plus feature.",
+    description: "Search for your rink or team and claim your listing. Claiming and verification are free; roster and lead management tools start at Organization Plus.",
     url: 'https://rinkstop.com/claim-your-listing',
     siteName: 'RinkStop',
     type: 'website',
@@ -75,7 +75,7 @@ type ClaimType = 'rink' | 'team' | 'player';
 const HEADER_COPY: Record<ClaimType, { eyebrow: string; sub: string; placeholder: string; bannerLabel: string; bannerPrice: string }> = {
   rink: {
     eyebrow: 'For Rink Operators',
-    sub: 'Search for your rink below. Claiming is free — verification is also free for every profile type. Upgrade to Organization Plus ($99/yr) only if you want lead capture, photos, hours, and other tools.',
+    sub: 'Search for your rink below. Claiming is free — verification is also free for every profile type. Upgrade to Organization Plus ($99/yr) only if you want roster management, payments, and other tools.',
     placeholder: 'Type your rink name or city…',
     bannerLabel: 'Rink operators',
     bannerPrice: 'a free verified business profile',
@@ -907,7 +907,14 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
         </Link>
         {!alreadyClaimed && !pending && !isSelfManaged && (
           <ClaimButton
-            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?intent=claim&entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}&tier=free`)}`}
+            // 2026-11-13 (growth sprint): anonymous claimers go to /sign-up,
+            // not /login. A visitor who has never claimed has no account, so
+            // "Sign in" was the wrong door. /sign-up renders the
+            // ClaimIntentCard (listing name + "Claiming rink") above the form
+            // and carries the full claim destination in redirect_url, so the
+            // entity type, id and name survive. Existing users still reach
+            // the same flow via the "Sign in" link on the sign-up page.
+            href={`/sign-up?redirect_url=${encodeURIComponent(`/dashboard/claims?intent=claim&entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}&tier=free`)}`}
             rinkId={rink.id}
             rinkSlug={rink.slug}
             query={query}

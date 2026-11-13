@@ -82,10 +82,27 @@ export default function ClaimThisListing({
   state: ClaimCtaState;
 }) {
   // The single canonical claim destination. All 5 states link here, either
-  // directly (already signed in) or via /login?redirect_url= (signed out).
+  // directly (already signed in) or via the auth page (signed out).
   // `intent=claim` is detected by /sign-up to render the price tier card
   // before the user creates an account. See src/app/sign-up/ClaimIntentCard.tsx.
   const claimDestination = `/dashboard/claims?intent=claim&entity=${entityType}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}&source=${entityType}&tier=${DEFAULT_TIER_BY_ENTITY[entityType]}`;
+
+  // 2026-11-13 (growth sprint): a visitor with NO account was sent to
+  // /login — a sign-in form — before they ever saw the claim form. They
+  // do not have an account, so "Sign in" was the wrong door, and the
+  // claim context was dropped on the login screen (which says only
+  // "Welcome back — sign in to save players and track favorites").
+  //
+  // A visitor claiming a listing for the first time is a NEW user. So
+  // the signed-out CTA now goes to /sign-up, where ClaimIntentCard
+  // renders the listing name and "Claiming {rink|team|…}" ABOVE the form.
+  // The full claim destination (entity type, entity id, entity name,
+  // tier) travels in the redirect_url, so nothing is lost.
+  //
+  // Existing users still have a path: the sign-up page shows a "Sign in
+  // instead" link, and /login accepts the same redirect_url, so they
+  // resume the identical claim journey.
+  const authDestination = `/sign-up?redirect_url=${encodeURIComponent(claimDestination)}`;
 
   const noun = entityType; // "rink", "team", "league", "player"
   const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -178,12 +195,28 @@ export default function ClaimThisListing({
           </div>
         </div>
         <Link
-          href={`/login?redirect_url=${encodeURIComponent(claimDestination)}`}
+          href={authDestination}
           style={ctaStyle}
           onClick={() => fireCtaClick(entityType, entityId)}
         >
-          Sign in to claim — it's free
+          Claim it free — create your account →
         </Link>
+        <div
+          style={{
+            fontSize: '0.75rem',
+            color: 'rgba(255,255,255,0.55)',
+            lineHeight: 1.5,
+          }}
+        >
+          Claiming is free and needs no card. Already have an account?{' '}
+          <Link
+            href={`/login?redirect_url=${encodeURIComponent(claimDestination)}`}
+            style={{ color: '#FFB81C', textDecoration: 'underline' }}
+          >
+            Sign in
+          </Link>{' '}
+          and we&rsquo;ll pick up right where you left off.
+        </div>
       </div>
     );
   }
@@ -199,7 +232,7 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={descriptionStyle}>
-              Claim it now — claiming is free. Hockey Passport ({formatTierPrice('verified_identity')}/yr) adds the Hockey Passport, payments, and messaging. Paid org tiers like Organization Pro (up to 150 players) and Organization Elite (multiple listings) add more claims and org tools.
+              Claiming is free and always will be. Paid plans add tools on top — Organization Plus ({formatTierPrice('org_plus')}/yr) adds roster, payments, and lead management; Hockey Passport ({formatTierPrice('verified_identity')}/yr) adds the verified badge and passport.
             </div>
           </div>
         </div>
@@ -267,7 +300,7 @@ export default function ClaimThisListing({
             Own or run {entityName}?
           </div>
           <div style={descriptionStyle}>
-            Claim this listing to edit the details, post schedule updates, respond to reviews, and unlock the lead-capture form. We review claims within 2 business days.
+            Claim this listing to edit the details, post schedule updates, and respond to reviews. We review claims within 2 business days.
           </div>
         </div>
       </div>
