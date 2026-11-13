@@ -128,51 +128,44 @@ async function lookupObsoletePersonAlias(
 
   try {
     // Find the non-canonical alias for this path, and the canonical path of
-    // the SAME person. The lookup is two round trips: the obsolete alias
-    // gives us the person id, then that person's canonical alias gives us
-    // the destination.
+    // the SAME person.
     //
-    // 2026-11-12: the embed was `person_aliases!inner(person_id)` — a
-    // SELF-embed. PostgREST rejects it with PGRST200 ("Could not find a
-    // relationship between 'person_aliases' and 'person_aliases'"), so this
-    // function returned null on EVERY request and the middleware 308 never
-    // fired. The page handler's `redirect()` then served a 307 (temporary)
-    // instead — which is exactly what a permanent redirect must not be.
-    // The self-embed also bought nothing: `person_id` is already a column
-    // on the row. A plain `select=person_id` returns it directly.
+    // 2026-11-12: the lookup was TWO round trips — the obsolete alias gave
+    // the person id, then a second query found that person's canonical
+    // alias. Under load the pair of 500ms timeouts was regularly exceeded,
+    // and a timeout returned null, which handed the request to the page
+    // handler's fallback redirect (a 307). The canonical path of a person
+    // is ALWAYS `/profile/<persons.slug>` — verified across all 919
+    // obsolete aliases with zero mismatches — so one query with an embed
+    // is enough. That halves the round trips and the timeout exposure.
+    //
+    // The earlier `person_aliases!inner(person_id)` self-embed was invalid
+    // (PostgREST PGRST200: "Could not find a relationship between
+    // 'person_aliases' and 'person_aliases'") and made this function
+    // return null on EVERY request, so the middleware 308 never fired at
+    // all. The embed below is a REAL foreign key — person_aliases.person_id
+    // -> persons.id — and is verified to return HTTP 200.
     const endpoint =
       `${url}/rest/v1/person_aliases` +
       `?path=eq.${encodeURIComponent(path)}` +
       `&is_canonical=eq.false` +
-      `&select=person_id` +
+      `&select=person_id,persons!inner(slug)` +
       `&limit=1`;
     const res = await fetch(endpoint, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(500),
+      signal: AbortSignal.timeout(1000),
     });
     if (!res.ok) return null;
-    const rows = (await res.json()) as Array<{ person_id: string }>;
+
+    const rows = (await res.json()) as Array<{ person_id: string; persons: { slug: string } | null }>;
     if (rows.length === 0) return null;
 
-    const personId = rows[0].person_id;
+    const slug = rows[0].persons?.slug;
+    if (!slug) return null;
 
-    // Now find that person's CANONICAL path.
-    const canonicalEndpoint =
-      `${url}/rest/v1/person_aliases` +
-      `?person_id=eq.${encodeURIComponent(personId)}` +
-      `&is_canonical=eq.true` +
-      `&select=path&limit=1`;
-    const canonicalRes = await fetch(canonicalEndpoint, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(500),
-    });
-    if (!canonicalRes.ok) return null;
-    const canonicalRows = (await canonicalRes.json()) as Array<{ path: string }>;
-    if (canonicalRows.length === 0) return null;
-
-    const canonicalPath = canonicalRows[0].path;
+    const canonicalPath = `/profile/${slug}`;
     // Guard against a self-redirect (would be an infinite loop).
-    if (!canonicalPath || canonicalPath === path) return null;
+    if (canonicalPath === path) return null;
     return canonicalPath;
   } catch (e) {
     console.error('[middleware] obsolete person alias lookup failed:', e);

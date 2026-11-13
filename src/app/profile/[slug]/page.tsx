@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 import { isIdentityVerified, isIdentityVerifiedFromProfile } from '@/lib/identity-verified';
 import {
   resolveProfileSlug,
@@ -298,8 +298,16 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
     const person: UnifiedPerson = resolution.person;
     // An obsolete alias (a merged-away person's old URL) redirects to the
     // surviving canonical URL. Permanent, so search engines collapse it.
+    //
+    // 2026-11-12: this used `redirect()`, which is a 307 (TEMPORARY).
+    // The middleware normally serves the 308 for these paths, but the
+    // middleware query can time out under load, and then this fallback is
+    // what the visitor gets. A temporary redirect does not collapse in
+    // search engines — which defeats the purpose of the redirect layer.
+    // `permanentRedirect()` issues a 308. The site already uses it for
+    // every other permanent slug migration.
     if (person.canonicalPath !== `/profile/${slug}`) {
-      redirect(person.canonicalPath);
+      permanentRedirect(person.canonicalPath);
     }
     return <UnifiedPersonProfile person={person} />;
   }
