@@ -62,6 +62,16 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');
+    // STAGING-ONLY: signed-out Clerk stand-in for isolated Preview builds.
+    // Refuses to run in production (see staging-stubs/clerk-signed-out.ts).
+    if (process.env.CLERK_STAGING_STUB === '1') {
+      if (process.env.VERCEL_ENV === 'production') {
+        throw new Error('CLERK_STAGING_STUB must never be set for a production build');
+      }
+      const stub = path.resolve(__dirname, 'staging-stubs/clerk-signed-out.ts');
+      config.resolve.alias['@clerk/nextjs$'] = stub;
+      config.resolve.alias['@clerk/nextjs/server$'] = stub;
+    }
     return config;
   },
   images: {
