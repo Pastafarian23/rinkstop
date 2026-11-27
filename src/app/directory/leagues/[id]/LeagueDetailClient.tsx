@@ -7,43 +7,57 @@ import SocialActions from '@/components/SocialActions';
 import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { buildLeagueShare } from '@/lib/share';
 import DestinationFeed from '@/components/DestinationFeed';
+import { findRefreshedLeague, listFromPayload } from '@/lib/league-refresh';
 
 const BASE_URL = 'https://rinkstop.com';
 
 export default function LeagueDetailClient({
   id,
+  initialLeague = null,
   initialFollowersCount = 0,
   viewerIsAdmin = false,
 }: {
   id: string;
+  initialLeague?: any | null;
   initialFollowersCount?: number;
   viewerIsAdmin?: boolean;
 }) {
-  const [league, setLeague] = useState<any>(null);
-  const [teams, setTeams] = useState([]);
+  // Server-fetched league is the first render, so the H1 is in the initial HTML.
+  // The effect below still refreshes it on the client, as before.
+  const [league, setLeague] = useState<any>(initialLeague);
+  const [teams, setTeams] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
     const param = String(id);
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
-    fetch('/api/leagues').then(r => r.json()).then(d => {
-      const list = d || [];
-      const found = list.find((x: any) => x.slug === param) || list.find((x: any) => x.id === param);
-      if (found) {
+
+    // A failed, malformed, or partial refresh keeps the server-rendered league on screen.
+    fetch('/api/leagues')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (cancelled) return;
+        const found = findRefreshedLeague(d, param);
+        if (!found) return;
         if (isUuid && found.slug && found.slug !== param) {
           window.location.replace(`/directory/leagues/${found.slug}`);
           return;
         }
         setLeague(found);
-        fetch(`/api/posts?leagueId=${found.id}&limit=12`).then(r => r.json()).then(d => {
-          const items = d?.data || d || [];
-          setArticles(items);
-        }).catch(() => {});
-      } else {
-        setLeague(null);
-      }
-    });
-    fetch(`/api/teams?leagueId=${param}`).then(r => r.json()).then(d => setTeams(d?.data || []));
+        fetch(`/api/posts?leagueId=${found.id}&limit=12`)
+          .then(r => (r.ok ? r.json() : null))
+          .then(p => { if (!cancelled) setArticles(listFromPayload(p)); })
+          .catch(() => {});
+      })
+      .catch(() => {});
+
+    fetch(`/api/teams?leagueId=${param}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled) setTeams(listFromPayload(d)); })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
   }, [id]);
 
   if (!league) return <p className="text-slate-400">Loading...</p>;

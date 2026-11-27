@@ -18,6 +18,7 @@ import {
 } from '@/lib/founding-promo';
 import { tierRank, tierTrack } from '@/lib/tier';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
+import { checkoutErrorMessage } from '@/lib/checkout-error-message';
 
 type Tier = {
   id: TierName;
@@ -291,18 +292,20 @@ export default function PricingContent({
           entity_name: searchParams?.get('name') || null,
         }),
       });
-      const data = await res.json();
+      // The rate limiter answers with plain text, so a non-JSON body must not become a
+      // "network error". Parse defensively; the status code decides the message.
+      const data = await res.json().catch((): null => null);
       if (!res.ok) {
-        setError(data.error || 'Checkout failed');
+        setError(checkoutErrorMessage({ code: data?.error, status: res.status }));
         return;
       }
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
       } else {
-        setError('Checkout did not return a URL');
+        setError(checkoutErrorMessage({ status: res.status }));
       }
     } catch {
-      setError('Network error - please try again');
+      setError(checkoutErrorMessage({ network: true }));
     } finally {
       setBusy(null);
     }

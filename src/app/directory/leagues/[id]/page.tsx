@@ -8,7 +8,8 @@ import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import { getFollowersCount } from '@/lib/ownership';
 import { buildLeagueFAQs, countryContextFor, LEVEL_DESCRIPTION } from '@/lib/league-context';
 import { auth } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { findActiveLeague } from '@/lib/league-lookup';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
@@ -16,16 +17,11 @@ const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('12
   ? 'https://rinkstop.com'
   : (RAW_BASE_URL || 'https://rinkstop.com');
 
+// Reads the league directly (same rows as /api/leagues) instead of a server self-fetch,
+// which shared the bulk rate limit. See src/lib/league-lookup.ts.
+// Returns null for a genuine no-match (notFound). A database error throws (server error).
 async function getLeague(slugOrId: string) {
-  try {
-    const res = await fetch(`${BASE_URL}/api/leagues`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const leagues = await res.json();
-    if (!Array.isArray(leagues)) return null;
-    return leagues.find((l: any) => l.id === slugOrId || l.slug === slugOrId) || null;
-  } catch {
-    return null;
-  }
+  return findActiveLeague(supabase, slugOrId);
 }
 
 async function getLeagueTeams(leagueId: string) {

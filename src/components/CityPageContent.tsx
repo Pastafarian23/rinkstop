@@ -3,6 +3,7 @@ import type { CityPageData } from '@/lib/city-page';
 import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 import CityHockeyScene from '@/components/CityHockeyScene';
 import type { CityFAQEntry } from '@/lib/city-context';
+import { browseDirectoryCopy } from '@/lib/city-browse-copy';
 
 interface Props {
   data: CityPageData;
@@ -231,7 +232,7 @@ export default function CityPageContent({ data, faqs }: Props) {
                 RinkStop is building out coverage for {cityName}. Public skating, learn-to-skate programs, and youth or adult hockey programs are typically available at regional rinks within driving distance.
               </>
             )}
-            {' '}Browse the directory below for {countryName === 'United States' ? 'leagues, teams, and rink details, plus links to upcoming games and standings.' : 'leagues, teams, and rink details across Canada.'}
+            {' '}Browse the directory below for {browseDirectoryCopy(countryName)}
           </p>
 
           {/* Hockey Canada affiliate ad — test placement, top of city page */}
