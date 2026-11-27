@@ -5,6 +5,7 @@ import { parsePageParams } from '@/lib/rinks-list';
 import RinksIndexClient from './RinksIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
+import { knownCount, rinksPhrase, rinksTitle } from '@/lib/directory-heading';
 import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 
 interface Rink {
@@ -32,12 +33,15 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const { country } = await searchParams;
   const n = await getRinkCount(country);
   const counts = await getDirectoryCountsCached();
+  const nKnown = knownCount(n);
+  const rinksN = knownCount(counts.rinks);
+  const countriesN = knownCount(counts.countries);
   const desc = country
-    ? `Browse ${n.toLocaleString()} ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities — with addresses, capacity, and ice size.`
-    : `Browse ${counts.rinks.toLocaleString()} ice rinks and arenas across ${counts.countries.toLocaleString()}+ countries and ${counts.cities.toLocaleString()} cities. Find public skating, hockey, and curling facilities worldwide — searchable by city, state, or country.`;
+    ? `Browse ${nKnown !== null ? `${nKnown.toLocaleString()} ` : ''}ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities — with addresses, capacity, and ice size.`
+    : `Browse ${rinksPhrase(rinksN, countriesN, knownCount(counts.cities))}. Find public skating, hockey, and curling facilities — with addresses, capacity, and ice size. Search by name, league, or city.`;
   const title = country
-    ? `Ice Rinks in ${country} — ${n.toLocaleString()} Arenas & Facilities`
-    : `${counts.rinks.toLocaleString()} Ice Rinks Across ${counts.countries.toLocaleString()} Countries — Find One Near You`;
+    ? (nKnown !== null ? `Ice Rinks in ${country} — ${nKnown.toLocaleString()} Arenas & Facilities` : `Ice Rinks in ${country} — Arenas & Facilities`)
+    : rinksTitle(rinksN, countriesN);
   return {
     title,
     description: desc,

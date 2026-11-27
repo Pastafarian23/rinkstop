@@ -6,6 +6,7 @@ import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { knownCount, teamsTrackedPhrase } from '@/lib/directory-heading';
 import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 import {
   getDirectoryCountsCached,
@@ -27,6 +28,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const levelIsValid = level && LEVEL_ORDER.includes(level as Level);
   const counts = await getDirectoryCountsCached();
   const teamCount = counts.teams;
+  const teamsN = knownCount(counts.teams);
+  const leaguesN = knownCount(counts.leagues);
+  const countriesN = knownCount(counts.countries);
   // Title strategy: lead with the most specific filter, add context, end with brand.
   // country + level: "[Level] Hockey Teams in [Country]"
   // country only:    "Hockey Teams in [Country]"
@@ -43,7 +47,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   } else if (levelIsValid) {
     title = `${LEVEL_LABELS[level as Level]} Hockey Teams Worldwide`;
   } else {
-    title = `${teamCount.toLocaleString()}+ Hockey Teams Across ${counts.leagues.toLocaleString()} Leagues`;
+    title = teamsN !== null
+      ? `${teamsN.toLocaleString()}+ Hockey Teams${leaguesN !== null ? ` Across ${leaguesN.toLocaleString()} Leagues` : ''}`
+      : 'Hockey Teams Worldwide';
   }
   const description = (() => {
     if (levelIsValid && country) {
@@ -55,7 +61,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     if (country) {
       return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info — searchable by league tier and city.`;
     }
-    return `Find any hockey team in the world. ${teamCount.toLocaleString()}+ active teams across ${counts.leagues.toLocaleString()} leagues and ${counts.countries.toLocaleString()} countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
+    return `Find any hockey team in the world. ${teamsTrackedPhrase(teamsN, leaguesN, countriesN)} — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
   })();
   const canonicalParams = new URLSearchParams();
   if (country) canonicalParams.set('country', country);
@@ -344,6 +350,10 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     getTopLeaguesCached(),
     getCountryLeaguesMapCached(),
   ]);
+  // Unavailable counts (failed RPC, placeholder backend) are null, never a zero.
+  const teamsN = knownCount(counts.teams);
+  const leaguesN = knownCount(counts.leagues);
+  const countriesN = knownCount(counts.countries);
   return (
     <>
       {(() => {
@@ -366,7 +376,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
               name: 'Hockey Teams',
               // Directory page (not a paginated list) — ItemList advertises
               // the full directory size. The rendered 'top' is a sample.
-              numberOfItems: counts.teams,
+              ...(teamsN !== null ? { numberOfItems: teamsN } : {}),
               itemListElement: top.map((t, i) => ({
                 '@type': 'ListItem',
                 position: i + 1,
@@ -401,7 +411,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
         const teamFaqs = [
           {
             q: 'How many hockey teams are in the RinkStop directory?',
-            a: `RinkStop tracks ${counts.teams.toLocaleString()}+ active hockey teams across ${counts.countries} countries and ${counts.leagues}+ leagues — professional, junior, college, amateur, and youth tiers.`,
+            a: `RinkStop tracks ${teamsTrackedPhrase(teamsN, leaguesN, countriesN)} — professional, junior, college, amateur, and youth tiers.`,
           },
           {
             q: 'How do I find hockey teams by country?',
@@ -444,7 +454,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
                   Find any hockey team in the world
                 </h2>
                 <p style={{ margin: 0 }}>
-                  {counts.teams.toLocaleString()}+ active hockey teams across {counts.countries} countries and {counts.leagues}+ leagues — from NHL and KHL down to local youth programs. Use the search and filters below to find a team by name, league tier, country, or city.
+                  {teamsTrackedPhrase(teamsN, leaguesN, countriesN)} — from NHL and KHL down to local youth programs. Use the search and filters below to find a team by name, league tier, country, or city.
                 </p>
               </div>
             </details>
@@ -469,7 +479,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
         topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}
         topLeagues={topLeagues.map((l) => ({ name: l.name, slug: l.slug, teamCount: l.team_count }))}
         countryLeaguesMap={countryLeaguesMap}
-        totalCount={counts.teams}
+        totalCount={knownCount(counts.teams) ?? 0}
         country={country ?? null}
         level={level ?? null}
         league={league ?? null}
@@ -550,7 +560,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           </div>
         </details>
       )}
-      <HockeyTeamsContent totalTeams={counts.teams} topCountriesRaw={topCountries} />
+      <HockeyTeamsContent totalTeams={teamsN} totalLeagues={leaguesN} totalCountries={countriesN} topCountriesRaw={topCountries} />
     </>
   );
 }

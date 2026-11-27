@@ -606,7 +606,7 @@ export default function TeamsIndexClient({
           ? 'No results'
           : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}
         {urlQ ? ` matching “${urlQ}”` : ''}
-        {!urlQ && !hasFilters ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
+        {!urlQ && !hasFilters && totalCount > 0 ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
       </p>
 
       {/* Grid */}

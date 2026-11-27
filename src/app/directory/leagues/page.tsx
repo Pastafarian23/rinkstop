@@ -1,4 +1,4 @@
-import { knownCount, leagueSummary } from '@/lib/directory-heading';
+import { knownCount, leagueSummary, leagueLeadPhrase, leagueCountNoun } from '@/lib/directory-heading';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import LeaguesIndexClient from './LeaguesIndexClient';
@@ -30,12 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
     // impressions (Google gave up showing it) and CTR.
     title: 'Hockey Leagues Worldwide — Pro, Junior, College',
     description:
-      `Browse ${counts.leagues.toLocaleString()}+ hockey leagues across ${counts.countries}+ countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.`,
+      `Browse ${leagueLeadPhrase(knownCount(counts.leagues), knownCount(counts.countries))} — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.`,
     alternates: { canonical: 'https://rinkstop.com/directory/leagues' },
     openGraph: withDefaultOg({
       title: 'Hockey Leagues Worldwide — Pro, Junior, College',
       description:
-        `Browse ${counts.leagues.toLocaleString()}+ hockey leagues across ${counts.countries}+ countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.`,
+        `Browse ${leagueLeadPhrase(knownCount(counts.leagues), knownCount(counts.countries))} — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.`,
       url: 'https://rinkstop.com/directory/leagues',
       siteName: 'RinkStop',
       type: 'website',
@@ -82,7 +82,7 @@ export default async function LeaguesPage() {
   const faqs = [
     {
       q: 'How many hockey leagues are in the RinkStop directory?',
-      a: `RinkStop tracks ${counts.leagues.toLocaleString()}+ active hockey leagues across professional, junior, college, international, and amateur tiers on six continents — including the NHL, AHL, KHL, PWHL, CHL (OHL/WHL/QMJHL), USHL, NCAA Division I and III, IIHF member federations, and regional amateur associations.`,
+      a: `RinkStop tracks ${leagueCountNoun(headingLeagues)} across professional, junior, college, international, and amateur tiers on six continents — including the NHL, AHL, KHL, PWHL, CHL (OHL/WHL/QMJHL), USHL, NCAA Division I and III, IIHF member federations, and regional amateur associations.`,
     },
     {
       q: 'What are the top professional hockey leagues?',
@@ -131,7 +131,7 @@ export default async function LeaguesPage() {
       {
         '@type': 'ItemList',
         name: 'Hockey Leagues',
-        numberOfItems: counts.leagues,
+        ...(headingLeagues !== null ? { numberOfItems: headingLeagues } : {}),
         itemListElement: top.map((l, i) => ({
           '@type': 'ListItem',
           position: i + 1,
@@ -225,7 +225,7 @@ export default async function LeaguesPage() {
           </summary>
           <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginTop: '0.75rem' }}>
             <p style={{ margin: 0 }}>
-              RinkStop tracks <strong>${counts.leagues.toLocaleString()}+ active hockey leagues</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
+              RinkStop tracks <strong>{leagueCountNoun(headingLeagues)}</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
             </p>
             <p style={{ marginTop: '0.75rem' }}>
               Each league profile lists the current teams, tier, country, level, and the league&apos;s own website. Use the search and tier filters above to find a specific league, or browse the full directory by country, level, or season. League profiles are updated weekly during the active season and monthly in the off-season.

@@ -1,11 +1,12 @@
 import Link from 'next/link';
+import { teamsTrackedPhrase } from '@/lib/directory-heading';
 import type { Level } from '@/lib/league-levels';
 import { LEVEL_LABELS } from '@/lib/league-levels';
 
 interface Props {
-  totalTeams: number;
-  totalLeagues?: number;
-  totalCountries?: number;
+  totalTeams: number | null;
+  totalLeagues?: number | null;
+  totalCountries?: number | null;
   topCountries?: Array<{ name: string; slug: string; teamCount: number }>;
   topLeagues?: Array<{ name: string; slug: string; teamCount: number }>;
   topCountriesRaw?: Array<{ country: string; team_count: number }>;
@@ -18,8 +19,8 @@ interface Props {
 // cluster ("hockey teams in <country>", "<level> hockey teams").
 export default function HockeyTeamsContent({
   totalTeams,
-  totalLeagues = 240,
-  totalCountries = 57,
+  totalLeagues = null,
+  totalCountries = null,
   topCountriesRaw,
 }: Props) {
   // Map the raw RPC shape [{country, team_count}] to the display shape
@@ -102,8 +103,7 @@ export default function HockeyTeamsContent({
           How many hockey teams are there in the world?
         </h2>
         <p>
-          RinkStop tracks {totalTeams.toLocaleString()}+ active hockey teams across {totalLeagues}+ leagues
-          and {totalCountries} countries — from the NHL's 32 franchises and 24 IIHF national programs to
+          RinkStop tracks {teamsTrackedPhrase(totalTeams, totalLeagues, totalCountries)} — from the NHL's 32 franchises and 24 IIHF national programs to
           ~600 European pro and junior clubs, ~150 NCAA programs, and tens of thousands of amateur and
           youth teams. The exact count moves weekly as new leagues are added and dormant teams are
           archived; the figure above is updated weekly.
