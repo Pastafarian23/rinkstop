@@ -242,7 +242,6 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Registration management (programs)',
       'Payments and dues collection',
       'Practice Plans & Drills Library',
-      'Up to 30 players',
       'Listing claims, leads and reviews',
       '10 GB of shared media storage',
     ],
