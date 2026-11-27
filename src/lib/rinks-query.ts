@@ -9,14 +9,9 @@
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { enrichEntitiesWithClaimTier, isVerifiedClaim } from '@/lib/listingTier';
 import { pageInfo, rangeFor, sortAndSlice, type PageRequest } from '@/lib/rinks-list';
+import { RINK_PUBLIC_COLUMNS } from '@/lib/public-directory-fields';
 
-export const RINK_LIST_COLUMNS =
-  'id, name, slug, city, province_state, country, address, latitude, longitude, ' +
-  'capacity, ice_size, surface_type, website_url, logo_url, is_active, created_at, ' +
-  'updated_at, notes, source, status, cover_photo_url, place_id, opening_hours_json, ' +
-  'google_website, google_maps_url, static_map_url, league, timezone, ' +
-  'cover_photo_verified_at, cover_photo_source, seo_h1, seo_title, qr_identifier, ' +
-  'verification_tier, qr_revoked_at, notes_generated, meta_description, claimable';
+export const RINK_LIST_COLUMNS = RINK_PUBLIC_COLUMNS;
 
 export interface RinkListParams {
   country?: string | null;

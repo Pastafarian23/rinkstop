@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
+import { LEAGUE_PUBLIC_COLUMNS } from '@/lib/public-directory-fields';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -18,7 +19,8 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search');
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
-  let query = supabase.from('leagues').select('*');
+  // Explicit public allowlist: never select('*') on a public read.
+  let query = supabase.from('leagues').select(LEAGUE_PUBLIC_COLUMNS);
 
   if (id) {
     query = query.eq('id', id).limit(1);

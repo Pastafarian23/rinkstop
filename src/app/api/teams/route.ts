@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { TEAM_PUBLIC_COLUMNS } from '@/lib/public-directory-fields';
 import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 import { LEAGUE_LEVELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 
@@ -107,12 +108,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('team_workspaces')
     .select(
-      'id, name, slug, short_name, home_rink_id, home_city, home_country, ' +
-        'country_code, age_category, age_label, age_min, age_max, level, ' +
-        'season_label, description, visibility, is_active, created_at, updated_at, ' +
-        'avatar_url, banner_url, federation_id, organization_id, league_id, ' +
-        'website_url, division, home_state, timezone, is_published, ' +
-        'leagues(name)',
+      TEAM_PUBLIC_COLUMNS,
       { count: 'exact' },
     );
 
