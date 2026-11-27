@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   // Enrich list responses with claimer's tier (leagues use 'league' claim_type
   // — the enrich helper falls back to no-op if no rows match, so this is safe).
-  let enrichedData = data;
+  let enrichedData = (data || null) as unknown as Array<Record<string, unknown> & { name?: string }> | null;
   if (!id && data && data.length) {
     const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'league', data.map((d: any) => d.id));
     enrichedData = data.map((d: any) => {
