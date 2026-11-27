@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { nextLeagueList } from '@/lib/league-list-contract';
 import { isVerifiedClaim, isFeaturedClaim } from '@/lib/listingTier';
 import { FilterIcon } from '@/components/icons';
 import CategorySearchBar from '@/components/CategorySearchBar';
@@ -32,9 +33,10 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
     const params = new URLSearchParams();
     params.set('sort', 'tier');
     fetch(`/api/leagues?${params}`)
-      .then(r => r.json())
-      .then(d => {
-        setLeagues(d || []);
+      .then(async r => ({ ok: r.ok, body: await r.json().catch(() => null) }))
+      .then(({ ok, body }) => {
+        // Only a successful array replaces the list; error bodies are objects.
+        setLeagues(prev => nextLeagueList(prev, ok, body));
         setLoading(false);
       })
       .catch(() => setLoading(false));
