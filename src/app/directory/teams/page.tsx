@@ -354,6 +354,25 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   const teamsN = knownCount(counts.teams);
   const leaguesN = knownCount(counts.leagues);
   const countriesN = knownCount(counts.countries);
+  // FAQ entries for the teams page (rendered below the results).
+    const teamFaqs = [
+      {
+        q: 'How many hockey teams are in the RinkStop directory?',
+        a: `RinkStop tracks ${teamsTrackedPhrase(teamsN, leaguesN, countriesN)} — professional, junior, college, amateur, and youth tiers.`,
+      },
+      {
+        q: 'How do I find hockey teams by country?',
+        a: `Use the country filter above the list, or browse directly: /directory/teams?country=United+States, /directory/teams?country=Canada, /directory/teams?country=Sweden, /directory/teams?country=Russia, etc.`,
+      },
+      {
+        q: 'How do I find hockey teams by league tier?',
+        a: `Use the level pills above the list — Pro, Junior, College, International, or Adult — or browse the league directory at /directory/leagues.`,
+      },
+      {
+        q: 'What leagues does the directory cover?',
+        a: 'NHL, AHL, KHL, SHL, Liiga, DEL, NLA, Extraliga, ECHL, OHL, WHL, QMJHL, USHL, NCAA Division I and III, PWHL, and 200+ amateur and youth leagues worldwide.',
+      },
+    ];
   return (
     <>
       {(() => {
@@ -408,24 +427,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
             { '@type': 'ListItem', position: 3, name: 'Hockey Teams', item: 'https://rinkstop.com/directory/teams' },
           ],
         };
-        const teamFaqs = [
-          {
-            q: 'How many hockey teams are in the RinkStop directory?',
-            a: `RinkStop tracks ${teamsTrackedPhrase(teamsN, leaguesN, countriesN)} — professional, junior, college, amateur, and youth tiers.`,
-          },
-          {
-            q: 'How do I find hockey teams by country?',
-            a: `Use the country filter above the list, or browse directly: /directory/teams?country=United+States, /directory/teams?country=Canada, /directory/teams?country=Sweden, /directory/teams?country=Russia, etc.`,
-          },
-          {
-            q: 'How do I find hockey teams by league tier?',
-            a: `Use the level pills above the list — Pro, Junior, College, International, or Adult — or browse the league directory at /directory/leagues.`,
-          },
-          {
-            q: 'What leagues does the directory cover?',
-            a: 'NHL, AHL, KHL, SHL, Liiga, DEL, NLA, Extraliga, ECHL, OHL, WHL, QMJHL, USHL, NCAA Division I and III, PWHL, and 200+ amateur and youth leagues worldwide.',
-          },
-        ];
         const faqSchema = {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
@@ -445,6 +446,27 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
               type="application/ld+json"
               dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
             />
+          </>
+        );
+      })()}
+      <TeamsIndexClient
+        initialTeams={initialTeams}
+        topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}
+        topLeagues={topLeagues.map((l) => ({ name: l.name, slug: l.slug, teamCount: l.team_count }))}
+        countryLeaguesMap={countryLeaguesMap}
+        totalCount={knownCount(counts.teams) ?? 0}
+        country={country ?? null}
+        level={level ?? null}
+        league={league ?? null}
+        initialQuery={q ?? null}
+      />
+      {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
+      <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
+        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
+      </div>
+      {(() => {
+        return (
+          <>
             <details style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
               <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
                 Find any hockey team in the world
@@ -474,21 +496,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           </>
         );
       })()}
-      <TeamsIndexClient
-        initialTeams={initialTeams}
-        topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}
-        topLeagues={topLeagues.map((l) => ({ name: l.name, slug: l.slug, teamCount: l.team_count }))}
-        countryLeaguesMap={countryLeaguesMap}
-        totalCount={knownCount(counts.teams) ?? 0}
-        country={country ?? null}
-        level={level ?? null}
-        league={league ?? null}
-        initialQuery={q ?? null}
-      />
-      {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
-      <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
-      </div>
       {country ? (
         <details style={{ maxWidth: '80rem', margin: '0 auto 2rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
           <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
