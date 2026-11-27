@@ -183,7 +183,10 @@ export async function GET(request: NextRequest) {
   }
 
   const orderCol = sort === 'recent' ? 'created_at' : 'name';
-  const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
+  // id is a tie-breaker: teams sharing a name must not reorder between pages.
+  const { data, error, count } = await query
+    .order(orderCol, { ascending: sort === 'recent' ? false : true })
+    .order('id', { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let enrichedData = (data || []) as unknown as Array<Record<string, unknown> & { name?: string }>;
