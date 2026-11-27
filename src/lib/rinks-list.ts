@@ -2,6 +2,7 @@
  * Pure helpers for paginated, tier-ordered directory listings.
  * Used by /api/rinks list mode. No I/O, so the rules are unit-testable.
  */
+import { rankForEntitlements } from '@/lib/listingTier';
 
 export interface PageRequest {
   offset: number;
@@ -45,23 +46,6 @@ export function pageInfo(total: number, req: PageRequest): PageInfo {
   return { count: safeTotal, offset: req.offset, limit: req.limit, hasMore, nextOffset: hasMore ? next : null };
 }
 
-/** Claim-tier rank: lower sorts first. Unclaimed rows rank last. */
-export function tierRank(tier: string | null | undefined): number {
-  switch ((tier || '').toLowerCase()) {
-    case 'pro':
-    case 'premium':
-    case 'featured':
-      return 0;
-    case 'verified':
-      return 1;
-    case 'basic':
-    case 'free':
-      return 2;
-    default:
-      return 3;
-  }
-}
-
 export interface TierSortable {
   id: string;
   name?: string | null;
@@ -74,8 +58,9 @@ export interface TierSortable {
  * The id tie-breaker keeps paging free of duplicates and skips.
  */
 export function compareForListing(a: TierSortable, b: TierSortable): number {
-  const ra = Math.min(tierRank(a.claimed_by_tier), tierRank(a.claimed_by_org_tier));
-  const rb = Math.min(tierRank(b.claimed_by_tier), tierRank(b.claimed_by_org_tier));
+  // Same ranking the directory uses everywhere else (listingTier.rankForEntitlements).
+  const ra = rankForEntitlements(a.claimed_by_tier, a.claimed_by_org_tier);
+  const rb = rankForEntitlements(b.claimed_by_tier, b.claimed_by_org_tier);
   if (ra !== rb) return ra - rb;
   const na = (a.name || '').localeCompare(b.name || '');
   if (na !== 0) return na;

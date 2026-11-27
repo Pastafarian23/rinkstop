@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compareForListing, pageInfo, parsePageParams, rangeFor, sortAndSlice, tierRank, MAX_PAGE_LIMIT, DEFAULT_PAGE_LIMIT } from '@/lib/rinks-list';
+import { compareForListing, pageInfo, parsePageParams, rangeFor, sortAndSlice, MAX_PAGE_LIMIT, DEFAULT_PAGE_LIMIT } from '@/lib/rinks-list';
+import { rankForEntitlements } from '@/lib/listingTier';
 
 describe('parsePageParams', () => {
   it('uses defaults when params are absent', () => {
@@ -31,15 +32,14 @@ describe('pageInfo', () => {
   });
 });
 
-describe('tierRank / compareForListing', () => {
-  it('ranks pro above verified above basic above unclaimed', () => {
-    expect(tierRank('pro')).toBeLessThan(tierRank('verified'));
-    expect(tierRank('verified')).toBeLessThan(tierRank('basic'));
-    expect(tierRank('basic')).toBeLessThan(tierRank(null));
+describe('tier ranking uses the app canonical tiers', () => {
+  it('ranks org_pro above identity_plus above free (unclaimed)', () => {
+    expect(rankForEntitlements('org_pro')).toBeLessThan(rankForEntitlements('identity_plus'));
+    expect(rankForEntitlements('identity_plus')).toBeLessThan(rankForEntitlements(null));
   });
   it('uses the better of personal and org tier', () => {
-    const a = { id: 'a', name: 'Zed', claimed_by_tier: null, claimed_by_org_tier: 'pro' };
-    const b = { id: 'b', name: 'Alpha', claimed_by_tier: 'verified', claimed_by_org_tier: null };
+    const a = { id: 'a', name: 'Zed', claimed_by_tier: null, claimed_by_org_tier: 'org_pro' };
+    const b = { id: 'b', name: 'Alpha', claimed_by_tier: 'identity_plus', claimed_by_org_tier: null };
     expect(compareForListing(a, b)).toBeLessThan(0);
   });
   it('breaks name ties by id so the order is total', () => {
@@ -52,9 +52,9 @@ describe('tierRank / compareForListing', () => {
 describe('sortAndSlice (tier ordering applied before paging)', () => {
   const rows = [
     { id: 'r1', name: 'Charlie', claimed_by_tier: null },
-    { id: 'r2', name: 'Bravo', claimed_by_tier: 'pro' },
-    { id: 'r3', name: 'Alpha', claimed_by_tier: 'verified' },
-    { id: 'r4', name: 'Delta', claimed_by_tier: 'pro' },
+    { id: 'r2', name: 'Bravo', claimed_by_tier: 'org_pro' },
+    { id: 'r3', name: 'Alpha', claimed_by_tier: 'identity_plus' },
+    { id: 'r4', name: 'Delta', claimed_by_tier: 'org_pro' },
     { id: 'r5', name: 'Echo', claimed_by_tier: null },
   ];
   it('puts higher tiers first across the full set', () => {
