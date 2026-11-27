@@ -65,7 +65,6 @@ function decorate(rows: any[], tiers: Map<string, any>): Array<Record<string, un
       ...d,
       claimed_by_tier: c?.tier || null,
       claimed_by_org_tier: c?.org_tier || null,
-      claimed_by_user_id: c?.user_id || null,
     };
   });
 }

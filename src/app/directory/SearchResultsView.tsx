@@ -76,7 +76,8 @@ export function SearchResultsView({ q }: { q: string }) {
           const added = (d.results[type] ?? []).filter((i) => !seen.has(i.id));
           return {
             ...prev,
-            totals: d.totals,
+            // A type-scoped page only counts that type; keep the other totals.
+            totals: { ...prev.totals, [type]: d.totals[type] },
             results: { ...prev.results, [type]: [...(prev.results[type] ?? []), ...added] },
             page: prev.page ? { ...prev.page, hasMore: { ...prev.page.hasMore, [type]: Boolean(d.page?.hasMore?.[type]) } } : prev.page,
           };

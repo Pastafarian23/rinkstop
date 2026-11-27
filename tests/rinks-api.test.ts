@@ -153,3 +153,13 @@ describe('GET /api/rinks (list mode)', () => {
     expect(body?.id).toBe('rink-0001');
   });
 });
+
+describe('public response privacy', () => {
+  it('rinks list never exposes claimer user ids', async () => {
+    const page = await fetchRinkListPage({ activeOnly: true, sort: 'tier', page: { offset: 0, limit: 100 } });
+    expect(page.data.length).toBeGreaterThan(0);
+    for (const r of page.data as Array<Record<string, unknown>>) {
+      expect(r).not.toHaveProperty('claimed_by_user_id');
+    }
+  });
+});
