@@ -33,7 +33,7 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
     const params = new URLSearchParams();
     params.set('sort', 'tier');
     fetch(`/api/leagues?${params}`)
-      .then(async (r): Promise<{ ok: boolean; body: unknown }> => ({ ok: r.ok, body: await r.json().catch(() => null) }))
+      .then(async (r): Promise<{ ok: boolean; body: unknown }> => ({ ok: r.ok, body: await r.json().catch((): null => null) }))
       .then(({ ok, body }) => {
         // Only a successful array replaces the list; error bodies are objects.
         setLeagues(prev => nextLeagueList(prev, ok, body));
