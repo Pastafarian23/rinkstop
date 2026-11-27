@@ -175,6 +175,15 @@ export default function RinksIndexClient({ initialRinks, initialTotal, initialHa
             Does NOT narrow the grid (use URL ?q= param for that). */}
         <CategorySearchBar category="rink" page="/directory/rinks" maxWidth={600} />
         <input
+          type="search"
+          aria-label="Filter rinks by name or city"
+          placeholder="Filter rinks by name or city..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="input-field"
+          style={{ flex: '1 1 180px', minWidth: 0 }}
+        />
+        <input
           type="text"
           placeholder="Country"
           value={country}
