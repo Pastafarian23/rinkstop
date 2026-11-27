@@ -58,6 +58,34 @@ export function SearchResultsView({ q }: { q: string }) {
     };
   }, [q]);
 
+  const [moreType, setMoreType] = useState<ResultType | null>(null);
+  const moreFor = (t: ResultType) => Boolean(data?.page?.hasMore?.[t]);
+  const loadMore = (type: ResultType) => {
+    if (!data || moreType) return;
+    const offset = (data.results[type] ?? []).length;
+    setMoreType(type);
+    fetch(`/api/search/results?q=${encodeURIComponent(q)}&type=${type}&offset=${offset}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`Search failed: ${r.status}`);
+        return r.json() as Promise<SearchResultsResponse>;
+      })
+      .then((d) => {
+        setData((prev) => {
+          if (!prev) return prev;
+          const seen = new Set((prev.results[type] ?? []).map((i) => i.id));
+          const added = (d.results[type] ?? []).filter((i) => !seen.has(i.id));
+          return {
+            ...prev,
+            totals: d.totals,
+            results: { ...prev.results, [type]: [...(prev.results[type] ?? []), ...added] },
+            page: prev.page ? { ...prev.page, hasMore: { ...prev.page.hasMore, [type]: Boolean(d.page?.hasMore?.[type]) } } : prev.page,
+          };
+        });
+        setMoreType(null);
+      })
+      .catch(() => setMoreType(null));
+  };
+
   if (q.length < 2) {
     return <p style={{ color: 'rgba(255,255,255,0.5)' }}>Type at least 2 characters to search.</p>;
   }
@@ -173,8 +201,7 @@ export function SearchResultsView({ q }: { q: string }) {
                   marginLeft: '0.25rem',
                 }}
               >
-                {items.length}
-                {items.length === 50 ? '+' : ''}
+                {data.totals[type].toLocaleString()}
               </span>
             </h2>
             <ul
@@ -191,6 +218,18 @@ export function SearchResultsView({ q }: { q: string }) {
                 <ResultRow key={`${type}-${item.id}`} item={item} q={q} />
               ))}
             </ul>
+            {moreFor(type) && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => loadMore(type)}
+                  disabled={moreType !== null}
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 3, padding: '0.5rem 1rem', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', cursor: moreType ? 'wait' : 'pointer' }}
+                >
+                  {moreType === type ? 'Loading…' : `Load more ${meta.label.toLowerCase()} (${items.length.toLocaleString()} of ${data.totals[type].toLocaleString()})`}
+                </button>
+              </div>
+            )}
           </section>
         );
       })}
