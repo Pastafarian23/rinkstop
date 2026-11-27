@@ -327,9 +327,10 @@ export function buildLeagueFAQs(input: LeagueFAQInput): LeagueFAQEntry[] {
   if (typeof teamCount === 'number') {
     if (teamCount === 0) {
       teamCountAnswer =
-        `We currently have ${teamCount} teams tracked in ${name}. ` +
-        `If you are associated with a team we are missing, you can ` +
-        `<a href="/claim-your-listing">submit a team listing</a> to add it.`;
+        `Teams are not yet listed for ${name} on RinkStop. ` +
+        `If you are associated with this league, you can ` +
+        `<a href="/add-listing?type=league&name=${encodeURIComponent(name)}">claim the league</a> to manage its listing, ` +
+        `or <a href="/claim-your-listing">submit a team listing</a> to add a team.`;
     } else {
       const plural = teamCount === 1 ? '' : 's';
       teamCountAnswer =
@@ -381,7 +382,7 @@ export function buildLeagueFAQs(input: LeagueFAQInput): LeagueFAQEntry[] {
   out.push({
     question: `How do I get involved with ${name}?`,
     answer:
-      `The most direct routes into ${name} are: (1) try out for one of the ${teamCount ?? 'tracked'} teams listed in RinkStop, ` +
+      `The most direct routes into ${name} are: (1) try out for one of the ${typeof teamCount === 'number' && teamCount > 0 ? teamCount + ' teams listed in RinkStop' : 'teams in the league'}, ` +
       `(2) reach out to the league office if listed, or (3) start in a local amateur or youth league and progress to ${name} level through tryouts. ` +
       `Use our <a href="/tools/hockey-cost-calculator">hockey cost calculator</a> for typical season costs by level.`,
   });
