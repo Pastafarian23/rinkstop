@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { leagueHref } from '@/lib/team-hierarchy-links';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
 
@@ -548,21 +549,15 @@ export default function PublicTeamProfile({
             {team.organization?.name && (
               <span>
                 <span style={{ opacity: 0.6 }}>🏢</span>{' '}
-                {team.organization.slug ? (
-                  <Link href={`/organizations/${team.organization.slug}`} style={{ color: '#FFB81C', textDecoration: 'none' }}>
-                    {team.organization.name}
-                  </Link>
-                ) : (
-                  team.organization.name
-                )}
+                {team.organization.name}
               </span>
             )}
 
             {team.league?.name && (
               <span>
                 <span style={{ opacity: 0.6 }}>🏆</span>{' '}
-                {team.league.slug ? (
-                  <Link href={`/leagues/${team.league.slug}`} style={{ color: '#FFB81C', textDecoration: 'none' }}>
+                {leagueHref(team.league.slug) ? (
+                  <Link href={leagueHref(team.league.slug)!} style={{ color: '#FFB81C', textDecoration: 'none' }}>
                     {team.league.name}
                   </Link>
                 ) : (
@@ -940,11 +935,11 @@ export default function PublicTeamProfile({
               {ageGroup && <InfoRow label="Age group" value={ageGroup} />}
               {team.season_label && <InfoRow label="Season" value={team.season_label} />}
               {team.organization?.name && (
-                <InfoRow label="Organization" value={team.organization.slug ? `/organizations/${team.organization.slug}` : null} linkLabel={team.organization.name} />
+                <InfoRow label="Organization" value={team.organization.name} />
               )}
 
               {team.league?.name && (
-                <InfoRow label="League" value={team.league.slug ? `/leagues/${team.league.slug}` : null} linkLabel={team.league.name} />
+                <InfoRow label="League" value={null} linkHref={leagueHref(team.league.slug)} linkLabel={team.league.name} />
               )}
               {team.federation?.name && (
                 <InfoRow label="Federation" value={team.federation.slug ? `/federations/${team.federation.slug}` : null} linkLabel={team.federation.name} />
