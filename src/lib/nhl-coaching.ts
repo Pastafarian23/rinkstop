@@ -7,6 +7,7 @@
 // page to surface rows that need human review before public display.
 
 import { supabaseAdmin } from './supabase';
+import { backendIsPlaceholder } from './placeholder-backend';
 
 export type CoachingRole =
   | 'head_coach'
@@ -116,6 +117,9 @@ export async function getAllCoachingStaff(
     .order('display_order', { ascending: true });
 
   if (error) {
+    // Isolated Preview builds run without a real backend: render an empty list.
+    // Real backends keep throwing so genuine failures are never hidden.
+    if (backendIsPlaceholder()) return [];
     throw new Error(`Failed to load all coaching staff: ${error.message}`);
   }
 
