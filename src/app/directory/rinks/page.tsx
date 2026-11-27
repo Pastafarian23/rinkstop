@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
+import { fetchRinkListPage, type RinkListResult } from '@/lib/rinks-query';
+import { parsePageParams } from '@/lib/rinks-list';
 import RinksIndexClient from './RinksIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
@@ -59,15 +61,11 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 // ISR-cached for 1 hour (2026-07-22 perf pass).
 export const dynamic = 'force-dynamic';
 
-async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
-  // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
-  // route as dynamic and its `revalidate` is silently ignored — production was
-  // serving `no-store` + `x-vercel-cache: MISS` on every request, re-querying
-  // up to 500 rink rows each time.
-  //
-  // Route-level revalidate cannot apply to a dynamic route, so the DATA READ
-  // is memoized instead (see src/lib/cached-read.ts). Public directory rows
-  // only — no user-specific data.
+const INITIAL_RINK_PAGE_SIZE = 100;
+// Server-side paged read (first page). Further pages load via /api/rinks?offset=…
+async function fetchInitialRinks(country?: string | null): Promise<RinkListResult> {
+  // 2026-10-23 (perf): this route reads searchParams (dynamic), so the data read is memoized
+  // instead of the route revalidate (see src/lib/cached-read.ts). Public directory rows only.
   return cachedPublicRead(
     () => fetchInitialRinksUncached(country),
     [country ?? 'all'],
@@ -75,35 +73,27 @@ async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
     [...PUBLIC_READ_TAGS.directory],
   );
 }
-
-async function fetchInitialRinksUncached(country?: string | null): Promise<Rink[]> {
+async function fetchInitialRinksUncached(country?: string | null): Promise<RinkListResult> {
   try {
-    let q = supabase
-      .from('rinks')
-      .select('id, name, slug, city, province_state, country, capacity, ice_size, static_map_url')
-      .eq('is_active', true)
-      .order('name')
-      .limit(500);
-    if (country) q = q.eq('country', country);
-    const { data, error } = await q;
-    if (error) {
-      console.error('Rinks initial fetch failed:', error);
-      return [];
-    }
-    return (data || []) as Rink[];
+    return await fetchRinkListPage({
+      country: country ?? null,
+      activeOnly: true,
+      sort: 'tier',
+      page: parsePageParams(String(INITIAL_RINK_PAGE_SIZE), '0'),
+    });
   } catch (err) {
     console.error('Rinks initial fetch failed:', err);
-    return [];
+    return { count: 0, offset: 0, limit: INITIAL_RINK_PAGE_SIZE, hasMore: false, nextOffset: null, data: [] };
   }
 }
-
 export default async function RinksPage({
   searchParams,
 }: { searchParams: Promise<{ country?: string }> }) {
   // 2026-10-01 (Arnel data-integrity audit): pull counts for body template literals.
   const counts = await getDirectoryCountsCached();
   const { country } = await searchParams;
-  const initialRinks = await fetchInitialRinks(country);
+  const initial = await fetchInitialRinks(country);
+  const initialRinks = initial.data as unknown as Rink[];
   const top = initialRinks.slice(0, 20);
   const ldJson = {
     '@context': 'https://schema.org',
@@ -118,7 +108,7 @@ export default async function RinksPage({
       {
         '@type': 'ItemList',
         name: 'Ice Rinks',
-        numberOfItems: 1917,
+        numberOfItems: initial.count,
         itemListElement: top.map((r, i) => ({
           '@type': 'ListItem',
           position: i + 1,
@@ -134,7 +124,13 @@ export default async function RinksPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
       />
-      <RinksIndexClient initialRinks={initialRinks} country={country ?? null} />
+      <RinksIndexClient
+        initialRinks={initialRinks}
+        initialTotal={initial.count}
+        initialHasMore={initial.hasMore}
+        initialNextOffset={initial.nextOffset}
+        country={country ?? null}
+      />
       {/* WS16 PR2 — AdSense in-feed ad below the rink list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
         

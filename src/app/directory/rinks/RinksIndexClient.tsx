@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { isVerifiedClaim, isFeaturedClaim } from '@/lib/listingTier';
@@ -25,16 +25,26 @@ interface Rink {
   claimed_by_user_id?: string | null;
 }
 
+const PAGE_SIZE = 100;
+
 interface Props {
   initialRinks: Rink[];
+  initialTotal: number;
+  initialHasMore: boolean;
+  initialNextOffset: number | null;
   country?: string | null;
 }
 
-export default function RinksIndexClient({ initialRinks, country: initialCountry }: Props) {
+export default function RinksIndexClient({ initialRinks, initialTotal, initialHasMore, initialNextOffset, country: initialCountry }: Props) {
   const searchParams = useSearchParams();
   const [rinks, setRinks] = useState<Rink[]>(initialRinks);
+  const [total, setTotal] = useState<number>(initialTotal);
+  const [hasMore, setHasMore] = useState<boolean>(initialHasMore);
+  const [nextOffset, setNextOffset] = useState<number | null>(initialNextOffset);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   // The server already pre-filtered the list when ?country= is set,
   // so the initial state is correct. Client also re-reads ?country= on mount
   // for deep-links and back/forward navigation.
@@ -46,37 +56,66 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
     if (c && c !== country) setCountry(c);
   }, [searchParams]);
 
+  const buildUrl = (offset: number) => {
+    const p = new URLSearchParams({ sort: 'tier', limit: String(PAGE_SIZE), offset: String(offset) });
+    if (country) p.set('country', country);
+    if (search.trim()) p.set('search', search.trim());
+    if (verifiedOnly) p.set('verifiedOnly', '1');
+    return `/api/rinks?${p.toString()}`;
+  };
+
+  // Search, country and verified filters run on the server across the full dataset.
+  const skipFirstRun = useRef(true);
   useEffect(() => {
-    // Re-fetch from the server whenever the country filter changes — the
-    // server pre-filter is authoritative. We do NOT refetch on mount, because
-    // the initial Rink list already reflects the country from the URL.
-    if (country === (initialCountry || '')) return;
-    setLoading(true);
-    const url = country
-      ? `/api/rinks?country=${encodeURIComponent(country)}&sort=tier`
-      : '/api/rinks?sort=tier';
-    fetch(url)
+    // The server render already matches the default query; skip that first pass.
+    if (skipFirstRun.current) {
+      skipFirstRun.current = false;
+      if (country === (initialCountry || '') && !search.trim() && !verifiedOnly) return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      fetch(buildUrl(0))
+        .then(r => r.json())
+        .then(d => {
+          if (cancelled) return;
+          setRinks(d?.data || []);
+          setTotal(d?.count ?? 0);
+          setHasMore(!!d?.hasMore);
+          setNextOffset(d?.nextOffset ?? null);
+          setLoading(false);
+        })
+        .catch(() => { if (!cancelled) setLoading(false); });
+    }, search ? 300 : 0);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [country, search, verifiedOnly]);
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore || nextOffset == null) return;
+    setLoadingMore(true);
+    fetch(buildUrl(nextOffset))
       .then(r => r.json())
       .then(d => {
-        const list = Array.isArray(d) ? d : (d?.data || []);
-        setRinks(list);
-        setLoading(false);
+        setRinks(prev => {
+          const seen = new Set(prev.map(r => r.id));
+          return [...prev, ...((d?.data || []) as Rink[]).filter(r => !seen.has(r.id))];
+        });
+        setTotal(d?.count ?? total);
+        setHasMore(!!d?.hasMore);
+        setNextOffset(d?.nextOffset ?? null);
+        setLoadingMore(false);
       })
-      .catch(() => setLoading(false));
-  }, [country, initialCountry]);
+      .catch(() => setLoadingMore(false));
+  };
 
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
   // A listing is "verified" if the claimant has a paid tier in either track.
   // Personal: identity_plus (or legacy pro/roster_plus). Business: business_listing+ (or legacy business_*).
   // Federation is always verified (it's a paid org tier).
   const verifiedCount = rinks.filter(r => isVerifiedClaim(r.claimed_by_tier, r.claimed_by_org_tier)).length;
 
-  const filtered = rinks.filter(r => {
-    const matchSearch = !search || r.name.toLowerCase().includes(search.toLowerCase()) || (r.city || '').toLowerCase().includes(search.toLowerCase());
-    const matchCountry = !country || (r.country || '').toLowerCase().includes(country.toLowerCase());
-    const matchVerified = !verifiedOnly || isVerifiedClaim(r.claimed_by_tier, r.claimed_by_org_tier);
-    return matchSearch && matchCountry && matchVerified;
-  });
+  // Filters are applied on the server across the full dataset.
+  const filtered = rinks;
 
   const clearFilters = () => { setSearch(''); setCountry(''); };
   const hasFilters = search || country;
@@ -181,7 +220,7 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
         }}>
           <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)' }}>
             Showing rinks in <strong style={{ color: '#C8102E' }}>{initialCountry}</strong>{' '}
-            <span style={{ color: 'rgba(255,255,255,0.45)' }}>— {rinks.length.toLocaleString()} total</span>
+            <span style={{ color: 'rgba(255,255,255,0.45)' }}>— {total.toLocaleString()} total</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -225,7 +264,7 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
       {/* Results count */}
       {!loading && (
         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1rem' }}>
-          {filtered.length === 0 ? 'No results' : `${filtered.length} rink${filtered.length !== 1 ? 's' : ''}`}
+          {total === 0 ? 'No results' : `${total.toLocaleString()} rink${total !== 1 ? 's' : ''}`}
           {hasFilters ? ' matching your search' : ' in directory'}
         </p>
       )}
@@ -320,6 +359,18 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
             ))
         }
       </div>
+      {hasMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.25rem' }}>
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 3, padding: '0.625rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', cursor: loadingMore ? 'wait' : 'pointer' }}
+          >
+            {loadingMore ? 'Loading…' : `Load more rinks (${rinks.length.toLocaleString()} of ${total.toLocaleString()})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
