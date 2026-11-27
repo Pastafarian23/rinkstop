@@ -1,3 +1,4 @@
+import { knownCount, leagueSummary } from '@/lib/directory-heading';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import LeaguesIndexClient from './LeaguesIndexClient';
@@ -72,6 +73,10 @@ export default async function LeaguesPage() {
   ]);
   const top = initialLeagues.slice(0, 20);
   const countryCount = new Set(initialLeagues.map((l) => l.country).filter(Boolean)).size;
+  // Heading counts: the canonical RPC when it answers, else the live league list.
+  // Zero means unavailable (failed RPC or placeholder backend), never a real count.
+  const headingLeagues = knownCount(counts.leagues, initialLeagues.length);
+  const headingCountries = knownCount(counts.countries, countryCount);
 
   // WS21 — GSC decay: 559 imp / 0.72% CTR / pos 24
   const faqs = [
@@ -174,7 +179,7 @@ export default async function LeaguesPage() {
             Hockey Leagues Worldwide
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginTop: '0.5rem', maxWidth: '720px' }}>
-            ${counts.leagues.toLocaleString()}+ leagues across ${counts.countries}+ countries — professional, junior, college, international, and amateur tiers.
+            {leagueSummary(headingLeagues, headingCountries)}
           </p>
         </div>
 
