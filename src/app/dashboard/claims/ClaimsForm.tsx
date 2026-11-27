@@ -287,6 +287,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: '1.25rem 0 0', lineHeight: 1.5 }}>
             Tip: verify your identity now and we&rsquo;ll prioritize your claim (within 24 hours vs 1–2 business days).
           </p>
+          <p style={{ color: '#888', fontSize: '0.85rem', margin: '1.25rem 0 0', lineHeight: 1.5 }}>Your claim is under review. Once it is approved, you will see your plan options here.</p>
         </div>
 
         {/* Why upgrade? prompt — shown only to free users after their first claim. */}

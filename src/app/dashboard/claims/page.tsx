@@ -3,6 +3,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { orgPlusOfferCopy } from '@/lib/org-plus-offer';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import ClaimsForm from './ClaimsForm';
@@ -137,6 +138,23 @@ export default async function ClaimsPage({
             You haven&rsquo;t submitted any claims yet. Use the form below to request ownership of a rink, team, or player profile.
           </p>
         ) : (
+          <div>
+            {(() => {
+              const approvedOrg = myClaims.find((c: { status: string | null; claim_type: string }) => c.status === 'approved' && (c.claim_type === 'rink' || c.claim_type === 'team'));
+              if (!approvedOrg) return null;
+              const o = orgPlusOfferCopy(approvedOrg.claim_type);
+              return (
+                <div style={{ border: '1px solid #FFB81C', borderRadius: 10, padding: '1rem 1.1rem', marginBottom: 12 }}>
+                  <p style={{ color: '#FFB81C', fontWeight: 700, margin: '0 0 0.5rem' }}>{o.headline}</p>
+                  <ul style={{ color: '#ccc', fontSize: '0.875rem', lineHeight: 1.6, paddingLeft: '1.1rem', margin: '0 0 0.8rem' }}>
+                    {o.benefits.map((b) => <li key={b}>{b}</li>)}
+                  </ul>
+                  <Link href={o.href} style={{ display: 'inline-block', background: '#FFB81C', color: '#0a0a0a', padding: '0.6rem 1rem', borderRadius: 6, fontWeight: 700, textDecoration: 'none', fontSize: '0.9rem' }}>
+                    {o.ctaLabel} →
+                  </Link>
+                </div>
+              );
+            })()}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {myClaims.map((c: { id: string; claim_type: string; entity_name: string; entity_id: string | null; status: string | null; created_at: string | null }) => {
               const st = STATUS_STYLES[c.status || 'pending'] || STATUS_STYLES.pending;
@@ -185,6 +203,7 @@ export default async function ClaimsPage({
                 </div>
               );
             })}
+          </div>
           </div>
         )}
       </section>
