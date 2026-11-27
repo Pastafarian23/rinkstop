@@ -76,7 +76,8 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
           {formatLevelSentence(displayName, levelDesc)}{country ? ` based in ${country}` : ''}.{' '}
           {teamCount > 0
             ? `RinkStop currently tracks ${teamCountLabel} for this league, with each team having a full profile page linking to roster, schedule, and recent results.`
-            : 'Full team pages, schedules, and results appear below as teams are added to the directory.'}
+            : `Teams are not yet listed for this league. Full team pages, schedules, and results appear below as teams are added. Are you connected to ${displayName}? `}
+          {teamCount > 0 ? null : <a href={`/add-listing?type=league&name=${encodeURIComponent(displayName || '')}`} style={{ color: '#FFB81C', fontWeight: 700, textDecoration: 'underline' }}>Claim this league</a>}
         </p>
 
         <p style={{ color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, margin: '0 0 0.75rem', fontSize: '0.95rem' }}>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import RelatedContent from '@/components/RelatedContent';
+import { claimLeagueHref } from '@/lib/league-empty-state';
 
 interface Props {
   leagueId: string;
@@ -34,8 +35,11 @@ export default function LeagueRelated({ leagueId, leagueName }: Props) {
 
   if (teams.length === 0) {
     return (
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', marginTop: '1rem' }}>
-        No teams registered in {leagueName} yet.
+      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', marginTop: '1rem' }}>
+        Teams not yet listed.{' '}
+        <a href={claimLeagueHref(leagueName)} style={{ color: '#FFB81C', fontWeight: 700, textDecoration: 'underline' }}>
+          Claim this league
+        </a>
       </p>
     );
   }
