@@ -352,7 +352,7 @@ export default async function LeaguePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }}
         />
       )}
-      <LeagueDetailClient id={id} initialFollowersCount={initialFollowersCount} viewerIsAdmin={viewerIsLeagueAdmin} />
+      <LeagueDetailClient id={id} initialLeague={league} initialFollowersCount={initialFollowersCount} viewerIsAdmin={viewerIsLeagueAdmin} />
       {league && (
         <LeagueSEOCopy
           league={league}

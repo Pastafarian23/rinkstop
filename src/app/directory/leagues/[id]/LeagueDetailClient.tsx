@@ -7,7 +7,8 @@ import SocialActions from '@/components/SocialActions';
 import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { buildLeagueShare } from '@/lib/share';
 import DestinationFeed from '@/components/DestinationFeed';
-import { findRefreshedLeague, listFromPayload } from '@/lib/league-refresh';
+import { listFromPayload } from '@/lib/league-refresh';
+import { interpretLeagueListResponse, LEAGUE_NOT_FOUND_MESSAGE, LEAGUE_ERROR_MESSAGE, LEAGUE_REQUEST_TIMEOUT_MS } from '@/lib/league-load-state';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -27,6 +28,7 @@ export default function LeagueDetailClient({
   const [league, setLeague] = useState<any>(initialLeague);
   const [teams, setTeams] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
+  const [loadMessage, setLoadMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,23 +36,42 @@ export default function LeagueDetailClient({
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
 
     // A failed, malformed, or partial refresh keeps the server-rendered league on screen.
-    fetch('/api/leagues')
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => {
+    // Bounded request: a slow or stalled refresh resolves to an error, never an endless Loading.
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), LEAGUE_REQUEST_TIMEOUT_MS) : null;
+    fetch('/api/leagues', controller ? { signal: controller.signal } : undefined)
+      .then(r => {
+        if (!r.ok) return interpretLeagueListResponse(false, null, param);
+        return r.json().then(
+          (body: unknown) => interpretLeagueListResponse(true, body, param),
+          () => interpretLeagueListResponse(false, null, param),
+        );
+      })
+      .then(outcome => {
         if (cancelled) return;
-        const found = findRefreshedLeague(d, param);
-        if (!found) return;
+        if (outcome.kind === 'error') {
+          // Keep a server-rendered league on screen; only show an error when there is none.
+          setLoadMessage(LEAGUE_ERROR_MESSAGE);
+          return;
+        }
+        if (outcome.kind === 'not_found') {
+          setLoadMessage(LEAGUE_NOT_FOUND_MESSAGE);
+          return;
+        }
+        const found: any = outcome.league;
         if (isUuid && found.slug && found.slug !== param) {
           window.location.replace(`/directory/leagues/${found.slug}`);
           return;
         }
+        setLoadMessage(null);
         setLeague(found);
         fetch(`/api/posts?leagueId=${found.id}&limit=12`)
           .then(r => (r.ok ? r.json() : null))
           .then(p => { if (!cancelled) setArticles(listFromPayload(p)); })
           .catch(() => {});
       })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setLoadMessage(LEAGUE_ERROR_MESSAGE); })
+      .finally(() => { if (timer) clearTimeout(timer); });
 
     fetch(`/api/teams?leagueId=${param}`)
       .then(r => (r.ok ? r.json() : null))
@@ -60,7 +81,11 @@ export default function LeagueDetailClient({
     return () => { cancelled = true; };
   }, [id]);
 
-  if (!league) return <p className="text-slate-400">Loading...</p>;
+  if (!league) {
+    // Explicit outcomes only: a message when the league is missing or the request failed.
+    if (loadMessage) return <p className="text-slate-400">{loadMessage}</p>;
+    return <p className="text-slate-400">Loading...</p>;
+  }
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
