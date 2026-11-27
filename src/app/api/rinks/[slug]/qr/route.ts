@@ -86,7 +86,7 @@ async function handle(
       headers: {
         'Content-Type': 'image/svg+xml; charset=utf-8',
         'Cache-Control': 'public, max-age=86400, s-maxage=86400',
-        // X-Qr-Identifier removed: the raw QR identifier is not echoed in headers.
+        'X-Qr-Identifier': rink.qr_identifier,
         'X-Rink-Id': rink.id,
       },
     });

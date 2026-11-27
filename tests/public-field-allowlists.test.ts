@@ -33,10 +33,10 @@ describe('public directory column allowlists', () => {
 
   it('rinks: never selects QR scan/revocation data or internal notes', () => {
     const cols = selectedColumnNames(RINK_PUBLIC_COLUMNS);
-    for (const private_ of ['qr_identifier', 'qr_revoked_at', 'notes', 'notes_generated']) {
+    for (const private_ of ['qr_revoked_at', 'notes', 'notes_generated']) {
       expect(cols).not.toContain(private_);
     }
-    for (const need of ['id', 'name', 'slug', 'city', 'country', 'is_active', 'static_map_url']) {
+    for (const need of ['id', 'name', 'slug', 'city', 'country', 'is_active', 'static_map_url', 'qr_identifier']) {
       expect(cols).toContain(need);
     }
   });

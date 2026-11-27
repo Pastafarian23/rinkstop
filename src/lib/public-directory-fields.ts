@@ -26,16 +26,16 @@ export const RINK_PUBLIC_COLUMNS =
   'capacity, ice_size, surface_type, website_url, logo_url, is_active, created_at, ' +
   'updated_at, source, status, cover_photo_url, place_id, opening_hours_json, ' +
   'google_website, google_maps_url, static_map_url, league, timezone, ' +
-  'cover_photo_verified_at, cover_photo_source, seo_h1, seo_title, ' +
+  'cover_photo_verified_at, cover_photo_source, seo_h1, seo_title, qr_identifier, ' +
   'verification_tier, meta_description, claimable';
-// Deliberately excluded: qr_identifier and qr_revoked_at (QR scan/revocation data),
-// notes and notes_generated (internal operator notes). The rink detail page reads
-// these itself, server-side; the public list and search never need them.
+// qr_identifier is intentionally public (QR generation, display and scanning).
+// Deliberately excluded: qr_revoked_at (server-side QR validity only) and
+// notes / notes_generated (kept out of the public API per owner instruction).
 
 /** Substrings that must never appear in a public column allowlist. */
 export const FORBIDDEN_PUBLIC_FIELD_PARTS = [
   'user_id', 'claimed_by_user', 'email', 'phone', 'password', 'secret',
-  'stripe', 'service_role', 'token', 'owner_', 'billing', 'qr_', 'notes',
+  'stripe', 'service_role', 'token', 'owner_', 'billing', 'qr_revoked', 'notes',
 ];
 
 export function selectedColumnNames(list: string): string[] {
