@@ -3,6 +3,7 @@ import Link from 'next/link';
 import DirectoryLandingClient from './DirectoryLandingClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
+import { knownCount } from '@/lib/directory-heading';
 import FourPathNav from '@/components/FourPathNav';
 
 // 2026-10-01 (Arnel data-integrity audit): route title/description through
@@ -10,7 +11,14 @@ import FourPathNav from '@/components/FourPathNav';
 // rendered DirectoryLandingClient counts and never drifts.
 export async function generateMetadata(): Promise<Metadata> {
   const counts = await getDirectoryCountsCached();
-  const description = `Browse RinkStop's complete hockey directory — ${counts.teams.toLocaleString()}+ teams, ${counts.leagues.toLocaleString()}+ leagues, ${counts.players.toLocaleString()}+ players, and ${counts.rinks.toLocaleString()} ice rinks across ${counts.countries.toLocaleString()} countries. Search by name, league, country, or city.`;
+  // Unavailable counts (failed RPC, placeholder backend) are omitted, never shown as 0.
+  const teamsN = knownCount(counts.teams);
+  const leaguesN = knownCount(counts.leagues);
+  const playersN = knownCount(counts.players);
+  const rinksN = knownCount(counts.rinks);
+  const countriesN = knownCount(counts.countries);
+  const plus = (n: number | null, label: string) => (n === null ? label : `${n.toLocaleString()}+ ${label}`);
+  const description = `Browse RinkStop's complete hockey directory — ${plus(teamsN, 'teams')}, ${plus(leaguesN, 'leagues')}, ${plus(playersN, 'players')}, and ${rinksN !== null ? `${rinksN.toLocaleString()} ice rinks` : 'ice rinks'} across ${countriesN !== null ? `${countriesN.toLocaleString()} countries` : 'countries'}. Search by name, league, country, or city.`;
   return {
     title: 'Hockey Directory',
   description: description,

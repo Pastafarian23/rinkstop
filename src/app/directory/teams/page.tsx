@@ -117,7 +117,7 @@ async function fetchInitialTeams(opts: {
   league?: string | null;
   limit?: number;
   offset?: number;
-}): Promise<Team[]> {
+}): Promise<{ teams: Team[]; failed: boolean }> {
   // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
   // route as dynamic and its `revalidate` is silently ignored — production was
   // serving `no-store` + `x-vercel-cache: MISS` on every request.
@@ -130,18 +130,26 @@ async function fetchInitialTeams(opts: {
   // is memoized instead (see src/lib/cached-read.ts). The key includes every
   // filter that affects the result, so different filter combinations never
   // collide. These are public directory rows — no user-specific data.
-  return cachedPublicRead(
-    () => fetchInitialTeamsUncached(opts),
-    [
-      opts.country ?? '',
-      opts.level ?? '',
-      opts.league ?? '',
-      opts.limit ?? 500,
-      opts.offset ?? 0,
-    ],
-    300,
-    [...PUBLIC_READ_TAGS.directory],
-  );
+  // A failed read throws inside the cached function, so the failure is not
+  // cached and the next request retries. It is reported here as `failed`,
+  // never as an empty list of teams.
+  try {
+    const teams = await cachedPublicRead(
+      () => fetchInitialTeamsUncached(opts),
+      [
+        opts.country ?? '',
+        opts.level ?? '',
+        opts.league ?? '',
+        opts.limit ?? 500,
+        opts.offset ?? 0,
+      ],
+      300,
+      [...PUBLIC_READ_TAGS.directory],
+    );
+    return { teams, failed: false };
+  } catch {
+    return { teams: [], failed: true };
+  }
 }
 
 async function fetchInitialTeamsUncached(opts: {
@@ -275,7 +283,7 @@ async function fetchInitialTeamsUncached(opts: {
 
   const [nhlRes, userRes] = await Promise.all([nhlQuery, userQuery]);
 
-  if (nhlRes.error) console.error('Teams initial fetch failed:', nhlRes.error);
+  if (nhlRes.error) throw new Error(`Teams initial fetch failed: ${nhlRes.error.message ?? 'unknown error'}`);
   if (userRes.error) console.error('User teams initial fetch failed:', userRes.error);
 
   // Alias the new column names to the legacy ones (city/country/logo_url)
@@ -338,7 +346,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   // averaging 500–700ms on the Supabase pool, sequential was ~2.5s total.
   // Parallel + cached: ~600ms. (Verified live 2026-08-13 after deploy.)
   const [
-    initialTeams,
+    initialTeamsResult,
     counts,
     topCountries,
     topLeagues,
@@ -350,6 +358,8 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     getTopLeaguesCached(),
     getCountryLeaguesMapCached(),
   ]);
+  const initialTeams = initialTeamsResult.teams;
+  const initialTeamsFailed = initialTeamsResult.failed;
   // Unavailable counts (failed RPC, placeholder backend) are null, never a zero.
   const teamsN = knownCount(counts.teams);
   const leaguesN = knownCount(counts.leagues);
@@ -451,6 +461,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
       })()}
       <TeamsIndexClient
         initialTeams={initialTeams}
+        initialLoadFailed={initialTeamsFailed}
         topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}
         topLeagues={topLeagues.map((l) => ({ name: l.name, slug: l.slug, teamCount: l.team_count }))}
         countryLeaguesMap={countryLeaguesMap}

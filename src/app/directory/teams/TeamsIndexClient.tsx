@@ -1,4 +1,5 @@
 'use client';
+import { readListResponse, LIST_UNAVAILABLE_MESSAGE, type ListResult } from '@/lib/directory-fetch';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -71,6 +72,8 @@ interface Props {
   countryLeaguesMap: Array<[string, string[]]>;
   /** Total team count (for display when no filter is active). */
   totalCount: number;
+  /** True when the server-side initial load failed (not an empty result). */
+  initialLoadFailed?: boolean;
   /** Active filter values from the URL (server-side). */
   country?: string | null;
   level?: string | null;
@@ -108,6 +111,7 @@ export default function TeamsIndexClient({
   topLeagues,
   countryLeaguesMap,
   totalCount,
+  initialLoadFailed = false,
   country: initialCountry,
   level: initialLevel,
   league: initialLeague,
@@ -133,6 +137,7 @@ export default function TeamsIndexClient({
   // teams come from the same /api/user-teams endpoint.
   const [extraTeams, setExtraTeams] = useState<Team[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<boolean>(initialLoadFailed);
   const [hasMore, setHasMore] = useState(true);
 
   // The teams list is the props (already SSR-filtered when the URL has
@@ -242,11 +247,17 @@ export default function TeamsIndexClient({
     params.set('limit', '48');
     try {
       const [nhlRes, userRes] = await Promise.all([
-        fetch(`/api/teams?${params.toString()}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
-        fetch(`/api/user-teams?${params.toString()}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
+        fetch(`/api/teams?${params.toString()}`).then((r) => readListResponse<any>(r)).catch((): ListResult<any> => ({ ok: false })),
+        fetch(`/api/user-teams?${params.toString()}`).then((r) => readListResponse<any>(r)).catch((): ListResult<any> => ({ ok: false })),
       ]);
-      const nhlData: any[] = (nhlRes?.data || []) as any[];
-      const userData: any[] = (userRes?.data || []) as any[];
+      // A failed main request is an error, never an empty page of results.
+      if (!nhlRes.ok) {
+        setLoadError(true);
+        return;
+      }
+      const nhlData: any[] = nhlRes.data;
+      // User teams are additive: a failure there does not hide the main list.
+      const userData: any[] = userRes.ok ? userRes.data : [];
       const mapped: Team[] = [
         ...nhlData.map((t): Team => ({
           id: t.id, name: t.name, slug: t.slug,
@@ -283,6 +294,7 @@ export default function TeamsIndexClient({
       }
     } catch (e) {
       console.error('[loadMore] failed', e);
+      setLoadError(true);
     } finally {
       setLoadingMore(false);
     }
@@ -603,10 +615,10 @@ export default function TeamsIndexClient({
           client loading state needed since we no longer fetch on filter change. */}
       <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1rem' }}>
         {visibleTeams.length === 0
-          ? 'No results'
+          ? (loadError ? LIST_UNAVAILABLE_MESSAGE : 'No results')
           : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}
-        {urlQ ? ` matching “${urlQ}”` : ''}
-        {!urlQ && !hasFilters && totalCount > 0 ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
+        {visibleTeams.length > 0 && urlQ ? ` matching “${urlQ}”` : ''}
+        {visibleTeams.length > 0 && !urlQ && !hasFilters && totalCount > 0 ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
       </p>
 
       {/* Grid */}
