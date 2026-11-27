@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         // verification/featured state from the effective entitlement
         // (best of personal and org) rather than the personal column only.
         claimed_by_org_tier: claim?.org_tier || null,
-        claimed_by_user_id: claim?.user_id || null,
+        // claimed_by_user_id is deliberately NOT returned: it is a private Clerk user id.
       };
     });
     const sort = searchParams.get('sort');
