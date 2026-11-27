@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 import { LEAGUE_PUBLIC_COLUMNS } from '@/lib/public-directory-fields';
+import { parsePageParams } from '@/lib/rinks-list';
+import { fetchLeaguePage } from '@/lib/leagues-query';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -14,6 +16,22 @@ function requireAuth(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  // Paged mode (full-dataset search with Load More) only when a limit is supplied.
+  // Without `limit` the response stays a plain array for existing callers.
+  if (searchParams.get('limit') && !id) {
+    try {
+      const result = await fetchLeaguePage({
+        search: searchParams.get('search'),
+        country: searchParams.get('country'),
+        verifiedOnly: searchParams.get('verifiedOnly') === '1',
+        sort: searchParams.get('sort') || 'name',
+        page: parsePageParams(searchParams.get('limit'), searchParams.get('offset')),
+      });
+      return NextResponse.json(result);
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    }
+  }
   const country = searchParams.get('country');
   const level = searchParams.get('level');
   const search = searchParams.get('search');
