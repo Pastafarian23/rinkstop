@@ -263,7 +263,6 @@ export const TIERS: Record<TierName, TierInfo> = {
       'API access for team data',
       'Promotions and featured placement',
       'Multiple listings',
-      'Up to 150 players',
       '50 GB of shared media storage',
     ],
     footnote: 'For mid-sized clubs and organizations that need reporting and integrations.',

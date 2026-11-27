@@ -34,7 +34,3 @@ export function orgPlusOfferCopy(claimType: string | null | undefined): { headli
   };
 }
 
-export const ORG_PLUS_EVENTS = {
-  offerShown: 'claim_upgrade_offer_shown',
-  ctaClick: 'claim_upgrade_cta_click',
-} as const;

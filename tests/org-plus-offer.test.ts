@@ -2,7 +2,7 @@ import { TEAM_LIMIT_PER_TIER } from '@/lib/pricing';
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { shouldShowOrgPlusOffer, orgPlusPrices, orgPlusOfferCopy, ORG_PLUS_EVENTS } from '@/lib/org-plus-offer';
+import { shouldShowOrgPlusOffer, orgPlusPrices, orgPlusOfferCopy } from '@/lib/org-plus-offer';
 
 describe('which claims see the offer', () => {
   it('rink and team claims see it', () => {
@@ -36,11 +36,11 @@ describe('prices come from pricing.ts and match the existing 50% first-year prom
   });
 });
 
-describe('measurement events are on the tracking allowlist', () => {
+describe('no offer analytics events are added to the tracking allowlist', () => {
   const track = readFileSync(join(process.cwd(), 'src/app/api/track/route.ts'), 'utf8');
-  it('offer shown and CTA click are both allowlisted', () => {
-    expect(track).toContain(`'${ORG_PLUS_EVENTS.offerShown}'`);
-    expect(track).toContain(`'${ORG_PLUS_EVENTS.ctaClick}'`);
+  it('the two unused offer event names are absent', () => {
+    expect(track).not.toContain('claim_upgrade_offer_shown');
+    expect(track).not.toContain('claim_upgrade_cta_click');
   });
 });
 
@@ -60,7 +60,7 @@ describe('verified benefits only (30-player promise removed; team limit is enfor
   });
   it('the preview route is blocked on production', () => {
     const src = readFileSync(join(process.cwd(), 'src/app/preview/org-plus-offer/page.tsx'), 'utf8');
-    expect(src).toContain("process.env.VERCEL_ENV === 'production'");
+    expect(src).toContain('isPreviewServable(process.env.VERCEL_ENV)');
     expect(src).toContain('notFound()');
   });
 });

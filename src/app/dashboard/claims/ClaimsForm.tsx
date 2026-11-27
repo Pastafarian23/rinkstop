@@ -30,9 +30,10 @@ interface ClaimsFormProps {
   maxClaims: number; // -1 means Federation/custom
   currentCount: number;
   recommendedTier?: string;
+  hasPendingClaim?: boolean; // pending or newly submitted claims: show review status only, no purchase prompt
 }
 
-export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedTier }: ClaimsFormProps) {
+export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedTier, hasPendingClaim = false }: ClaimsFormProps) {
   const searchParams = useSearchParams();
   // Read deep-link params (e.g. /dashboard/claims?entity=team&id=...&name=...)
   // and pre-fill the form. Supports entity=team|rink|player.
@@ -287,10 +288,11 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: '1.25rem 0 0', lineHeight: 1.5 }}>
             Tip: verify your identity now and we&rsquo;ll prioritize your claim (within 24 hours vs 1–2 business days).
           </p>
+          <p style={{ color: '#888', fontSize: '0.85rem', margin: '1.25rem 0 0', lineHeight: 1.5 }}>Your claim is under review. Once it is approved, you will see your plan options here.</p>
         </div>
 
-        {/* Why upgrade? prompt — shown only to free users after their first claim. */}
-        {tier === 'free' && (
+        {/* Why upgrade? prompt — shown only to free users after their first claim, and never while a claim is pending. */}
+        {tier === 'free' && !hasPendingClaim && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, rgba(255,184,28,0.06) 100%)',
             border: '1px solid rgba(255,184,28,0.3)',
@@ -395,7 +397,11 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
         </div>
       )}
 
-      {freeUserAtCap ? (
+      {freeUserAtCap && hasPendingClaim ? (
+        <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '2rem 1.5rem', textAlign: 'center' }}>
+          <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>Your claim is under review. You will see plan options here after it is approved.</p>
+        </div>
+      ) : freeUserAtCap ? (
         <div style={{
           background: 'rgba(255,184,28,0.06)',
           border: '1px solid rgba(255,184,28,0.3)',

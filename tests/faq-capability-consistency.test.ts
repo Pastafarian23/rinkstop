@@ -31,7 +31,6 @@ import {
 } from '../src/lib/media-entitlements';
 import {
   LISTING_CLAIMS_PER_TIER,
-  PLAYER_CAPACITY_PER_TIER,
   TEAM_LIMIT_PER_TIER,
 } from '../src/lib/pricing';
 
@@ -128,19 +127,19 @@ describe('FAQ numbers match the canonical constants', () => {
     expect(STRINGS.some((s) => /Organization Plus raises that to five/i.test(s))).toBe(true);
   });
 
-  it('quotes the same team and player caps the database enforces', () => {
+  it('quotes the team and claim caps the server enforces, and makes no player-count promise', () => {
+    // Team caps are enforced (src/lib/org-limits.ts checkTeamLimit). Player capacity is NOT enforced:
+    // getPlayerCapacity has no callers and no DB roster cap exists (audit 2026-11-27). Public copy must
+    // not quote a player cap until one is enforced and approved.
     expect(TEAM_LIMIT_PER_TIER.org_plus).toBe(3);
     expect(TEAM_LIMIT_PER_TIER.org_pro).toBe(10);
-    expect(PLAYER_CAPACITY_PER_TIER.org_plus).toBe(30);
-    expect(PLAYER_CAPACITY_PER_TIER.org_pro).toBe(150);
     const s = answerFor(/how many claims, players, and teams/i);
     expect(s, 'no answer found for the capacity question').toBeTruthy();
     expect(s).toContain('5 claims');
     expect(s).toContain('3 team workspaces');
-    expect(s).toContain('30 players');
     expect(s).toContain('25 claims');
     expect(s).toContain('10 teams');
-    expect(s).toContain('150 players');
+    expect(s).not.toMatch(/\b(30|150) players\b/);
   });
 
   it('quotes video duration caps that match the allowance table', () => {

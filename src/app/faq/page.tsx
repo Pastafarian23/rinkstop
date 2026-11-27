@@ -152,7 +152,7 @@ const sections: Array<{
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Organization Plus covers one small club with up to 30 players. Organization Pro covers up to 150 players with multiple teams. Organization Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing. New rink operators should also read How to Choose a Learn-to-Play Program at /learn/choosing-a-program/.',
+        a: 'Organization Plus covers one small club running up to 3 teams. Organization Pro covers organizations with more teams. Organization Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing. New rink operators should also read How to Choose a Learn-to-Play Program at /learn/choosing-a-program/.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -600,7 +600,7 @@ const sections: Array<{
       },
       {
         q: 'How many claims, players, and teams can my plan hold?',
-        a: 'Free gets one listing claim. Organization Plus gets 5 claims, 3 team workspaces, and up to 30 players. Organization Pro gets 25 claims, 10 teams, and up to 150 players. Organization Elite is unlimited on all three. Personal Passport plans are for individuals and do not include team workspaces.',
+        a: 'Free gets one listing claim. Organization Plus gets 5 claims and 3 team workspaces. Organization Pro gets 25 claims and 10 teams. Organization Elite is unlimited on all three. Personal Passport plans are for individuals and do not include team workspaces.',
       },
       {
         q: 'What happens if I exceed my plan limit?',

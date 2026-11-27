@@ -40,7 +40,6 @@ const PASSPORT_BULLETS = [
 
 const CLUB_BULLETS = [
   'Showcase every team in your club in one place',
-  'Free for the first 30 players',
   'Roster management + standings + scheduling',
   'Visible to every coach, scout, and family in your area',
 ];

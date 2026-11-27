@@ -254,7 +254,7 @@ export default function ClaimThisListing({
               {state.recommendedTier === 'org_enterprise' ? `You've reached your tier's claim limit. Organization Enterprise covers enterprise-scale organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
             </div>
             <div style={descriptionStyle}>
-              Organization Pro covers up to 150 players with multiple teams. For leagues, brands, or organizations that need more, contact sales for Enterprise.
+              Organization Pro covers organizations with more teams. For leagues, brands, or organizations that need more, contact sales for Enterprise.
             </div>
           </div>
         </div>

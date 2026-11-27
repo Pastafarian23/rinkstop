@@ -48,7 +48,7 @@ const NEXT_STEPS: Record<TierId, string[]> = {
     'Your Founding Member badge is now live on your profile.',
   ],
   org_pro: [
-    'Organization Pro is live - up to 10 teams, up to 150 players, financial reporting and API access.',
+    'Organization Pro is live - up to 10 teams, financial reporting and API access.',
     'Open the Financial Reporting tab.',
     'Configure promotions and featured placement for your listings.',
   ],
@@ -70,8 +70,8 @@ const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: strin
   verified_identity: { id: 'identity_plus', label: 'Hockey Passport Plus', price: formatTierPricePerYear('identity_plus'), reason: 'Family Hub, photos, videos, advanced analytics, achievement tracking' },
   identity_plus: { id: null, label: '—', price: '—', reason: 'You have the top individual plan. Switch to an Organization plan to manage a club, league, or federation.' },
   // Organization progression
-  org_free: { id: 'org_plus', label: 'Organization Plus', price: formatTierPricePerYear('org_plus'), reason: 'Up to 3 teams, registrations, payments, up to 30 players' },
-  org_plus: { id: 'org_pro', label: 'Organization Pro', price: formatTierPricePerYear('org_pro'), reason: 'Up to 10 teams, up to 150 players, financial reporting, API access' },
+  org_free: { id: 'org_plus', label: 'Organization Plus', price: formatTierPricePerYear('org_plus'), reason: 'Up to 3 teams, registrations and payments' },
+  org_plus: { id: 'org_pro', label: 'Organization Pro', price: formatTierPricePerYear('org_pro'), reason: 'Up to 10 teams, financial reporting, API access' },
   org_pro: { id: 'org_elite', label: 'Organization Elite', price: formatTierPricePerYear('org_elite'), reason: 'Unlimited teams, advanced analytics, custom branding' },
   org_elite: { id: 'org_enterprise', label: 'Organization Enterprise', price: 'Custom', reason: 'Organization Elite is the top self-serve plan. Enterprise is for federation governance and compliance.' },
   org_enterprise: { id: null, label: '—', price: '—', reason: 'You have the top organization plan. Reach out to your success team for anything else.' },
@@ -222,8 +222,8 @@ export default async function WelcomePage({
           {tier === 'verified_identity' && 'You\'re on Hockey Passport. Your profile claim and unlimited roles under one identity are ready.'}
           {tier === 'identity_plus' && 'You\'re on Hockey Passport Plus. Family Hub, photos, videos, and advanced analytics are now available.'}
           {tier === 'org_free' && 'You\'re on Organization Free. Your team is listed on the RinkStop directory — claim it and update the details.'}
-          {tier === 'org_plus' && 'You\'re on Organization Plus. Up to 3 teams, registrations, payments, and up to 30 players are live.'}
-          {tier === 'org_pro' && 'You\'re on Organization Pro. Up to 10 teams, up to 150 players, financial reporting, and API access are live.'}
+          {tier === 'org_plus' && 'You\'re on Organization Plus. Up to 3 teams, registrations and payments are live.'}
+          {tier === 'org_pro' && 'You\'re on Organization Pro. Up to 10 teams, financial reporting, and API access are live.'}
           {tier === 'org_elite' && 'You\'re on Organization Elite. Unlimited teams, advanced analytics, and custom branding are unlocked.'}
           {tier === 'org_enterprise' && 'You\'re on Organization Enterprise. Your success team will reach out within 24 hours to scope governance and compliance.'}
         </p>

@@ -100,7 +100,7 @@ const FAQ = [
   },
   {
     q: 'Does RinkStop replace SportsEngine, Hudl, or my existing tools?',
-    a: 'For most clubs, no — it complements them. If you already run Hudl for video breakdown, keep Hudl. RinkStop\'s value is the directory + claim + identity layer that those tools do not cover. The exception: very small clubs (under 30 players) who have not committed to a paid management tool yet. For them, RinkStop Organization Plus at $99/yr replaces the need for SportsEngine HQ at $696/yr.',
+    a: 'For most clubs, no — it complements them. If you already run Hudl for video breakdown, keep Hudl. RinkStop\'s value is the directory + claim + identity layer that those tools do not cover. The exception: very small clubs who have not committed to a paid management tool yet. For them, RinkStop Organization Plus at $99/yr replaces the need for SportsEngine HQ at $696/yr.',
   },
   {
     q: 'Is RinkStop\'s pricing in USD?',
@@ -462,7 +462,7 @@ export default function RinkStopVsCompetitors() {
             marginBottom: '0.5rem',
           }}
         >
-          Recommended tier: <strong style={{ color: '#fff' }}>Organization Plus ($99/yr)</strong> for under 30 players, or Organization Pro for 30-150.
+          Recommended tier: <strong style={{ color: '#fff' }}>Organization Plus ($99/yr)</strong> for a single small club running up to 3 teams, or Organization Pro for organizations with more teams.
         </p>
         <p
           style={{
@@ -471,7 +471,7 @@ export default function RinkStopVsCompetitors() {
             lineHeight: 1.7,
           }}
         >
-          <strong style={{ color: '#009650' }}>Worth it.</strong> At $99/yr vs SportsEngine HQ at $696/yr, you save $597/year for the same core workflow. The catch: if you need USA Hockey affiliation, uniform ordering, or background checks, SportsEngine has those and RinkStop does not (yet). For a club under 30 players that hasn&apos;t committed to either platform, RinkStop is the price-of-entry choice.
+          <strong style={{ color: '#009650' }}>Worth it.</strong> At $99/yr vs SportsEngine HQ at $696/yr, you save $597/year for the same core workflow. The catch: if you need USA Hockey affiliation, uniform ordering, or background checks, SportsEngine has those and RinkStop does not (yet). For a small club that hasn&apos;t committed to either platform, RinkStop is the price-of-entry choice.
         </p>
       </section>
 

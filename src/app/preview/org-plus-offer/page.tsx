@@ -1,15 +1,17 @@
 // Staging-only preview of the approved-claim Organization Plus offer (B-4 review, 2026-11-27).
 // Shows SAMPLE data only. Reads no claim, creates no account, writes nothing, starts no purchase.
-// Returns 404 on production so it can never be visible to customers.
+// Served ONLY when VERCEL_ENV === 'preview' (fail closed: production, development and unset all 404).
+// Excluded from the sitemap; see tests/org-plus-preview-gate.test.ts.
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { orgPlusOfferCopy } from '@/lib/org-plus-offer';
+import { isPreviewServable } from '@/lib/org-plus-preview-gate';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function OrgPlusOfferPreview() {
-  if (process.env.VERCEL_ENV === 'production') notFound();
+  if (!isPreviewServable(process.env.VERCEL_ENV)) notFound();
   return (
     <main style={{ maxWidth: 640, margin: '0 auto', padding: '1.5rem 1rem', color: '#fff' }}>
       <p style={{ background: '#222', color: '#FFB81C', padding: '0.6rem 0.8rem', borderRadius: 6, fontSize: '0.85rem' }}>

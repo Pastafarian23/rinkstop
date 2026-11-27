@@ -91,13 +91,13 @@ const TIER_OPTIONS = [
     value: 'org_plus',
     label: 'Organization Plus',
     price: '$99/year',
-    blurb: 'For small clubs (≤30 players, up to 3 teams). Roster, schedule, events, registrations and payments.',
+    blurb: 'For small clubs running up to 3 teams. Roster, schedule, events, registrations and payments.',
   },
   {
     value: 'org_pro',
     label: 'Organization Pro',
     price: '$299/year',
-    blurb: 'For mid clubs (≤150 players, up to 10 teams). Financial reporting, API access, promotions and featured placement.',
+    blurb: 'For mid clubs running up to 10 teams. Financial reporting, API access, promotions and featured placement.',
     popular: true,
   },
   {
