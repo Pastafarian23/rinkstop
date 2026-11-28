@@ -48,7 +48,7 @@ export default function PWHLClient({ league, teams }: Props) {
           PWHL
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', marginTop: '0.625rem', maxWidth: '560px', lineHeight: 1.6 }}>
-          North America&apos;s premier professional women&apos;s hockey league — 6 teams, elite competition, history in the making.
+          Professional women&apos;s hockey in North America — 12 teams across the United States and Canada.
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function PWHLClient({ league, teams }: Props) {
         <div style={{ flex: '0 0 auto', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {[
             { label: 'Founded', value: '2023' },
-            { label: 'Teams', value: '6' },
+            { label: 'Teams', value: '12' },
             { label: 'Countries', value: '2' },
           ].map(stat => (
             <div key={stat.label} style={{ textAlign: 'center' }}>
@@ -178,7 +178,7 @@ export default function PWHLClient({ league, teams }: Props) {
       }}>
         <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>SEASON LEADERS</h2>
         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.875rem' }}>
-          Stats integration coming soon — player scoring, goaltending, and team standings.
+          Season leaders and standings will appear here once regular-season games begin on December 5, 2026.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem', marginTop: '1.25rem' }}>
           {['Points', 'Goals', 'Assists', 'GAA', 'Save %', 'Wins'].map(stat => (
