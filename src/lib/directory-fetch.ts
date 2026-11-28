@@ -7,7 +7,10 @@
  */
 export type ListResult<T> = { ok: true; data: T[] } | { ok: false };
 
-export async function readListResponse<T = unknown>(res: Response): Promise<ListResult<T>> {
+/** Same as ListResult, plus the server's exact `count` when the body sent one. */
+export type ListPageResult<T> = { ok: true; data: T[]; count: number | null } | { ok: false };
+
+export async function readListPage<T = unknown>(res: Response): Promise<ListPageResult<T>> {
   if (!res.ok) return { ok: false };
   let body: unknown;
   try {
@@ -18,7 +21,17 @@ export async function readListResponse<T = unknown>(res: Response): Promise<List
   if (!body || typeof body !== 'object' || !Array.isArray((body as { data?: unknown }).data)) {
     return { ok: false };
   }
-  return { ok: true, data: (body as { data: T[] }).data };
+  const count = (body as { count?: unknown }).count;
+  return {
+    ok: true,
+    data: (body as { data: T[] }).data,
+    count: typeof count === 'number' && Number.isFinite(count) ? count : null,
+  };
+}
+
+export async function readListResponse<T = unknown>(res: Response): Promise<ListResult<T>> {
+  const page = await readListPage<T>(res);
+  return page.ok ? { ok: true, data: page.data } : { ok: false };
 }
 
 export const LIST_UNAVAILABLE_MESSAGE = 'Teams are temporarily unavailable. Please try again shortly.';

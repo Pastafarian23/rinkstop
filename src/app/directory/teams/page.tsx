@@ -7,6 +7,7 @@ import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { knownCount, teamsTrackedPhrase } from '@/lib/directory-heading';
+import { TEAMS_PAGE_SIZE } from '@/lib/teams-paging';
 import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 import {
   getDirectoryCountsCached,
@@ -117,7 +118,7 @@ async function fetchInitialTeams(opts: {
   league?: string | null;
   limit?: number;
   offset?: number;
-}): Promise<{ teams: Team[]; failed: boolean }> {
+}): Promise<{ teams: Team[]; nameRows: number; nameHasMore: boolean; failed: boolean }> {
   // 2026-10-23 (perf): this page reads `searchParams`, so Next.js treats the
   // route as dynamic and its `revalidate` is silently ignored — production was
   // serving `no-store` + `x-vercel-cache: MISS` on every request.
@@ -134,12 +135,13 @@ async function fetchInitialTeams(opts: {
   // cached and the next request retries. It is reported here as `failed`,
   // never as an empty list of teams.
   try {
-    const teams = await cachedPublicRead(
+    const result = await cachedPublicRead(
       () => fetchInitialTeamsUncached(opts),
       [
-        // Key version: bump when the cached shape or failure behaviour changes so
-        // entries written before the fix (including stale empty results) are not reused.
-        'v2',
+        // Key version: bump when the cached shape or ordering changes so entries
+        // written before the change are not reused. v3: name-ordered rows tie-break
+        // on id (matching /api/teams), and the cached value carries nameRows.
+        'v3',
         opts.country ?? '',
         opts.level ?? '',
         opts.league ?? '',
@@ -149,9 +151,9 @@ async function fetchInitialTeams(opts: {
       300,
       [...PUBLIC_READ_TAGS.directory],
     );
-    return { teams, failed: false };
+    return { teams: result.teams, nameRows: result.nameRows, nameHasMore: result.nameHasMore, failed: false };
   } catch {
-    return { teams: [], failed: true };
+    return { teams: [], nameRows: 0, nameHasMore: false, failed: true };
   }
 }
 
@@ -161,7 +163,7 @@ async function fetchInitialTeamsUncached(opts: {
   league?: string | null;
   limit?: number;
   offset?: number;
-}): Promise<Team[]> {
+}): Promise<{ teams: Team[]; nameRows: number; nameHasMore: boolean }> {
   const { country, level, league, limit = 500, offset = 0 } = opts;
   // Resolve the URL `country=` value to the 2-letter ISO that team_workspaces
   // stores in `country_code`. The directory dropdown sends full English names
@@ -188,8 +190,11 @@ async function fetchInitialTeamsUncached(opts: {
     .from('team_workspaces')
     .select('id, name, slug, avatar_url, home_city, country_code, league_id, leagues(name)')
     .eq('is_active', true)
+    // id tie-breaks equal names so this page and /api/teams agree on the order.
     .order('name')
-    .range(offset, offset + limit - 1);
+    .order('id')
+    // One extra row, so the page knows whether another page exists. It is not shown.
+    .range(offset, offset + limit);
   if (countryIso) nhlQuery = nhlQuery.eq('country_code', countryIso);
 
   // Filter by league and/or level. Both can be set at once — intersect them.
@@ -292,7 +297,9 @@ async function fetchInitialTeamsUncached(opts: {
   // Alias the new column names to the legacy ones (city/country/logo_url)
   // expected by the Team type + TeamsIndexClient card renderer. The renaming
   // happened in PR2; we keep the public shape stable.
-  const nhlTeams = ((nhlRes.data || []) as any[]).map((t: any): Team => ({
+  const nameFetched = (nhlRes.data || []) as any[];
+  const nameHasMore = nameFetched.length > limit;
+  const nhlTeams = nameFetched.slice(0, limit).map((t: any): Team => ({
     id: t.id,
     name: t.name,
     slug: t.slug,
@@ -331,7 +338,8 @@ async function fetchInitialTeamsUncached(opts: {
   const merged = [...nhlTeams, ...userTeams].filter(
     (t, i, arr) => arr.findIndex(x => x.id === t.id) === i
   );
-  return merged;
+  // nameRows: rows the ordered list gave this page. Load more resumes at this offset.
+  return { teams: merged, nameRows: nhlTeams.length, nameHasMore };
 }
 
 // SSRed page size for the teams grid. This is the crux of the page-load
@@ -340,7 +348,7 @@ async function fetchInitialTeamsUncached(opts: {
 // of 12 on a 6-col grid) fits the visible viewport on every device and
 // keeps the initial HTML under ~80KB. The "Load more" button on the page
 // fetches the next batch via /api/teams?offset=N.
-const SSR_PAGE_SIZE = 48;
+const SSR_PAGE_SIZE = TEAMS_PAGE_SIZE;
 
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string; q?: string }> }) {
   const { country, level, league, q } = await searchParams;
@@ -363,6 +371,8 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   ]);
   const initialTeams = initialTeamsResult.teams;
   const initialTeamsFailed = initialTeamsResult.failed;
+  const initialNameRows = initialTeamsResult.nameRows;
+  const initialHasMore = initialTeamsResult.nameHasMore;
   // Unavailable counts (failed RPC, placeholder backend) are null, never a zero.
   const teamsN = knownCount(counts.teams);
   const leaguesN = knownCount(counts.leagues);
@@ -465,6 +475,8 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
       <TeamsIndexClient
         initialTeams={initialTeams}
         initialLoadFailed={initialTeamsFailed}
+        initialNameRows={initialNameRows}
+        initialHasMore={initialHasMore}
         topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}
         topLeagues={topLeagues.map((l) => ({ name: l.name, slug: l.slug, teamCount: l.team_count }))}
         countryLeaguesMap={countryLeaguesMap}
@@ -545,7 +557,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
               Find any hockey team in the world
             </h2>
             <p style={{ marginBottom: '0.75rem' }}>
-              RinkStop tracks more than {initialTeams.length.toLocaleString()} active hockey teams
+              RinkStop tracks {teamsN != null ? `more than ${teamsN.toLocaleString()} active hockey teams` : 'active hockey teams'}
               across professional, junior, college, amateur, and youth leagues on six continents.
               Use the search and league filters above to find a specific team, or browse the full
               directory by league, country, or city.

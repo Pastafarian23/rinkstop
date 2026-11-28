@@ -1,6 +1,7 @@
 'use client';
-import { readListResponse, LIST_UNAVAILABLE_MESSAGE, type ListResult } from '@/lib/directory-fetch';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { readListPage, LIST_UNAVAILABLE_MESSAGE, type ListPageResult } from '@/lib/directory-fetch';
+import { TEAMS_PAGE_SIZE, applyTeamsPage, initialTeamsPageState, type TeamsPageState } from '@/lib/teams-paging';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { isVerifiedClaim, isFeaturedClaim } from '@/lib/listingTier';
@@ -74,6 +75,10 @@ interface Props {
   totalCount: number;
   /** True when the server-side initial load failed (not an empty result). */
   initialLoadFailed?: boolean;
+  /** Rows the server-rendered first page took from the name-ordered list (0..TEAMS_PAGE_SIZE). */
+  initialNameRows?: number;
+  /** True when the name-ordered list continues past the first page (one-row lookahead). */
+  initialHasMore?: boolean;
   /** Active filter values from the URL (server-side). */
   country?: string | null;
   level?: string | null;
@@ -112,6 +117,8 @@ export default function TeamsIndexClient({
   countryLeaguesMap,
   totalCount,
   initialLoadFailed = false,
+  initialNameRows = TEAMS_PAGE_SIZE,
+  initialHasMore = false,
   country: initialCountry,
   level: initialLevel,
   league: initialLeague,
@@ -130,15 +137,28 @@ export default function TeamsIndexClient({
   // Local state for verified-only (transient, not URL-synced — same as before)
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  // Load-more pagination. 2026-08-13: server-side initialTeams is now capped
-  // at 48 cards (down from 500) so the page HTML is ~80KB instead of ~1MB.
-  // The "Load more" button fetches the next batch via /api/teams?offset=N
-  // and the resulting NHL rows are merged into extraTeams. User-created
-  // teams come from the same /api/user-teams endpoint.
-  const [extraTeams, setExtraTeams] = useState<Team[]>([]);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // Load-more pagination. The server-rendered first page is one page
+  // (TEAMS_PAGE_SIZE) so the HTML stays small. "Load more" resumes the same
+  // name-ordered list at the offset the previous page stopped at. Paging state
+  // is keyed by filter, so a filter change starts fresh and a late response
+  // for another filter is ignored. See src/lib/teams-paging.ts.
+  const [pagingState, setPagingState] = useState<TeamsPageState<Team> | null>(null);
+  const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<boolean>(initialLoadFailed);
-  const [hasMore, setHasMore] = useState(true);
+  const pageKey = `${urlCountry}|${urlLevel}|${urlLeague}`;
+  const fallbackPaging = useMemo(
+    () => initialTeamsPageState<Team>(pageKey, initialNameRows, initialHasMore),
+    [pageKey, initialNameRows, initialHasMore],
+  );
+  const paging = pagingState && pagingState.key === pageKey ? pagingState : fallbackPaging;
+  const extraTeams = paging.teams;
+  const hasMore = paging.hasMore;
+  const loadingMore = loadingKey === pageKey;
+  // Key of the request in flight, so a double click cannot fetch the same page twice.
+  const inFlightKey = useRef<string | null>(null);
+  // Current filter key, read by a response that arrives after the filter changed.
+  const activeKey = useRef(pageKey);
+  useEffect(() => { activeKey.current = pageKey; }, [pageKey]);
 
   // The teams list is the props (already SSR-filtered when the URL has
   // a filter set). We do NOT cache it in local state — every prior version
@@ -232,80 +252,63 @@ export default function TeamsIndexClient({
     [setFilter]
   );
 
-  // Load more teams via the /api/teams + /api/user-teams endpoints.
-  // Mirrors the page filter so the new batch respects the active URL
-  // filters. Pagination is by simple offset; user teams are capped at 100.
+  // Load more teams with one request to /api/teams, resuming at the cursor the
+  // previous page stopped at. /api/user-teams is not called here: it takes no
+  // offset, so every call returned the same rows and the list filled with
+  // duplicates. /api/teams already covers every active team in one ordered list.
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
+    const key = pageKey;
+    if (!hasMore || inFlightKey.current === key) return;
+    inFlightKey.current = key;
+    setLoadingKey(key);
+    const requestedOffset = paging.cursor;
     const params = new URLSearchParams();
     if (urlCountry) params.set('country', urlCountry);
     if (urlLevel) params.set('level', urlLevel);
     if (urlLeague) params.set('league', urlLeague);
-    const offset = teams.length;
-    params.set('offset', String(offset));
-    params.set('limit', '48');
+    params.set('offset', String(requestedOffset));
+    params.set('limit', String(TEAMS_PAGE_SIZE));
     try {
-      const [nhlRes, userRes] = await Promise.all([
-        fetch(`/api/teams?${params.toString()}`).then((r) => readListResponse<any>(r)).catch((): ListResult<any> => ({ ok: false })),
-        fetch(`/api/user-teams?${params.toString()}`).then((r) => readListResponse<any>(r)).catch((): ListResult<any> => ({ ok: false })),
-      ]);
-      // A failed main request is an error, never an empty page of results.
-      if (!nhlRes.ok) {
+      const result = await fetch(`/api/teams?${params.toString()}`)
+        .then((r) => readListPage<any>(r))
+        .catch((): ListPageResult<any> => ({ ok: false }));
+      // The filter changed while this request was in flight: drop the response.
+      if (activeKey.current !== key) return;
+      // A failed request is an error, never an empty page of results.
+      if (!result.ok) {
         setLoadError(true);
         return;
       }
-      const nhlData: any[] = nhlRes.data;
-      // User teams are additive: a failure there does not hide the main list.
-      const userData: any[] = userRes.ok ? userRes.data : [];
-      const mapped: Team[] = [
-        ...nhlData.map((t): Team => ({
-          id: t.id, name: t.name, slug: t.slug,
-          logo_url: t.avatar_url ?? t.logo_url ?? null,
-          city: t.home_city ?? null, country: t.country_code ?? null,
-          league_id: t.league_id ?? null,
-          leagues: t.leagues ?? null,
-          source: 'nhl' as const,
-        })),
-        ...userData.map((t): Team => ({
-          id: t.id, name: t.name, slug: t.slug,
-          country: t.home_country ?? null, country_code: t.country_code ?? null,
-          city: t.home_city ?? null,
-          organization: t.organization ?? null, league: t.league ?? null, federation: t.federation ?? null,
-          level: t.level ?? null, age_label: t.age_label ?? null, age_category: t.age_category ?? null,
-          description: t.description ?? null, season_label: t.season_label ?? null,
-          claimed_by_tier: null,
-          source: 'user' as const,
-        })),
-      ];
-      // Dedupe by id
-      const seen = new Set<string>();
-      const unique: Team[] = [];
-      for (const t of mapped) {
-        if (seen.has(t.id)) continue;
-        seen.add(t.id);
-        unique.push(t);
-      }
-      if (unique.length === 0) {
-        setHasMore(false);
-      } else {
-        setExtraTeams((prev) => [...prev, ...unique]);
-        if (unique.length < 48) setHasMore(false);
-      }
+      const rows: Team[] = result.data.map((t): Team => ({
+        id: t.id, name: t.name, slug: t.slug,
+        logo_url: t.avatar_url ?? t.logo_url ?? null,
+        city: t.home_city ?? null, country: t.country_code ?? null,
+        league_id: t.league_id ?? null,
+        leagues: t.leagues ?? null,
+        source: 'nhl' as const,
+      }));
+      const total = result.count;
+      setPagingState((prev) => {
+        const base = prev && prev.key === key ? prev : initialTeamsPageState<Team>(key, initialNameRows, initialHasMore);
+        return applyTeamsPage(base, {
+          key,
+          requestedOffset,
+          rows,
+          total,
+          seedTeams: initialTeams,
+        });
+      });
     } catch (e) {
       console.error('[loadMore] failed', e);
       setLoadError(true);
     } finally {
-      setLoadingMore(false);
+      if (inFlightKey.current === key) inFlightKey.current = null;
+      setLoadingKey((cur) => (cur === key ? null : cur));
     }
-  }, [loadingMore, hasMore, urlCountry, urlLevel, urlLeague, teams.length]);
+  }, [pageKey, hasMore, paging.cursor, urlCountry, urlLevel, urlLeague, initialTeams, initialNameRows, initialHasMore]);
 
-  // Reset extraTeams + hasMore when the filter changes (chip click,
-  // dropdown select). The new initialTeams comes from the URL change.
-  useEffect(() => {
-    setExtraTeams([]);
-    setHasMore(true);
-  }, [urlCountry, urlLevel, urlLeague]);
+  // No reset effect is needed: paging state is keyed by pageKey (see above),
+  // so a filter change starts from the server-rendered first page.
 
   // Auto-cleanup: if the URL has an impossible level+league combination
   // (e.g. ?level=college&league=NHL), clear the league so the dropdown
