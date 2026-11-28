@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { foldSlugToAscii, hasNonAscii } from './lib/ascii-slug';
+import { isPwhlCanonicalSlugPure } from './lib/pwhl-canonical-slugs';
 import {
   getCrawlerIpLists,
   isVerifiedBingIp,
@@ -551,7 +552,11 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
   for (const prefix of TEAM_SLUG_PREFIXES) {
     if (path.startsWith(prefix) && path.length > prefix.length) {
       const slug = path.slice(prefix.length).split('/')[0];
-      if (slug && !slug.includes('.')) {
+      // A canonical PWHL franchise slug is never redirected here: neither by the
+      // team_slug_redirects table (which holds a diacritic-fold row sending
+      // montreal-victoire to montréal-victoire) nor by the ASCII-fold fallback. Redirecting it
+      // would loop with the alias -> canonical redirect once its page is public.
+      if (slug && !slug.includes('.') && !isPwhlCanonicalSlugPure(slug)) {
         let toSlug = await lookupTeamSlugRedirect(slug);
         // Exact lookup missed. Fall back to ASCII-fold matching so a
         // diacritic-only spelling difference still resolves.
