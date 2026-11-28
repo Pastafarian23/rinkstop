@@ -101,7 +101,7 @@ describe('wiring: every public surface that joins fixtures to teams applies the 
     it(file + ' selects team visibility and filters with filterPublicFixtures', () => {
       const src = read(file);
       expect(src).toContain("from '@/lib/fixture-visibility'");
-      expect(src).toContain('filterPublicFixtures(');
+      expect(src).toMatch(/filterPublicFixtures(<any>)?\(/);
       expect(src).toMatch(/fixtures_home_team_id_fkey\(name, slug, visibility\)/);
       expect(src).toMatch(/fixtures_away_team_id_fkey\(name, slug, visibility\)/);
     });

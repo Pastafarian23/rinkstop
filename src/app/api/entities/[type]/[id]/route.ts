@@ -37,7 +37,8 @@ export async function GET(
       payload = data;
     }
   } else if (type === 'team') {
-    const { data } = await supabaseAdmin.from('team_workspaces').select('id, name, slug').eq('id', id).maybeSingle();
+    // Private and unlisted teams are not looked up by id on this public endpoint.
+    const { data } = await supabaseAdmin.from('team_workspaces').select('id, name, slug').eq('id', id).eq('visibility', 'public').maybeSingle();
     if (data) {
       name = data.name || 'Team';
       url = `/directory/teams/${data.slug || data.id}`;
