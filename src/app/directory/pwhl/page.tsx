@@ -3,6 +3,11 @@ import PWHLClient from './PWHLClient';
 import { LeagueTeams } from '@/components/LeagueTeams';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
+// Official PWHL franchise count for 2026-27 (thepwhl.com team list: 12 teams).
+// Do not derive copy from database row counts: the team table holds duplicate and
+// legacy rows until the approved PWHL data correction is applied.
+const PWHL_FRANCHISE_COUNT = 12;
+
 interface Team {
   id: string;
   name: string;
@@ -26,7 +31,7 @@ interface League {
 export async function generateMetadata(): Promise<Metadata> {
   // 2026-09-11 AdSense fix: dynamic team count from DB (was hardcoded "8", DB shows 7).
   const { teams } = await fetchInitialData();
-  const n = teams.length;
+  const n = PWHL_FRANCHISE_COUNT;
   return {
     // 2026-09-03 Gap 1: rewrote title with year + team count + value props.
     title: `PWHL Women's Hockey 2026-27 — ${n} Teams, Scores`,
@@ -81,7 +86,7 @@ export default async function PWHLPage() {
             name: 'PROFESSIONAL WOMEN\'S HOCKEY LEAGUE',
             url: 'https://rinkstop.com/directory/pwhl',
             sport: 'Ice Hockey',
-            description: `Professional Women's Hockey League — premier women's pro league in North America, ${teams.length} teams across USA and Canada.`,
+            description: `Professional Women's Hockey League — premier women's pro league in North America, ${PWHL_FRANCHISE_COUNT} teams across USA and Canada.`,
             foundingDate: '2023',
             sameAs: ['https://en.wikipedia.org/wiki/Professional_Women%27s_Hockey_League'],
           }, {
@@ -89,7 +94,7 @@ export default async function PWHLPage() {
             mainEntity: [{
               '@type': 'Question',
               name: 'How many teams are in the PWHL?',
-              acceptedAnswer: { '@type': 'Answer', text: `The Professional Women's Hockey League (PWHL) fields ${teams.length} teams across the United States and Canada in the 2026-27 season.` },
+              acceptedAnswer: { '@type': 'Answer', text: `The Professional Women's Hockey League (PWHL) fields ${PWHL_FRANCHISE_COUNT} teams across the United States and Canada in the 2026-27 season.` },
             }, {
               '@type': 'Question',
               name: 'When was the PWHL founded?',
@@ -101,7 +106,7 @@ export default async function PWHLPage() {
             }, {
               '@type': 'Question',
               name: 'Where can I find PWHL rosters, schedules, and standings?',
-              acceptedAnswer: { '@type': 'Answer', text: `Browse all ${teams.length} PWHL team profiles on RinkStop, each with roster, schedule, arena info, and verified profiles.` },
+              acceptedAnswer: { '@type': 'Answer', text: `Browse all ${PWHL_FRANCHISE_COUNT} PWHL team profiles on RinkStop, each with roster, schedule, arena info, and verified profiles.` },
             }],
           }],
         }) }}
@@ -110,7 +115,7 @@ export default async function PWHLPage() {
         <div style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>About the PWHL</h2>
           <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.5rem', maxWidth: '1280px' }}>
-            The Professional Women's Hockey League (PWHL) is the premier women's professional ice hockey league in North America. Founded in 2023 and entering its {teams.length}-team era in 2026-27, the PWHL fields teams across the United States and Canada (active rosters below). The league was capitalized with historic backing from the Walter family (the same ownership group behind the Boston Bruins' ownership lineage) and chartered by former Team USA captain Hilary Knight as a flagship franchise. The PWHL Stanley Cup-equivalent trophy is the Walter Cup, awarded annually to the playoff champion. The league's average salary — $80,000–$150,000 — is the highest in women's professional hockey history and supports athletes competing at international caliber through the IIHF Women's World Championship and Winter Olympics.
+            The Professional Women's Hockey League (PWHL) is the premier women's professional ice hockey league in North America. Founded in 2023 and entering its {PWHL_FRANCHISE_COUNT}-team era in 2026-27, the PWHL fields teams across the United States and Canada (active rosters below). The league was capitalized with historic backing from the Walter family (the same ownership group behind the Boston Bruins' ownership lineage) and chartered by former Team USA captain Hilary Knight as a flagship franchise. The PWHL Stanley Cup-equivalent trophy is the Walter Cup, awarded annually to the playoff champion. The league's average salary — $80,000–$150,000 — is the highest in women's professional hockey history and supports athletes competing at international caliber through the IIHF Women's World Championship and Winter Olympics.
           </p>
         </div>
       </section>
@@ -141,7 +146,7 @@ export default async function PWHLPage() {
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW THE PWHL WORKS</h2>
         <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
           <p style={{ marginBottom: '1rem' }}>
-            The PWHL regular season runs from late November to early May, with each of the 9 teams in 2026-27 playing 30 regular season games. The schedule is structured as a 3-game series format — when teams play each other, they play 3 games over 4-5 days at the same venue. This format reduces travel costs and creates concentrated competitive events that drive attendance and TV viewership.
+            The PWHL regular season runs from late November to early May, with each of the 12 teams in 2026-27 playing 30 regular season games. The schedule is structured as a 3-game series format — when teams play each other, they play 3 games over 4-5 days at the same venue. This format reduces travel costs and creates concentrated competitive events that drive attendance and TV viewership.
           </p>
           <p style={{ marginBottom: '1rem' }}>
             The top 4 teams in the PWHL standings advance to the Walter Cup Playoffs, a best-of-3 semifinal and best-of-3 final. The Walter Cup is the PWHL&apos;s championship trophy, named after the Walter family&apos;s contribution to the league. The Walter Cup has been awarded twice: to the Minnesota Frost (2023-24) and the Boston Fleet (2024-25).

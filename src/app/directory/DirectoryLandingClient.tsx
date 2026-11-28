@@ -78,8 +78,8 @@ const CATS = [
   {
     label: 'PWHL',
     href: '/directory/pwhl',
-    count: '6',
-    desc: 'Professional Women\'s Hockey League — 6 teams across North America',
+    count: '12',
+    desc: 'Professional Women\'s Hockey League — 12 teams across North America',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2a5 5 0 0 1 5 5c0 2-1 3-2 4l-3 3-3-3c-1-1-2-2-2-4a5 5 0 0 1 5-5z"/>
