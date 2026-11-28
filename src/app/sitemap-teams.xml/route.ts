@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { baseUrl, isHighQualityTeam } from '@/lib/sitemap-shared';
+import { isHighQualityTeam, teamSitemapUrl } from '@/lib/sitemap-shared';
 
 // Sub-sitemap for team detail pages. Same URLs as the main /sitemap.xml,
 // just split out so Google can crawl team pages through a dedicated
@@ -43,7 +43,7 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${filtered.map(t => `  <url>
-    <loc>${baseUrl}/directory/teams/${t.slug}</loc>
+    <loc>${teamSitemapUrl(t.slug)}</loc>
     <lastmod>${t.updated_at ? new Date(t.updated_at).toISOString() : new Date().toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
