@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import { pwhlAliasRedirectTarget, pwhlTemporaryFallbackTarget } from '@/lib/pwhl-franchises';
+import PwhlTeamSection from '@/components/PwhlTeamSection';
 import { canViewTeamPage } from '@/lib/team-visibility-access';
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
@@ -724,6 +725,9 @@ export default async function PublicTeamPage({ params }: PageProps) {
         cityTeams={cityTeams}
         cityRinks={cityRinks}
       />
+
+      {/* Official 2026-27 schedule, results and standing for the 12 PWHL franchises (canonical slugs only). */}
+      <PwhlTeamSection slug={team.slug} />
 
       {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
           Required per MEMORY.md § AdSense-Compliant Content Rules:

@@ -1,0 +1,183 @@
+{
+ "team": "toronto-sceptres",
+ "label": "2026-27 training camp roster (official, announced 2026-10-07)",
+ "source": "https://www.thepwhl.com/en/teams/toronto-sceptres/news/2026/october/07/toronto-sceptres-announce-2026-27-training-camp-roster",
+ "retrieved": "2026-11-28",
+ "note": "A training-camp roster is not the final or current 24-player roster.",
+ "players": [
+  {
+   "name": "Claire Dalton",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Jessymaude Drapeau",
+   "group": "Forwards",
+   "note": "Concordia University",
+   "flag": ""
+  },
+  {
+   "name": "Mathea Fischer",
+   "group": "Forwards",
+   "note": "SDE HF",
+   "flag": ""
+  },
+  {
+   "name": "Emma Gentry",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Sara Hjalmarsson",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": ""
+  },
+  {
+   "name": "Jane Kuehl",
+   "group": "Forwards",
+   "note": "Princeton University",
+   "flag": "^"
+  },
+  {
+   "name": "Michelle Löwenhielm",
+   "group": "Forwards",
+   "note": "Färjestad BK",
+   "flag": ""
+  },
+  {
+   "name": "Lauren Messier",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Jamie Nelson",
+   "group": "Forwards",
+   "note": "University of Minnesota",
+   "flag": "^"
+  },
+  {
+   "name": "Jamie Lee Rattray",
+   "group": "Forwards",
+   "note": "Boston Fleet",
+   "flag": "*"
+  },
+  {
+   "name": "Kirsten Simms",
+   "group": "Forwards",
+   "note": "University of Wisconsin",
+   "flag": "^"
+  },
+  {
+   "name": "Natalie Spooner",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Clara Van Wieren",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": ""
+  },
+  {
+   "name": "Emma Woods",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Kiara Zanon",
+   "group": "Forwards",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Hanna Baskin",
+   "group": "Defenders",
+   "note": "Toronto Sceptres",
+   "flag": ""
+  },
+  {
+   "name": "Gabrielle De Serres",
+   "group": "Defenders",
+   "note": "France National Team",
+   "flag": ""
+  },
+  {
+   "name": "Brooke Disher",
+   "group": "Defenders",
+   "note": "Ohio State University",
+   "flag": "^"
+  },
+  {
+   "name": "Renata Fast",
+   "group": "Defenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Kali Flanagan",
+   "group": "Defenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Jessica Kondas",
+   "group": "Defenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Allie Munroe",
+   "group": "Defenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Lotti Odnoga",
+   "group": "Defenders",
+   "note": "Skellefteå AIK",
+   "flag": ""
+  },
+  {
+   "name": "Alyssa Regalado",
+   "group": "Defenders",
+   "note": "Cornell University",
+   "flag": "^"
+  },
+  {
+   "name": "Ella Shelton",
+   "group": "Defenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Grace Campbell",
+   "group": "Goaltenders",
+   "note": "Boston College",
+   "flag": "*"
+  },
+  {
+   "name": "Calli Hogarth",
+   "group": "Goaltenders",
+   "note": "Quinnipiac University",
+   "flag": ""
+  },
+  {
+   "name": "Raygan Kirk",
+   "group": "Goaltenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  },
+  {
+   "name": "Jessie McPherson",
+   "group": "Goaltenders",
+   "note": "Toronto Sceptres",
+   "flag": "*"
+  }
+ ]
+}

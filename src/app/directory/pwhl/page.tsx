@@ -3,6 +3,7 @@ import PWHLClient from './PWHLClient';
 import { LeagueTeams } from '@/components/LeagueTeams';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { normalizePwhlTeams } from '@/lib/pwhl-franchises';
+import PwhlSchedule from '@/components/PwhlSchedule';
 
 // Official PWHL franchise count for 2026-27 (thepwhl.com team list: 12 teams).
 // Do not derive copy from database row counts: the team table holds duplicate and
@@ -124,6 +125,11 @@ export default async function PWHLPage() {
         </div>
       </section>
       <PWHLClient league={league} teams={teams} />
+
+      {/* Official 2026-27 standings, preseason results and the full regular-season schedule. */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <PwhlSchedule />
+      </div>
 
       {/* WS-49 2026-10-09: PWHL History + How it Works sections, ~1,400 words of
           original content with sources. Mirrors the structure on the other
