@@ -1,5 +1,6 @@
 /**
  * Official PWHL schedule, results and standings data.
+ * Verified against the official page on 2026-11-28 (192 games; 30 regular-season games per team).
  *
  * Source of truth: the public schedule page of the league, https://www.thepwhl.com/en/schedule,
  * which embeds the full game list as structured data (192 games for 2026-27: 12 preseason and
