@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { formatHighlightDate } from '@/lib/highlight-date';
 import Link from 'next/link';
 import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 
@@ -297,7 +298,7 @@ export default function HighlightsGrid({
                       </span>
                     </div>
                     <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.3)' }}>
-                      {new Date(highlight.match.date).toLocaleDateString()}
+                      {formatHighlightDate(highlight.match.date)}
                     </span>
                   </div>
                 </div>
