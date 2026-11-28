@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { canViewTeamPage } from '@/lib/team-visibility-access';
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
@@ -189,7 +190,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .eq('is_active', true)
     .maybeSingle();
 
-  if (!team) {
+  // Non-public teams get the same generic response as a missing team, so the
+  // name and description are not exposed in metadata to anonymous visitors.
+  if (!team || (team as { visibility?: string }).visibility !== 'public') {
     return {
       title: 'Team not found · RinkStop',
       robots: { index: false, follow: false },
@@ -262,6 +265,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+async function viewerIsActiveTeamMember(teamId: string): Promise<boolean> {
+  try {
+    const { userId } = await auth();
+    if (!userId) return false;
+    const { data } = await supabaseAdmin
+      .from('team_members')
+      .select('role')
+      .eq('team_id', teamId)
+      .eq('user_id', userId)
+      .is('left_at', null)
+      .maybeSingle<{ role: string }>();
+    return !!data;
+  } catch {
+    return false;
+  }
+}
+
 export default async function PublicTeamPage({ params }: PageProps) {
   const { slug } = await params;
   // Decode percent-encoded slugs (Next.js doesn't auto-decode route params).
@@ -307,6 +327,12 @@ export default async function PublicTeamPage({ params }: PageProps) {
 
   if (!teamData) notFound();
   const team = teamData as TeamRow;
+
+  // Non-public teams are served only to an active member of that team.
+  // Anyone else, including anonymous visitors, gets a 404 with no team data.
+  if (!canViewTeamPage(team.visibility, await viewerIsActiveTeamMember(team.id))) {
+    notFound();
+  }
 
   // Posts (anon key — these tables have public SELECT RLS)
   // Recent results — last 2 seasons (or all if team is new)
