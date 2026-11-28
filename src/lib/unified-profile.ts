@@ -514,7 +514,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
       ? fetchAll<any>((from, to) =>
           supabaseAdmin
             .from('team_workspaces')
-            .select('id, name, slug, avatar_url')
+            .select('id, name, slug, avatar_url, visibility')
             .in('id', teamIds)
             .range(from, to),
         )
@@ -530,6 +530,14 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
       : Promise.resolve([] as any[]),
   ]);
   const teamMap = new Map(teamRows.map((t) => [String(t.id), t]));
+  // PRIVACY: this loader serves public profile pages and the profile API, and runs
+  // with a privileged client. A private or unlisted team's id and name are not
+  // shown in anyone's role history. (There is no viewer in this loader, so the
+  // person's own page does not show their private team here either.)
+  const hiddenTeam = (id: unknown): boolean => {
+    const t = id ? teamMap.get(String(id)) : undefined;
+    return !!t && t.visibility !== 'public';
+  };
   const leagueMap = new Map(leagueRows.map((l) => [String(l.id), l]));
 
   // ── Build the source records ─────────────────────────────────────────────
@@ -622,7 +630,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
       id: r.id as string,
       roleType: r.role_type as UnifiedRoleType,
       roleDetail: (r.role_detail as string) ?? null,
-      teamId: (r.team_id as string) ?? null,
+      teamId: hiddenTeam(r.team_id) ? null : ((r.team_id as string) ?? null),
       leagueId: (r.league_id as string) ?? null,
       season: (r.season as string) ?? null,
       jerseyNumber: (r.jersey_number as string) ?? null,
@@ -631,7 +639,7 @@ export async function loadUnifiedPerson(personId: string): Promise<UnifiedPerson
       sourceId,
       href: publicPathForRole(r.role_type as string, source, sourceId, srcSlug),
       name,
-      teamName: r.team_id ? ((teamMap.get(String(r.team_id))?.name as string) ?? null) : null,
+      teamName: r.team_id && !hiddenTeam(r.team_id) ? ((teamMap.get(String(r.team_id))?.name as string) ?? null) : null,
       leagueName: r.league_id ? ((leagueMap.get(String(r.league_id))?.name as string) ?? null) : null,
     };
   });

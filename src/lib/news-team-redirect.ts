@@ -48,6 +48,8 @@ export async function resolveTeamRedirect(
     .from('team_workspaces')
     .select('slug')
     .eq('slug', slug)
+    // A private or unlisted team slug does not redirect (that would confirm it exists).
+    .eq('visibility', 'public')
     .maybeSingle();
 
   if (data?.slug) {

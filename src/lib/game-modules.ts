@@ -61,7 +61,11 @@ export async function getTeamForm(leagueId: string | null | undefined, teamId: s
         const sb = getSupabase();
         const { data: recent } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!home_team_id(name), away_team:team_workspaces!away_team_id(name)')
+          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!home_team_id!inner(name), away_team:team_workspaces!away_team_id!inner(name)')
+          // PRIVACY: these results are stored in a shared cache, so they may only contain
+          // games between two public teams.
+          .eq('home_team.visibility', 'public')
+          .eq('away_team.visibility', 'public')
           .eq('league_id', leagueId)
           .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
           .eq('status', 'completed')
@@ -97,7 +101,7 @@ export async function getTeamForm(leagueId: string | null | undefined, teamId: s
         return null;
       }
     },
-    ['team-form', leagueId, teamId],
+    ['team-form-public-v2', leagueId, teamId],
     { revalidate: tier, tags: ['game-module'] }
   );
   return fetchImpl();
@@ -125,7 +129,11 @@ export async function getH2H(leagueId: string | null, homeId: string | null, awa
         const sb = getSupabase();
         const { data: rows } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!home_team_id(name), away_team:team_workspaces!away_team_id(name)')
+          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!home_team_id!inner(name), away_team:team_workspaces!away_team_id!inner(name)')
+          // PRIVACY: these results are stored in a shared cache, so they may only contain
+          // games between two public teams.
+          .eq('home_team.visibility', 'public')
+          .eq('away_team.visibility', 'public')
           .eq('league_id', leagueId)
           .or(`and(home_team_id.eq.${homeId},away_team_id.eq.${awayId}),and(home_team_id.eq.${awayId},away_team_id.eq.${homeId})`)
           .eq('status', 'completed')
@@ -153,7 +161,7 @@ export async function getH2H(leagueId: string | null, homeId: string | null, awa
         return [];
       }
     },
-    ['h2h', leagueId, homeId, awayId, excludeId],
+    ['h2h-public-v2', leagueId, homeId, awayId, excludeId],
     { revalidate: tier, tags: ['game-module'] }
   );
   return fetchImpl();
@@ -183,7 +191,11 @@ export async function getNextGame(leagueId: string | null, teamId: string | null
         const sb = getSupabase();
         const { data: rows } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:team_workspaces!home_team_id(name, slug), away_team:team_workspaces!away_team_id(name, slug), league:leagues(slug, name)')
+          .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:team_workspaces!home_team_id!inner(name, slug), away_team:team_workspaces!away_team_id!inner(name, slug), league:leagues(slug, name)')
+          // PRIVACY: these results are stored in a shared cache, so they may only contain
+          // games between two public teams.
+          .eq('home_team.visibility', 'public')
+          .eq('away_team.visibility', 'public')
           .eq('league_id', leagueId)
           .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
           .gt('scheduled_at', afterIso)
@@ -207,7 +219,7 @@ export async function getNextGame(leagueId: string | null, teamId: string | null
         return null;
       }
     },
-    ['next-game', leagueId, teamId, afterIso],
+    ['next-game-public-v2', leagueId, teamId, afterIso],
     { revalidate: tier, tags: ['game-module'] }
   );
   return fetchImpl();
@@ -237,7 +249,11 @@ export async function getSameDayGames(leagueId: string | null, dayStart: string,
         const sb = getSupabase();
         const { data: rows } = await sb
           .from('fixtures')
-          .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score, home_team:team_workspaces!home_team_id(name, slug), away_team:team_workspaces!away_team_id(name, slug)')
+          .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score, home_team:team_workspaces!home_team_id!inner(name, slug), away_team:team_workspaces!away_team_id!inner(name, slug)')
+          // PRIVACY: these results are stored in a shared cache, so they may only contain
+          // games between two public teams.
+          .eq('home_team.visibility', 'public')
+          .eq('away_team.visibility', 'public')
           .eq('league_id', leagueId)
           .gte('scheduled_at', dayStart)
           .lt('scheduled_at', dayEnd)
@@ -259,7 +275,7 @@ export async function getSameDayGames(leagueId: string | null, dayStart: string,
         return [];
       }
     },
-    ['same-day', leagueId, dayStart, dayEnd, excludeId],
+    ['same-day-public-v2', leagueId, dayStart, dayEnd, excludeId],
     { revalidate: tier, tags: ['game-module'] }
   );
   return fetchImpl();

@@ -101,3 +101,33 @@ describe('the member-only endpoint is gated and uncacheable', () => {
     expect(src).toContain("'Cache-Control': 'private, no-store, max-age=0'");
   });
 });
+
+describe('shared-cache game modules only contain games between public teams', () => {
+  const src = read('src/lib/game-modules.ts');
+  it('every fixtures query inner-joins both teams and filters both to public', () => {
+    expect(src.match(/home_team:team_workspaces!home_team_id!inner\(/g)?.length).toBe(4);
+    expect(src.match(/away_team:team_workspaces!away_team_id!inner\(/g)?.length).toBe(4);
+    expect(src.match(/\.eq\('home_team\.visibility', 'public'\)/g)?.length).toBe(4);
+    expect(src.match(/\.eq\('away_team\.visibility', 'public'\)/g)?.length).toBe(4);
+    expect(src).not.toMatch(/home_team:team_workspaces!home_team_id\(/);
+  });
+  it('the cache keys are versioned so pre-fix cached entries are not reused', () => {
+    for (const k of ['team-form-public-v2', 'h2h-public-v2', 'next-game-public-v2', 'same-day-public-v2']) expect(src).toContain("'" + k + "'");
+  });
+});
+
+describe('news team redirect does not confirm a private team exists', () => {
+  it('the team slug lookup is public-only', () => {
+    expect(read('src/lib/news-team-redirect.ts')).toMatch(/\.eq\('slug', slug\)\s*\n\s*\/\/[^\n]*\n\s*\.eq\('visibility', 'public'\)\s*\n\s*\.maybeSingle\(\)/);
+  });
+});
+
+describe('profile role history hides non-public team id and name', () => {
+  const src = read('src/lib/unified-profile.ts');
+  it('selects visibility and masks id and name through one helper', () => {
+    expect(src).toContain(".select('id, name, slug, avatar_url, visibility')");
+    expect(src).toContain('const hiddenTeam = (id: unknown): boolean');
+    expect(src).toContain('teamId: hiddenTeam(r.team_id) ? null');
+    expect(src).toContain('teamName: r.team_id && !hiddenTeam(r.team_id)');
+  });
+});
