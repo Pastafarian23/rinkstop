@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
-import { pwhlAliasRedirectTarget, pwhlTemporaryFallbackTarget } from '@/lib/pwhl-franchises';
+import { pwhlAliasRedirectTarget, pwhlFranchiseSlugForPage, pwhlTemporaryFallbackTarget } from '@/lib/pwhl-franchises';
 import PwhlTeamSection from '@/components/PwhlTeamSection';
 import { canViewTeamPage } from '@/lib/team-visibility-access';
 import Link from 'next/link';
@@ -726,8 +726,9 @@ export default async function PublicTeamPage({ params }: PageProps) {
         cityRinks={cityRinks}
       />
 
-      {/* Official 2026-27 schedule, results and standing for the 12 PWHL franchises (canonical slugs only). */}
-      <PwhlTeamSection slug={team.slug} />
+      {/* Official 2026-27 schedule, results and standing for the 12 PWHL franchises. Mounted only for a franchise page
+          (canonical slug or its temporary public stand-in); every other team page renders no async child. */}
+      {pwhlFranchiseSlugForPage(team.slug) ? <PwhlTeamSection slug={pwhlFranchiseSlugForPage(team.slug) as string} /> : null}
 
       {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
           Required per MEMORY.md § AdSense-Compliant Content Rules:

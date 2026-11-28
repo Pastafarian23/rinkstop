@@ -109,6 +109,19 @@ export async function pwhlAliasRedirectTarget(slug: string): Promise<string | nu
 
 
 /**
+ * The franchise a team page stands for, used for franchise-level content such as the official
+ * schedule. A canonical slug maps to itself; a TEMPORARY stand-in row (see PWHL_TEMPORARY_FALLBACK)
+ * maps to the franchise it stands in for, because that row is the franchise's only public page for
+ * now; every other slug (legacy aliases redirect, unrelated teams) maps to null. Pure and
+ * synchronous so the team page can decide whether to mount the async schedule section at all.
+ */
+export function pwhlFranchiseSlugForPage(slug: string): string | null {
+  if (CANONICAL.has(slug)) return slug;
+  for (const [franchise, standIn] of Object.entries(PWHL_TEMPORARY_FALLBACK)) if (standIn === slug) return franchise;
+  return null;
+}
+
+/**
  * TEMPORARY stopgap, delete after the Montreal data decision (PWHL_CONSOLIDATED_PLAN.md,
  * Phase 2). Until the canonical Montreal row is publicly viewable, its canonical URL
  * would 404 although a working page exists. The site previously redirected

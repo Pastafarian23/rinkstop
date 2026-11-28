@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: () => ({}) } }));
 
-import { PWHL_FRANCHISES } from '@/lib/pwhl-franchises';
+import { PWHL_FRANCHISES, PWHL_TEMPORARY_FALLBACK, pwhlFranchiseSlugForPage } from '@/lib/pwhl-franchises';
 import {
   PWHL_GAMES_PER_TEAM, PWHL_REGULAR_GAMES, computeStandings, etDateKey, formatEtTime, getPwhlSchedule, gamesForTeam,
   isFinal, isPlausibleSchedule, isTba, parseOfficialSchedule, snapshotSchedule, type PwhlGame,
@@ -200,12 +200,33 @@ describe('calendar endpoint', () => {
   });
 });
 
+describe('pwhlFranchiseSlugForPage: which team pages carry the franchise schedule', () => {
+  it('maps each of the 12 canonical slugs to itself', () => {
+    for (const f of PWHL_FRANCHISES) expect(pwhlFranchiseSlugForPage(f.slug)).toBe(f.slug);
+  });
+  it('maps the temporary public Montreal stand-in to the Montreal franchise', () => {
+    for (const [franchise, standIn] of Object.entries(PWHL_TEMPORARY_FALLBACK)) expect(pwhlFranchiseSlugForPage(standIn)).toBe(franchise);
+    expect(pwhlFranchiseSlugForPage('montr\u00e9al-victoire')).toBe('montreal-victoire');
+  });
+  it('returns null for legacy aliases (they redirect), other franchises-by-name rows and unrelated teams', () => {
+    for (const f of PWHL_FRANCHISES) for (const a of f.aliases) {
+      if (Object.values(PWHL_TEMPORARY_FALLBACK).includes(a)) continue;
+      expect(pwhlFranchiseSlugForPage(a)).toBeNull();
+    }
+    for (const s of ['seattle-storm', 'minnesota-whitecaps', 'fixture-federation-team', '']) expect(pwhlFranchiseSlugForPage(s)).toBeNull();
+  });
+});
+
 describe('wiring', () => {
   it('the landing page renders the schedule section', () => {
     expect(read('src/app/directory/pwhl/page.tsx')).toContain('<PwhlSchedule />');
   });
   it('the team page renders the PWHL team section for the canonical slug', () => {
-    expect(read('src/app/directory/teams/[slug]/page.tsx')).toContain('<PwhlTeamSection slug={team.slug} />');
+    const page = read('src/app/directory/teams/[slug]/page.tsx');
+    // Mounted conditionally: an async server component must not be a child of every team page
+    // (renderToStaticMarkup-based page tests cannot render one, and 2,600 teams never use it).
+    expect(page).toContain('pwhlFranchiseSlugForPage(team.slug) ? <PwhlTeamSection slug={pwhlFranchiseSlugForPage(team.slug) as string} /> : null');
+    expect(page).not.toContain('<PwhlTeamSection slug={team.slug} />');
   });
   it('the team section only appears for the 12 franchises', () => {
     expect(read('src/components/PwhlTeamSection.tsx')).toContain('if (!f) return null;');
