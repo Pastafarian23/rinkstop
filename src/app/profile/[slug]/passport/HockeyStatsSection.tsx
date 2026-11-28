@@ -77,7 +77,7 @@ export async function HockeyStatsSection({
       .limit(200),
     supabaseAdmin
       .from('hockey_player_team_history')
-      .select('id, team_name_snapshot, season_id, level, position, jersey_number')
+      .select('id, team_name_snapshot, season_id, level, position, jersey_number, team:team_workspaces(visibility)')
       .eq('player_id', playerId)
       .order('start_date', { ascending: false })
       .limit(50),
@@ -86,7 +86,13 @@ export async function HockeyStatsSection({
   const rows = statsRes.data;
   const error = statsRes.error;
   const seasons = (seasonsRes.data as any[]) ?? [];
-  const teamHistory = (teamHistoryRes.data as any[]) ?? [];
+  // PRIVACY: a career entry on a private or unlisted team is shown as 'Private team'
+  // to everyone except the passport owner.
+  const teamHistory = ((teamHistoryRes.data as any[]) ?? []).map((r: any) => {
+    const t = Array.isArray(r.team) ? r.team[0] : r.team;
+    if (!isOwner && t && t.visibility !== 'public') return { ...r, team: null, team_name_snapshot: 'Private team' };
+    return r;
+  });
   const sectionStyle = {
     padding: '1.25rem 1.5rem 1.5rem',
     borderTop: '1px solid rgba(255,255,255,0.08)',

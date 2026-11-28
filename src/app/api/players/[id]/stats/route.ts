@@ -81,7 +81,7 @@ export async function GET(
         created_at,
         updated_at,
         hockey_seasons!inner(label, start_date, end_date),
-        hockey_player_team_history!left(id, team_name, team_logo_url),
+        hockey_player_team_history!left(id, team_name, team_logo_url, team:team_workspaces(visibility)),
         leagues!left(id, name, slug, country)
       `,
       )
@@ -156,7 +156,13 @@ export async function GET(
           league_name: ps.leagues?.name || null,
           league_id: ps.leagues?.id || null,
           level: ps.level || null,
-          team_name: ps.hockey_player_team_history?.team_name || null,
+          // PRIVACY: this public API runs with a privileged client. A stat row on a private
+          // or unlisted team does not reveal that team's name.
+          team_name: (() => {
+            const h = ps.hockey_player_team_history;
+            const t = Array.isArray(h?.team) ? h.team[0] : h?.team;
+            return t && t.visibility !== 'public' ? 'Private team' : h?.team_name || null;
+          })(),
           games_played: ps.games_played ?? 0,
           goals: ps.goals ?? 0,
           assists: ps.assists ?? 0,

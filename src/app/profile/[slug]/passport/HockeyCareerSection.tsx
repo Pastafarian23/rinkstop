@@ -49,7 +49,7 @@ export async function HockeyCareerSection({
         id, team_id, team_name_snapshot, jersey_number, position, role,
         start_date, end_date, verification_source, verified_at, level,
         season:hockey_seasons(label),
-        team:team_workspaces(slug, name)
+        team:team_workspaces(slug, name, visibility)
       `)
       .eq('player_id', playerId)
       .order('start_date', { ascending: false, nullsFirst: false }),
@@ -60,7 +60,16 @@ export async function HockeyCareerSection({
       .limit(200),
   ]);
 
-  const rows = historyRes.data;
+  // PRIVACY: this section runs with a privileged client on public profile passports.
+  // A career entry whose team is private or unlisted shows no team name and no link to
+  // anyone except the passport owner.
+  const rows = ((historyRes.data as any[]) ?? []).map((r: any) => {
+    const t = Array.isArray(r.team) ? r.team[0] : r.team;
+    if (!isOwner && t && t.visibility !== 'public') {
+      return { ...r, team: null, team_name_snapshot: 'Private team' };
+    }
+    return r;
+  });
   const error = historyRes.error;
   const seasons: Season[] = (seasonsRes.data as Season[]) ?? [];
   // Map the career rows to the shape the modal expects (so the modal can
