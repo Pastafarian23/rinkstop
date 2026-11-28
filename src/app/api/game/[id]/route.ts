@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isPublicFixture } from '@/lib/fixture-visibility';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,8 +27,8 @@ export async function GET(
     .select(`
       id, scheduled_at, status, home_score, away_score, league_id,
       home_team_id, away_team_id, season, game_data,
-      home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, logo_url:avatar_url, city:home_city, country:home_country),
-      away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, logo_url:avatar_url, city:home_city, country:home_country),
+      home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, visibility, logo_url:avatar_url, city:home_city, country:home_country),
+      away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, visibility, logo_url:avatar_url, city:home_city, country:home_country),
       league:leagues!fixtures_league_id_fkey(id, name, slug, level, country)
     `)
     .eq('id', id)
@@ -36,7 +37,8 @@ export async function GET(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  if (!f) {
+  if (!f || !isPublicFixture(f as any)) {
+    // A game with a private or unlisted team is reported as not found.
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 

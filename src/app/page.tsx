@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
+import { filterPublicFixtures } from '@/lib/fixture-visibility';
 import HomeSearch from '@/app/HomeSearch';
 import YourTeams from '@/components/YourTeams';
 import HighlightsGrid from '@/components/HighlightsGrid';
@@ -283,23 +284,25 @@ export default async function Home() {
       const [liveRes, finalRes] = await Promise.all([
         supabaseAdmin
           .from('fixtures')
-          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
+          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug, visibility)')
           .in('league_id', leagueIds)
           .eq('status', 'in_progress')
           .order('scheduled_at', { ascending: true })
-          .limit(5),
+          // Over-fetch: games involving a non-public team are dropped below.
+          .limit(15),
         supabaseAdmin
           .from('fixtures')
-          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
+          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug, visibility)')
           .in('league_id', leagueIds)
           .eq('status', 'completed')
           .gte('scheduled_at', dayStart.toISOString())
           .lt('scheduled_at', dayEnd.toISOString())
           .order('scheduled_at', { ascending: false })
-          .limit(5),
+          // Over-fetch: games involving a non-public team are dropped below.
+          .limit(15),
       ]);
-      liveGames = (liveRes as any)?.data || [];
-      finalGames = (finalRes as any)?.data || [];
+      liveGames = filterPublicFixtures((liveRes as any)?.data || []).slice(0, 5);
+      finalGames = filterPublicFixtures((finalRes as any)?.data || []).slice(0, 5);
     }
   } catch {}
 

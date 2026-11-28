@@ -18,6 +18,7 @@ import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildPlayerFAQs } from '@/lib/player-context';
 import { supabaseAdmin } from '@/lib/supabase';
+import { filterPublicFixtures } from '@/lib/fixture-visibility';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
 import UnifiedProfileLink from '@/components/profile/UnifiedProfileLink';
 
@@ -255,12 +256,13 @@ export default async function PlayerPage({ params }: Props) {
       recentTeamSlug = (hist as any).team_workspaces?.slug || null;
       const { data: games } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_score, away_score, home_team_id, away_team_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_score, away_score, home_team_id, away_team_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug, visibility)')
         .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
         .eq('status', 'completed')
         .order('scheduled_at', { ascending: false })
-        .limit(5);
-      recentTeamGames = (games as any) || [];
+        // Over-fetch: games involving a non-public team are dropped below.
+        .limit(15);
+      recentTeamGames = filterPublicFixtures<any>((games as any) || []).slice(0, 5);
     }
   } catch {}
 

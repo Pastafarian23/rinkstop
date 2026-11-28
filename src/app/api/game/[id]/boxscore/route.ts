@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isPublicFixture } from '@/lib/fixture-visibility';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders } from '@/lib/rateLimit';
 
 const RATE_LIMIT = { maxRequests: 120, windowMs: 60 * 1000 };
@@ -73,9 +74,13 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 // (JSONB), AND the joined teams all come back undefined. Use only the
 // JSONB path; skip the column reference entirely.
     const { data: fx } = await supabaseAdmin.from('fixtures')
-      .select('game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name), away_team:team_workspaces!fixtures_away_team_id_fkey(name)')
+      .select('game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:team_workspaces!fixtures_home_team_id_fkey(name, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, visibility)')
       .eq('id', gameId)
       .maybeSingle();
+    if (fx && !isPublicFixture(fx as any)) {
+      // A game with a private or unlisted team is reported as not found.
+      return NextResponse.json({ error: 'not found' }, { status: 404 });
+    }
     if (fx?.game_data?.nhl_game_id) {
       nhlGameId = String(fx.game_data.nhl_game_id);
     } else if (fx?.game_data?.hl_match_id && fx.league_id) {

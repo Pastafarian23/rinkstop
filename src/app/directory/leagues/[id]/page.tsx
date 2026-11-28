@@ -11,6 +11,7 @@ import { auth } from '@clerk/nextjs/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { findActiveLeague } from '@/lib/league-lookup';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
+import { filterPublicFixtures } from '@/lib/fixture-visibility';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
 const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
@@ -59,7 +60,9 @@ export async function generateMetadata({
         .from('team_workspaces')
         .select('id', { count: 'exact', head: true })
         .eq('league_id', league.id)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        // Private and unlisted teams are not counted in the public title.
+        .eq('visibility', 'public');
       if (typeof count === 'number') teamCount = count;
     } catch {
       // leave undefined, fallback path handles it
@@ -139,29 +142,31 @@ export default async function LeaguePage({
       // Last 5 completed games with team names joined inline.
       const { data: recentData } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, season, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, season, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug, visibility)')
         .eq('league_id', league.id)
         .eq('status', 'completed')
         .not('home_score', 'is', null)
         .order('scheduled_at', { ascending: false })
-        .limit(5);
+        // Over-fetch: games involving a non-public team are dropped below.
+        .limit(25);
       // Only show leagues with at least 3 completed games; otherwise
       // 'Recent results' would mislead users with stale data.
-      recentFixtures = (recentData || []).filter((f: any) => f.home_score > 0 || f.away_score > 0).slice(0, 5);
+      recentFixtures = filterPublicFixtures(recentData || []).filter((f: any) => f.home_score > 0 || f.away_score > 0).slice(0, 5);
       if (recentFixtures[0]?.season) seasonYear = recentFixtures[0].season;
 
       // Next 5 scheduled games with team names joined inline.
       const { data: upcomingData } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_team_id, away_team_id, status, season, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_team_id, away_team_id, status, season, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug, visibility)')
         .eq('league_id', league.id)
         .eq('status', 'scheduled')
         .gte('scheduled_at', nowIso)
         .order('scheduled_at', { ascending: true })
-        .limit(5);
+        // Over-fetch: games involving a non-public team are dropped below.
+        .limit(25);
       // Only show upcoming when we have 3+ games on the schedule; otherwise
       // the section looks abandoned.
-      upcomingFixtures = (upcomingData || []).slice(0, 5);
+      upcomingFixtures = filterPublicFixtures(upcomingData || []).slice(0, 5);
       if (upcomingFixtures.length < 3) upcomingFixtures = [];
 
       // 2026-10-14 (Phase 4): today's games specifically — completed +
@@ -177,13 +182,13 @@ export default async function LeaguePage({
       const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
       const { data: todayData } = await supabaseAdmin
         .from('fixtures')
-        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug)')
+        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:team_workspaces!fixtures_home_team_id_fkey(name, slug, visibility), away_team:team_workspaces!fixtures_away_team_id_fkey(name, slug, visibility)')
         .eq('league_id', league.id)
         .gte('scheduled_at', dayStart.toISOString())
         .lt('scheduled_at', dayEnd.toISOString())
         .order('scheduled_at', { ascending: true })
         .limit(20);
-      var todayFixtures: any[] = todayData || [];
+      var todayFixtures: any[] = filterPublicFixtures(todayData || []);
 
       // Top 5 teams by name (alphabetical — cheap proxy for "notable")
       const { data: teamsData } = await supabaseAdmin

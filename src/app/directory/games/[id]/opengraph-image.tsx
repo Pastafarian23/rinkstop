@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isPublicFixture } from '@/lib/fixture-visibility';
 
 export const runtime = 'edge';
 export const alt = 'Game on RinkStop';
@@ -54,13 +55,14 @@ export default async function Image({ params }: { params: { id: string } }) {
         home_team_id,
         away_team_id,
         league:leagues!fixtures_league_id_fkey(id, name, slug),
-        home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, logo_url:avatar_url),
-        away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, logo_url:avatar_url)
+        home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, visibility, logo_url:avatar_url),
+        away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, visibility, logo_url:avatar_url)
       `)
       .eq('id', id)
       .maybeSingle();
 
-    if (game) {
+    // A game with a non-public team gets the generic image, no team names.
+    if (game && isPublicFixture(game as any)) {
       scheduledAt = game.scheduled_at || '';
       status = game.status || 'scheduled';
       isCompleted = status === 'completed';

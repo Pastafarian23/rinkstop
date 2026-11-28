@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
+import { auth } from '@clerk/nextjs/server';
+import { canViewFixture, isPublicFixture, nonPublicTeamIds } from '@/lib/fixture-visibility';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
@@ -67,8 +69,8 @@ interface FixtureRow {
   home_team_id: string;
   away_team_id: string;
   game_data: any;
-  home_team: { id: string; name: string; slug: string; logo_url: string | null; home_rink_id?: string | null; home_rink?: { id: string; name: string; slug: string } | null } | null;
-  away_team: { id: string; name: string; slug: string; logo_url: string | null } | null;
+  home_team: { id: string; name: string; slug: string; visibility?: string | null; logo_url: string | null; home_rink_id?: string | null; home_rink?: { id: string; name: string; slug: string } | null } | null;
+  away_team: { id: string; name: string; slug: string; visibility?: string | null; logo_url: string | null } | null;
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
   season: string | null;
 }
@@ -76,7 +78,7 @@ interface FixtureRow {
 // 2026-10-15 (Arnel 09:03 step 3): cache key includes id, status, and
 // tier so a game that flips status (scheduled → in_progress → completed)
 // lands on a fresh key.  Old keys age out naturally at their tier TTL.
-const FIXTURE_CACHE_VERSION = 'v3';
+const FIXTURE_CACHE_VERSION = 'v4';
 
 function tierForStatus(status: FixtureRow['status'] | undefined, scheduledAt: string | undefined): number {
   if (!status) return 3600;
@@ -114,8 +116,8 @@ const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt
         const { data: fixture, error } = await sb
           .from('fixtures')
           .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
-            home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, logo_url:avatar_url, home_rink_id, home_rink:rinks!team_workspaces_home_rink_id_fkey(id, name, slug)),
-            away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, logo_url:avatar_url),
+            home_team:team_workspaces!fixtures_home_team_id_fkey(id, name, slug, visibility, logo_url:avatar_url, home_rink_id, home_rink:rinks!team_workspaces_home_rink_id_fkey(id, name, slug)),
+            away_team:team_workspaces!fixtures_away_team_id_fkey(id, name, slug, visibility, logo_url:avatar_url),
             league:leagues(id, name, slug, level, country),
             season`)
           .eq('id', id)
@@ -129,6 +131,34 @@ const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
   );
 };
+
+// Teams of this fixture the signed-in viewer is an active member of.
+async function viewerActiveMemberTeamIds(teamIds: string[]): Promise<string[]> {
+  if (teamIds.length === 0) return [];
+  try {
+    const { userId } = await auth();
+    if (!userId) return [];
+    const { data } = await getSupabase()
+      .from('team_members')
+      .select('team_id')
+      .in('team_id', teamIds)
+      .eq('user_id', userId)
+      .is('left_at', null);
+    return (data || []).map((r: { team_id: string }) => r.team_id);
+  } catch {
+    return [];
+  }
+}
+
+// A game with a private or unlisted team is served only to active members of
+// those teams. Everyone else gets the same result as a missing game.
+async function fetchViewableGame(id: string): Promise<FixtureRow | null> {
+  const game = await fetchGame(id);
+  if (!game) return null;
+  if (isPublicFixture(game)) return game;
+  const members = await viewerActiveMemberTeamIds(nonPublicTeamIds(game));
+  return canViewFixture(game, members) ? game : null;
+}
 
 async function fetchGame(id: string): Promise<FixtureRow | null> {
   const probe = await probeStatusCached(id)();
@@ -151,7 +181,7 @@ export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Metadata> {
   const { id } = await params;
-  const game = await fetchGame(id);
+  const game = await fetchViewableGame(id);
   if (!game) {
     return {
       title: 'Game Not Found | RinkStop',
@@ -208,7 +238,8 @@ export async function generateMetadata(
     title,
     description: description.slice(0, 240),
     alternates: { canonical: `${BASE_URL}/directory/games/${id}` },
-    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
+    // A member-only game is never indexable.
+    robots: indexable && isPublicFixture(game) ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: withDefaultOg({
       title: `${awayName} @ ${homeName}`,
       description,
@@ -230,7 +261,7 @@ export default async function GameDetailPage(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const game = await fetchGame(id);
+  const game = await fetchViewableGame(id);
 
   if (!game) {
     notFound();
