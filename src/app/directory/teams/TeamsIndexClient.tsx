@@ -615,7 +615,7 @@ export default function TeamsIndexClient({
           client loading state needed since we no longer fetch on filter change. */}
       <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1rem' }}>
         {visibleTeams.length === 0
-          ? (loadError ? LIST_UNAVAILABLE_MESSAGE : 'No results')
+          ? (loadError ? '' : 'No results')
           : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}
         {visibleTeams.length > 0 && urlQ ? ` matching “${urlQ}”` : ''}
         {visibleTeams.length > 0 && !urlQ && !hasFilters && totalCount > 0 ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
@@ -627,7 +627,9 @@ export default function TeamsIndexClient({
             ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
                 <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
-                  No teams found{urlQ ? ` for “${urlQ}”` : ''}{hasFilters ? ' with the current filters' : ''}.
+                  {loadError
+                    ? LIST_UNAVAILABLE_MESSAGE
+                    : <>No teams found{urlQ ? ` for “${urlQ}”` : ''}{hasFilters ? ' with the current filters' : ''}.</>}
                 </p>
                 {hasFilters && (
                   <button
