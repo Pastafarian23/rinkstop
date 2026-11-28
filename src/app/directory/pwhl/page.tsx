@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import PWHLClient from './PWHLClient';
 import { LeagueTeams } from '@/components/LeagueTeams';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { normalizePwhlTeams } from '@/lib/pwhl-franchises';
 
 // Official PWHL franchise count for 2026-27 (thepwhl.com team list: 12 teams).
 // Do not derive copy from database row counts: the team table holds duplicate and
@@ -73,7 +74,10 @@ async function fetchInitialData(): Promise<{ league: League | null; teams: Team[
 }
 
 export default async function PWHLPage() {
-  const { league, teams } = await fetchInitialData();
+  const { league, teams: rawTeams } = await fetchInitialData();
+  // Exactly the 12 official franchises, each linked by its canonical slug, whatever
+  // duplicate or placeholder rows the team table currently holds.
+  const teams = normalizePwhlTeams(rawTeams as any[]) as any[];
   return (
     <>
       <script

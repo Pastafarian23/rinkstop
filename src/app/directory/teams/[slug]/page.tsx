@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { pwhlAliasRedirectTarget } from '@/lib/pwhl-franchises';
 import { canViewTeamPage } from '@/lib/team-visibility-access';
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
@@ -183,6 +184,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     normalizedSlug = (slug || '').toLowerCase().trim();
   }
 
+  // A legacy PWHL slug whose canonical page is public: point search engines at it.
+  const pwhlTarget = await pwhlAliasRedirectTarget(normalizedSlug);
+  if (pwhlTarget) {
+    return {
+      title: 'Redirecting · RinkStop',
+      alternates: { canonical: 'https://rinkstop.com/directory/teams/' + pwhlTarget },
+      robots: { index: false, follow: true },
+    };
+  }
+
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
     .select('name, description, home_city, home_country, country_code, age_label, level, timezone, visibility')
@@ -294,6 +305,11 @@ export default async function PublicTeamPage({ params }: PageProps) {
     normalizedSlug = (slug || '').toLowerCase().trim();
   }
   if (!normalizedSlug) notFound();
+
+  // Permanent (308) redirect from a legacy PWHL slug to its canonical team URL, only
+  // when the canonical page is publicly viewable (see src/lib/pwhl-franchises.ts).
+  const pwhlTarget = await pwhlAliasRedirectTarget(normalizedSlug);
+  if (pwhlTarget) permanentRedirect('/directory/teams/' + encodeURIComponent(pwhlTarget));
 
   // Workspace lookup (service role — pre-existing RLS recursion makes anon
   // SELECT unreliable for cross-table joins. Service role is safe here because
