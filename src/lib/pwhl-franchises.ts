@@ -91,6 +91,35 @@ export async function pwhlAliasRedirectTarget(slug: string): Promise<string | nu
   }
 }
 
+
+/**
+ * TEMPORARY stopgap, delete after the Montreal data decision (PWHL_CONSOLIDATED_PLAN.md,
+ * Phase 2). Until the canonical Montreal row is publicly viewable, its canonical URL
+ * would 404 although a working page exists. The site previously redirected
+ * /directory/teams/montreal-victoire to montreal-victo (a static rule in next.config.js).
+ * That static rule is removed because a canonical slug must never redirect once its
+ * page is public (it would loop with the alias redirect). This keeps the same behaviour
+ * with a TEMPORARY (307) redirect that applies only while the canonical page is not public.
+ */
+export const PWHL_TEMPORARY_FALLBACK: Readonly<Record<string, string>> = { 'montreal-victoire': 'montreal-victo' };
+
+export async function pwhlTemporaryFallbackTarget(slug: string): Promise<string | null> {
+  const fallback = PWHL_TEMPORARY_FALLBACK[slug];
+  if (!fallback) return null;
+  try {
+    const { data } = await supabaseAdmin
+      .from('team_workspaces')
+      .select('id')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .eq('visibility', 'public')
+      .maybeSingle();
+    return data ? null : fallback;
+  } catch {
+    return null;
+  }
+}
+
 type RowLike = { id: string; name: string; slug?: string | null };
 
 /**

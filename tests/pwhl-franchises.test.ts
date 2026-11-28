@@ -124,7 +124,7 @@ describe('wiring', () => {
   const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
   it('the team page issues a permanent redirect and canonical metadata for aliases', () => {
     const src = read('src/app/directory/teams/[slug]/page.tsx');
-    expect(src).toContain("import { notFound, permanentRedirect } from 'next/navigation';");
+    expect(src).toContain("import { notFound, permanentRedirect, redirect } from 'next/navigation';");
     expect(src).toContain("permanentRedirect('/directory/teams/' + encodeURIComponent(pwhlTarget))");
     expect(src.match(/pwhlAliasRedirectTarget\(normalizedSlug\)/g)?.length).toBe(2);
     expect(src).toContain("robots: { index: false, follow: true }");

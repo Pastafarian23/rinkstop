@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { notFound, permanentRedirect } from 'next/navigation';
-import { pwhlAliasRedirectTarget } from '@/lib/pwhl-franchises';
+import { notFound, permanentRedirect, redirect } from 'next/navigation';
+import { pwhlAliasRedirectTarget, pwhlTemporaryFallbackTarget } from '@/lib/pwhl-franchises';
 import { canViewTeamPage } from '@/lib/team-visibility-access';
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
@@ -310,6 +310,9 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // when the canonical page is publicly viewable (see src/lib/pwhl-franchises.ts).
   const pwhlTarget = await pwhlAliasRedirectTarget(normalizedSlug);
   if (pwhlTarget) permanentRedirect('/directory/teams/' + encodeURIComponent(pwhlTarget));
+  // TEMPORARY (307): the canonical Montreal URL until its page is public (see registry).
+  const pwhlFallback = await pwhlTemporaryFallbackTarget(normalizedSlug);
+  if (pwhlFallback) redirect('/directory/teams/' + encodeURIComponent(pwhlFallback));
 
   // Workspace lookup (service role — pre-existing RLS recursion makes anon
   // SELECT unreliable for cross-table joins. Service role is safe here because
