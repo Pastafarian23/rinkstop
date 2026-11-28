@@ -272,6 +272,8 @@ export async function getStaffRecord(id: string): Promise<StaffRecord | null> {
       'id, role, team_id, left_at, profiles!team_members_user_id_fkey(display_name, username, avatar_url), team_workspaces!inner(name, short_name, avatar_url)',
     )
     .eq('id', rawId)
+    // PRIVACY: a coach of a private or unlisted team has no public staff record.
+    .eq('team_workspaces.visibility', 'public')
     .maybeSingle();
 
   if (error || !member) return null;

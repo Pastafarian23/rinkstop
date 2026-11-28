@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { auth } from '@clerk/nextjs/server';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -25,17 +26,36 @@ export async function GET(req: NextRequest) {
   if (slugs.length === 0) return NextResponse.json({ teams: [] });
 
   const sb = supabaseAdmin;
+
+  // PRIVACY: this endpoint is anonymous and uses a privileged client. A team (or an
+  // opponent) that is private or unlisted is shown only to a signed-in viewer who is
+  // an active member of that team. Everyone else gets nothing for it, exactly as if
+  // it did not exist.
+  let memberTeamIds = new Set<string>();
+  try {
+    const { userId } = await auth();
+    if (userId) {
+      const { data: mem } = await sb.from('team_members').select('team_id').eq('user_id', userId).is('left_at', null);
+      memberTeamIds = new Set((mem || []).map((m: { team_id: string }) => m.team_id));
+    }
+  } catch {
+    memberTeamIds = new Set<string>();
+  }
+  const canSee = (t: { id: string; visibility?: string | null } | null | undefined): boolean =>
+    !!t && (t.visibility === 'public' || memberTeamIds.has(t.id));
+  let includesNonPublic = false;
   // 2026-11-06: the LEGACY `teams` table -> the canonical
   // `team_workspaces`. A followed team that exists only in
   // team_workspaces (every club a federation creates) was invisible here.
   const { data: teams, error: tErr } = await sb
     .from('team_workspaces')
-    .select('id, name, slug, avatar_url')
+    .select('id, name, slug, avatar_url, visibility')
     .in('slug', slugs);
   if (tErr) return NextResponse.json({ error: tErr.message }, { status: 500 });
-  if (!teams || teams.length === 0) return NextResponse.json({ teams: [] });
+  const visibleTeams = (teams || []).filter((t: any) => canSee(t));
+  if (visibleTeams.length === 0) return NextResponse.json({ teams: [] });
 
-  const teamIds = teams.map((t) => t.id);
+  const teamIds = visibleTeams.map((t: any) => t.id);
   // Last completed per team
   const { data: lastGames } = await sb
     .from('fixtures')
@@ -114,19 +134,28 @@ export async function GET(req: NextRequest) {
   for (const v of lastByTeam.values()) opponentIds.add(v.opponent_id);
   for (const v of nextByTeam.values()) opponentIds.add(v.opponent_id);
   const { data: opps }: { data: any[] | null } = opponentIds.size > 0
-    ? await sb.from('team_workspaces').select('id, name, slug').in('id', Array.from(opponentIds))
+    ? await sb.from('team_workspaces').select('id, name, slug, visibility').in('id', Array.from(opponentIds))
     : { data: [] };
-  const oppMap = new Map((opps || []).map((o: any) => [o.id, o]));
+  // Only opponents the viewer may see are resolvable; a game against any other
+  // opponent is dropped below (its link would be a 404 anyway).
+  const oppMap = new Map((opps || []).filter((o: any) => canSee(o)).map((o: any) => [o.id, o]));
+  const oppOk = (id: string | undefined) => !id || oppMap.has(id);
 
-  const result = teams.map((t: any) => {
-    const last = lastByTeam.get(t.id);
-    const next = nextByTeam.get(t.id);
+  const result = visibleTeams.map((t: any) => {
+    const last0 = lastByTeam.get(t.id);
+    const next0 = nextByTeam.get(t.id);
+    const last = last0 && oppOk(last0.opponent_id) ? last0 : undefined;
+    const next = next0 && oppOk(next0.opponent_id) ? next0 : undefined;
+    if (t.visibility !== 'public') includesNonPublic = true;
+    if (last && oppMap.get(last.opponent_id)?.visibility !== 'public') includesNonPublic = true;
+    if (next && oppMap.get(next.opponent_id)?.visibility !== 'public') includesNonPublic = true;
+    const { visibility: _v, ...team } = t;
     return {
-      team: t,
+      team,
       lastGame: last ? {
         id: last.id,
         scheduled_at: last.scheduled_at,
-        opponent: oppMap.get(last.opponent_id) || null,
+        opponent: oppMap.get(last.opponent_id) ? (({ visibility: _o, ...o }) => o)(oppMap.get(last.opponent_id)) : null,
         opponent_is_home: last.opponent_is_home,
         home_score: last.home_score,
         away_score: last.away_score,
@@ -135,12 +164,16 @@ export async function GET(req: NextRequest) {
       nextGame: next ? {
         id: next.id,
         scheduled_at: next.scheduled_at,
-        opponent: oppMap.get(next.opponent_id) || null,
+        opponent: oppMap.get(next.opponent_id) ? (({ visibility: _o, ...o }) => o)(oppMap.get(next.opponent_id)) : null,
         opponent_is_home: next.opponent_is_home,
         status: next.status,
       } : null,
     };
   });
 
-  return NextResponse.json({ teams: result });
+  // A body that depends on the viewer's membership must never sit in a shared cache.
+  return NextResponse.json(
+    { teams: result },
+    includesNonPublic ? { headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' } } : undefined,
+  );
 }

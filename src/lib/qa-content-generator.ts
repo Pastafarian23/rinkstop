@@ -89,7 +89,7 @@ async function buildCache(): Promise<DatasetCache> {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const client: any = supabaseAdmin;
-    const query: any = client.from('team_workspaces').select('country_code, league_id').eq('is_active', true).range(teamOffset, teamOffset + teamPageSize - 1);
+    const query: any = client.from('team_workspaces').select('country_code, league_id').eq('is_active', true).eq('visibility', 'public').range(teamOffset, teamOffset + teamPageSize - 1);
     const result: any = await query;
     if (result?.error) {
       console.error('teams query error:', result.error.message);
