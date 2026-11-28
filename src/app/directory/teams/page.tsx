@@ -141,8 +141,9 @@ async function fetchInitialTeams(opts: {
       [
         // Key version: bump when the cached shape or ordering changes so entries
         // written before the change are not reused. v3: name-ordered rows tie-break
-        // on id (matching /api/teams), and the cached value carries nameRows.
-        'v3',
+        // on id (matching /api/teams), and the cached value carries nameRows. v4: the
+        // first page is public-only (visibility) and uses the shared country predicate.
+        'v4',
         opts.country ?? '',
         opts.level ?? '',
         opts.league ?? '',

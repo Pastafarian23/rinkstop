@@ -61,3 +61,11 @@ describe('first page shows only public teams, matching the anon read policy', ()
     expect(PAGE).toMatch(/\.eq\('is_active', true\)\s*\n(\s*\/\/[^\n]*\n\s*)*\.eq\('visibility', 'public'\)/);
   });
 });
+
+describe('first-page cache key is bumped for the visibility and country change', () => {
+  const PAGE = readFileSync(join(process.cwd(), 'src/app/directory/teams/page.tsx'), 'utf8');
+  it('the initial-read cache key is v4 (v3 entries may hold private teams and the old country rule)', () => {
+    expect(PAGE).toMatch(/'v4',/);
+    expect(PAGE).not.toMatch(/'v3',/);
+  });
+});
