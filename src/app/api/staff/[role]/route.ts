@@ -65,7 +65,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .from('team_members')
         .select('id, role, team_id, user_id, left_at, profiles!team_members_user_id_fkey(display_name, username, avatar_url), team_workspaces!inner(name, short_name, avatar_url)')
         .in('role', COACH_ROLES)
-        .is('left_at', null);
+        .is('left_at', null)
+        // Coaches of private or unlisted teams are not listed publicly.
+        .eq('team_workspaces.visibility', 'public');
 
       if (!membersError && members) {
         const community = members.map(m => {

@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { useUser } from '@clerk/nextjs';
+import { mergeMemberGames } from '@/lib/member-games-merge';
 import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
 import { formatGameTime, timezoneForGame, tzAbbr } from '@/lib/game-time';
 import { displayNameForGame, historicalAliasLabel } from '@/lib/franchise-name-lookup';
@@ -702,7 +704,12 @@ export default function GamesIndexClient({ initialData }: Props) {
   }, [chip.slug, isLeagueChip]);
 
   // Game list — start from SSR-populated initial data on first render
-  const [games, setGames] = useState<Game[]>(initialData.games);
+  // baseGames is the PUBLIC list (games between public teams). The games the
+  // viewer may additionally see because they belong to a private team are kept
+  // separately in memberGames and merged below; they never enter the public list.
+  const [baseGames, setGames] = useState<Game[]>(initialData.games);
+  const [memberGames, setMemberGames] = useState<Game[]>([]);
+  const { isSignedIn } = useUser();
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialData.hasMore);
@@ -783,9 +790,13 @@ export default function GamesIndexClient({ initialData }: Props) {
     const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
     let query = sb
       .from('fixtures')
-      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`, { count: 'exact' })
+      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id!inner(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id!inner(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`, { count: 'exact' })
       .not('home_team_id', 'is', null)
       .not('away_team_id', 'is', null)
+      // PRIVACY: games between two public teams only. Games of a private team the
+      // viewer belongs to are added separately by /api/scores/mine (no-store).
+      .eq('home_team.visibility', 'public')
+      .eq('away_team.visibility', 'public')
       .order('scheduled_at', { ascending: true })
       .in('league_id', leagueIds)
       .range(offset, offset + limit - 1);
@@ -794,7 +805,7 @@ export default function GamesIndexClient({ initialData }: Props) {
       if (subRow && (subRow as { id: string }).id) query = query.eq('league_id', (subRow as { id: string }).id);
     }
     if (team) {
-      const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).maybeSingle();
+      const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).eq('visibility', 'public').maybeSingle();
       if (teamRow && (teamRow as { id: string }).id) {
         const tid = (teamRow as { id: string }).id;
         query = query.or(`home_team_id.eq.${tid},away_team_id.eq.${tid}`);
@@ -802,7 +813,7 @@ export default function GamesIndexClient({ initialData }: Props) {
     }
     if (q) {
       const safe = q.replace(/[%_\\]/g, '\\$&');
-      const { data: matchingTeams } = await sb.from('team_workspaces').select('id').ilike('name', `%${safe}%`);
+      const { data: matchingTeams } = await sb.from('team_workspaces').select('id').eq('visibility', 'public').ilike('name', `%${safe}%`);
       const teamList = (matchingTeams as { id: string }[] | null) || [];
       if (teamList.length > 0) {
         const teamIds = teamList.map((t) => t.id).join(',');
@@ -837,6 +848,29 @@ export default function GamesIndexClient({ initialData }: Props) {
     }
     return query;
   }, [league, time, team, subleague, q, dateFilter, weekOffset, searchParams]);
+
+  // Member-only games: fetched from an authenticated, no-store endpoint. Signed-out
+  // visitors never call it. Failures are silent: the public list is unaffected.
+  useEffect(() => {
+    if (!isSignedIn) {
+      setMemberGames([]);
+      return;
+    }
+    let cancelled = false;
+    const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
+    const params = new URLSearchParams();
+    params.set('league', league);
+    if (team) params.set('team', team);
+    if (range.from) params.set('from', range.from);
+    if (range.to) params.set('to', range.to);
+    fetch('/api/scores/mine?' + params.toString(), { credentials: 'same-origin', cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { data: [] as Game[] }))
+      .then((j) => { if (!cancelled) setMemberGames(Array.isArray(j?.data) ? (j.data as Game[]) : []); })
+      .catch(() => { if (!cancelled) setMemberGames([]); });
+    return () => { cancelled = true; };
+  }, [isSignedIn, league, team, dateFilter, weekOffset, searchParams]);
+
+  const games = useMemo(() => mergeMemberGames(baseGames, memberGames, q), [baseGames, memberGames, q]);
 
   const isFirstMount = useRef(true);
   useEffect(() => {
@@ -930,7 +964,8 @@ export default function GamesIndexClient({ initialData }: Props) {
   const loadMore = () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    const currentLen = games.length;
+    // Offset counts only the public list, so member games never shift paging.
+    const currentLen = baseGames.length;
     (async () => {
       try {
         const query = await buildQuery(currentLen, DEFAULT_PAGE_SIZE);

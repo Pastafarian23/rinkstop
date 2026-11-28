@@ -13,6 +13,7 @@ async function getMestisTeamCount(): Promise<number> {
     const { count } = await supabaseAdmin
       .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
+      .eq('visibility', 'public')
       .eq('league_id', MESTIS_LEAGUE_ID)
       .eq('is_active', true);
     return count ?? 0;

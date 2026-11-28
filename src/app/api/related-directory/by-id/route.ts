@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
     const { data } = await supabaseAdmin
       .from('team_workspaces')
       .select('id, slug, name, home_city, country_code')
-      .in('id', teamIds);
+      .in('id', teamIds)
+      // Public teams only: this endpoint runs with a privileged client.
+      .eq('visibility', 'public');
     for (const r of (data || []) as EntityRow[]) {
       results.push({ ...r, type: 'team' as const });
     }

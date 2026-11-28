@@ -54,6 +54,7 @@ async function fetchKhlTeamCount(): Promise<number> {
     const { count } = await supabase
       .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
+      .eq('visibility', 'public')
       .eq('league_id', KHL_LEAGUE_ID)
       .eq('is_active', true);
     return count || 0;

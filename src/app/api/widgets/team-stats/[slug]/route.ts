@@ -47,6 +47,8 @@ export async function GET(
     .from('team_workspaces')
     .select('id, name, home_city, home_country, avatar_url')
     .eq('slug', slug)
+    // Private and unlisted teams do not get a public embeddable widget.
+    .eq('visibility', 'public')
     .maybeSingle();
 
   if (!team) {

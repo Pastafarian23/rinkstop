@@ -14,6 +14,7 @@ async function getAihlTeamCount(): Promise<number> {
     const { count } = await supabaseAdmin
       .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
+      .eq('visibility', 'public')
       .eq('league_id', AIHL_LEAGUE_ID)
       .eq('is_active', true);
     return count ?? 0;

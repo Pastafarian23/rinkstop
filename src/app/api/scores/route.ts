@@ -35,6 +35,10 @@ function jsonResp(data: unknown, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json',
+      // Safe to cache publicly: the body never varies by viewer and contains
+      // only games between public teams (see the visibility filters below).
+      // Do NOT add member-only data to this endpoint without making it
+      // 'private, no-store'.
       'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
     },
   });
@@ -80,13 +84,20 @@ export async function GET(request: NextRequest) {
       .from('fixtures')
       .select(
         `id, scheduled_at, status, home_score, away_score, season, league_id,
-         home_team:team_workspaces!home_team_id(id, name, slug, logo_url:avatar_url),
-         away_team:team_workspaces!away_team_id(id, name, slug, logo_url:avatar_url),
+         home_team:team_workspaces!home_team_id!inner(id, name, slug, logo_url:avatar_url),
+         away_team:team_workspaces!away_team_id!inner(id, name, slug, logo_url:avatar_url),
          league:leagues(id, name, slug)`,
         { count: 'exact' }
       )
       .not('home_team_id', 'is', null)
       .not('away_team_id', 'is', null)
+      // PRIVACY: this endpoint is anonymous and publicly cached, and it runs with a
+      // privileged client that bypasses row-level security. A game is returned only
+      // if BOTH teams are public. The inner joins plus these filters are applied in
+      // the database, so the rows, the count and the pagination all agree and no
+      // private team id, name, slug or logo can appear in any field.
+      .eq('home_team.visibility', 'public')
+      .eq('away_team.visibility', 'public')
       .order('scheduled_at', { ascending: true })
       .range(offset, offset + limit - 1);
 
@@ -98,6 +109,8 @@ export async function GET(request: NextRequest) {
         .from('team_workspaces')
         .select('id')
         .eq('slug', team)
+        // A private team's slug does not resolve here.
+        .eq('visibility', 'public')
         .maybeSingle();
       if (teamRow) q = q.or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`);
     }

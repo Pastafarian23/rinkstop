@@ -15,6 +15,7 @@ async function getNcdcTeamCount(): Promise<number> {
     const { count } = await supabaseAdmin
       .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
+      .eq('visibility', 'public')
       .eq('league_id', NCDC_LEAGUE_ID)
       .eq('is_active', true);
     return count ?? 0;

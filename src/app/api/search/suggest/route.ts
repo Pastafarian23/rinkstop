@@ -247,7 +247,7 @@ export async function GET(req: NextRequest) {
     include('player') ? applyMultiWordSearch(
       supabaseAdmin
         .from('players')
-        .select('id, first_name, last_name, slug, position, team_workspaces(name)')
+        .select('id, first_name, last_name, slug, position, team_workspaces(name, visibility)')
         .eq('is_active', true),
       q,
       ['first_name', 'last_name']
@@ -256,8 +256,10 @@ export async function GET(req: NextRequest) {
       .then(({ data }) =>
         (data ?? []).map((r) => {
           const fullName = `${r.first_name} ${r.last_name}`;
-          const teams = r.team_workspaces as { name: string } | { name: string }[] | null;
-          const teamName = Array.isArray(teams) ? teams[0]?.name : teams?.name;
+          const teams = r.team_workspaces as { name: string; visibility?: string | null } | { name: string; visibility?: string | null }[] | null;
+          const team = Array.isArray(teams) ? teams[0] : teams;
+          // PRIVACY: a player's team name is shown only when that team is public.
+          const teamName = team && team.visibility === 'public' ? team.name : undefined;
           return {
             type: 'player' as const,
             id: r.id,
@@ -403,7 +405,9 @@ export async function GET(req: NextRequest) {
       // Stage 2: team_members filtered by those user_ids, active only
       const { data: memberRows } = await supabaseAdmin
         .from('team_members')
-        .select('id, role, user_id, team_workspaces(name)')
+        .select('id, role, user_id, team_workspaces!inner(name)')
+        // Staff of private or unlisted teams are not listed publicly.
+        .eq('team_workspaces.visibility', 'public')
         .in('user_id', userIds)
         .in('role', ['head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach', 'manager', 'scout', 'official', 'staff'])
         .is('left_at', null)

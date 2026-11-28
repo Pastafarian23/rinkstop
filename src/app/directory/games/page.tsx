@@ -185,6 +185,9 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   // filters never collide. Live scores tolerate a 2-minute TTL: the site is
   // not a real-time scoreboard, and a 2-minute-old score is still useful.
   const cacheKey = [
+    // v2: public-only results. Bumped so no pre-fix cached page (which could
+    // contain private team names) is ever served.
+    'v2-public-only',
     searchParams.league ?? 'nhl',
     searchParams.team ?? '',
     searchParams.time ?? 'current',
@@ -248,9 +251,11 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
     // Build query
     let query = sb
       .from('fixtures')
-      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`, { count: 'exact' })
+      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id!inner(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id!inner(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`, { count: 'exact' })
       .not('home_team_id', 'is', null)
       .not('away_team_id', 'is', null)
+      .eq('home_team.visibility', 'public')
+      .eq('away_team.visibility', 'public')
       .order('scheduled_at', { ascending: true })
       .in('league_id', leagueIds)
       .range(offset, offset + limit - 1);
@@ -261,13 +266,13 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
     }
 
     if (team) {
-      const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).maybeSingle();
+      const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).eq('visibility', 'public').maybeSingle();
       if (teamRow) query = query.or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`);
     }
 
     if (q) {
       const safe = q.replace(/[%_\\]/g, '\\$&');
-      const { data: matchingTeams } = await sb.from('team_workspaces').select('id').ilike('name', `%${safe}%`);
+      const { data: matchingTeams } = await sb.from('team_workspaces').select('id').eq('visibility', 'public').ilike('name', `%${safe}%`);
       if (matchingTeams && matchingTeams.length > 0) {
         const teamIds = matchingTeams.map((t) => t.id).join(',');
         query = query.or(`home_team_id.in.(${teamIds}),away_team_id.in.(${teamIds})`);
@@ -324,7 +329,7 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
     // of the week, then yesterday/this-week's completed results at the
     // bottom. hasMore is true if either side has more rows.
     if (time === 'current' && !hasExplicitRange) {
-      const baseSelect = `id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`;
+      const baseSelect = `id, scheduled_at, status, home_score, away_score, season, league_id, home_team:team_workspaces!home_team_id!inner(id, name, slug, logo_url:avatar_url), away_team:team_workspaces!away_team_id!inner(id, name, slug, logo_url:avatar_url), league:leagues(id, name, slug)`;
       // Resolve subleague override (when set, narrow to that one league)
       let mergedLeagueIds = leagueIds;
       if (subleague) {
@@ -334,13 +339,13 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
       // Resolve team filter (id) and q filter (team id list)
       let teamId: string | null = null;
       if (team) {
-        const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).maybeSingle();
+        const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).eq('visibility', 'public').maybeSingle();
         if (teamRow) teamId = teamRow.id;
       }
       let qTeamIds: string[] | null = null;
       if (q) {
         const safe = q.replace(/[%_\\]/g, '\\$&');
-        const { data: matchingTeams } = await sb.from('team_workspaces').select('id').ilike('name', `%${safe}%`);
+        const { data: matchingTeams } = await sb.from('team_workspaces').select('id').eq('visibility', 'public').ilike('name', `%${safe}%`);
         qTeamIds = (matchingTeams || []).map((t) => t.id);
       }
       // Upcoming: scheduled + in_progress, ASC by date. Also bound
@@ -355,6 +360,8 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
           .select(baseSelect, { count: 'exact' })
           .not('home_team_id', 'is', null)
           .not('away_team_id', 'is', null)
+          .eq('home_team.visibility', 'public')
+          .eq('away_team.visibility', 'public')
           .in('status', ['scheduled', 'in_progress'])
           .gte('scheduled_at', new Date().toISOString())
           .in('league_id', mergedLeagueIds)
@@ -379,6 +386,8 @@ async function fetchInitialGamesUncached(searchParams: Awaited<SearchParams>): P
           .select(baseSelect, { count: 'exact' })
           .not('home_team_id', 'is', null)
           .not('away_team_id', 'is', null)
+          .eq('home_team.visibility', 'public')
+          .eq('away_team.visibility', 'public')
           .eq('status', 'completed')
           .gte('scheduled_at', last24h)
           .in('league_id', mergedLeagueIds)

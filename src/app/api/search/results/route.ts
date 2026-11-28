@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
       ? applyMultiWordSearch(
           supabaseAdmin
             .from('players')
-            .select('id, first_name, last_name, slug, position, team_workspaces(name)', { count: 'exact' })
+            .select('id, first_name, last_name, slug, position, team_workspaces(name, visibility)', { count: 'exact' })
             .eq('is_active', true),
           q,
           ['first_name', 'last_name']
@@ -219,8 +219,10 @@ export async function GET(req: NextRequest) {
           .then(({ data, count }) => ({
             count: count ?? 0,
             rows: (data ?? []).map((r) => {
-              const teams = r.team_workspaces as { name: string } | { name: string }[] | null;
-              const teamName = Array.isArray(teams) ? teams[0]?.name : teams?.name;
+              const teams = r.team_workspaces as { name: string; visibility?: string | null } | { name: string; visibility?: string | null }[] | null;
+              const team = Array.isArray(teams) ? teams[0] : teams;
+              // PRIVACY: a player's team name is shown only when that team is public.
+              const teamName = team && team.visibility === 'public' ? team.name : undefined;
               return {
                 type: 'player' as const,
                 id: r.id,
