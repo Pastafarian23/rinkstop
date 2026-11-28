@@ -85,6 +85,8 @@ export async function GET(
     let query = supabaseAdmin
       .from('team_workspaces')
       .select('id, name, avatar_url, leagues(name)')
+      // Public discovery only: private/unlisted team workspaces are not searchable.
+      .eq('visibility', 'public')
       .order('name', { ascending: true })
       .limit(limit);
     if (q) {

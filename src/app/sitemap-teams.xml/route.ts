@@ -29,6 +29,8 @@ export async function GET() {
       .from('team_workspaces')
       .select('slug, updated_at, country_code, home_city, league_id, division, avatar_url, website_url')
       .eq('is_active', true)
+      // Only public workspaces are advertised to crawlers.
+      .eq('visibility', 'public')
       .range(from, from + PAGE - 1);
     if (error) break;
     const batch = data || [];

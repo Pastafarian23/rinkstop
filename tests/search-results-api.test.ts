@@ -30,7 +30,7 @@ beforeEach(() => {
       country: 'USA',
       is_active: true,
     })),
-    team_workspaces: [{ id: 't1', name: 'Arena Hawks', slug: 'arena-hawks', home_city: 'Town', home_country: 'USA', is_active: true }],
+    team_workspaces: [{ id: 't1', name: 'Arena Hawks', slug: 'arena-hawks', home_city: 'Town', home_country: 'USA', is_active: true, visibility: 'public' }],
     players: [],
     leagues: [],
     brands: [],

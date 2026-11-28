@@ -234,9 +234,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // If the team says "make this public," we index it. They can fill in
   // fields later.
   const isPublic = (team as { visibility?: string })?.visibility === 'public';
+  // Non-public workspaces (private/unlisted) are never indexed, whatever their
+  // field count. Public visibility is the only route to indexing.
   const decision = isPublic
     ? { indexable: true, reason: 'public workspace', uniquenessScore: Math.max(thinDecision.uniquenessScore, 50) }
-    : thinDecision;
+    : { indexable: false, reason: 'workspace not public', uniquenessScore: 0 };
 
   return {
     title,

@@ -219,7 +219,9 @@ export async function GET(req: NextRequest) {
       supabaseAdmin
         .from('team_workspaces')
         .select('id, name, slug, home_city, home_country, leagues(name)')
-        .eq('is_active', true),
+        .eq('is_active', true)
+        // Public discovery only: private/unlisted teams are not suggested.
+        .eq('visibility', 'public'),
       q,
       ['name', 'home_city', 'home_country']
     )
