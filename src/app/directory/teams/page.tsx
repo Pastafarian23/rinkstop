@@ -191,6 +191,10 @@ async function fetchInitialTeamsUncached(opts: {
     .from('team_workspaces')
     .select('id, name, slug, avatar_url, home_city, country_code, league_id, leagues(name)')
     .eq('is_active', true)
+    // Public rows only: the anon read policy (team_workspaces_select_roster) shows
+    // visibility = 'public' rows, and this query uses the admin client, which
+    // bypasses it. Without this filter private teams appeared on the public page.
+    .eq('visibility', 'public')
     // id tie-breaks equal names so this page and /api/teams agree on the order.
     .order('name')
     .order('id')
@@ -258,6 +262,8 @@ async function fetchInitialTeamsUncached(opts: {
     .from('team_workspaces')
     .select('id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, organization_id, league_id, federation_id, organization:organizations(name,slug), league:leagues(name,slug), federation:federations(name,slug)')
     .eq('is_active', true)
+    // Same public-only rule as the anon read policy (see the NHL query above).
+    .eq('visibility', 'public')
     .order('created_at', { ascending: false })
     .range(offset, offset + Math.min(limit, 100) - 1);
   if (countryIso) {

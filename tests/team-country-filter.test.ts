@@ -47,3 +47,17 @@ describe('wiring: the first page and /api/teams use the shared predicate', () =>
     expect(PAGE).not.toMatch(/country_code\.ilike\.%\$\{countryIso\}%/);
   });
 });
+
+describe('first page shows only public teams, matching the anon read policy', () => {
+  const PAGE = readFileSync(join(process.cwd(), 'src/app/directory/teams/page.tsx'), 'utf8');
+
+  it('both first-page queries filter visibility to public', () => {
+    // Two occurrences: the NHL-name query and the user-team query.
+    const hits = PAGE.match(/\.eq\('visibility', 'public'\)/g) ?? [];
+    expect(hits.length).toBe(2);
+  });
+
+  it('the public filter sits in the same chain as is_active on each query', () => {
+    expect(PAGE).toMatch(/\.eq\('is_active', true\)\s*\n(\s*\/\/[^\n]*\n\s*)*\.eq\('visibility', 'public'\)/);
+  });
+});
