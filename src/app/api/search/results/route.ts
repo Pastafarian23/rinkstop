@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clampSearchPage, typeHasMore, SEARCH_PAGE_SIZE } from '@/lib/search-paging';
+import { PWHL_ALIAS_NOT_IN } from '@/lib/pwhl-franchises';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
@@ -180,7 +181,9 @@ export async function GET(req: NextRequest) {
             .select('id, name, slug, home_city, home_country, leagues(name)', { count: 'exact' })
             .eq('is_active', true)
             // Public discovery only: private/unlisted teams are not searchable.
-            .eq('visibility', 'public'),
+            .eq('visibility', 'public')
+            // Legacy duplicate PWHL slugs are not listed; they redirect to the canonical team.
+            .not('slug', 'in', PWHL_ALIAS_NOT_IN),
           q,
           ['name', 'home_city', 'home_country']
         )

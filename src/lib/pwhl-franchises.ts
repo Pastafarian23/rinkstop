@@ -44,6 +44,15 @@ const CANONICAL = new Set(PWHL_FRANCHISES.map((f) => f.slug));
 const ALIAS_TO_CANONICAL = new Map<string, string>();
 for (const f of PWHL_FRANCHISES) for (const a of f.aliases) ALIAS_TO_CANONICAL.set(a, f.slug);
 
+/**
+ * PostgREST value for .not('slug', 'in', ...) that excludes every known legacy PWHL
+ * alias slug (25). Public listings use it so duplicate rows do not compete with the 12
+ * canonical franchise pages. Built from the registry, never from display names, so
+ * unrelated clubs (e.g. seattle-storm, minnesota-whitecaps) are untouched.
+ */
+export const PWHL_ALIAS_SLUGS: readonly string[] = PWHL_FRANCHISES.flatMap((f) => f.aliases);
+export const PWHL_ALIAS_NOT_IN: string = '(' + PWHL_ALIAS_SLUGS.map((a) => '"' + a + '"').join(',') + ')';
+
 export function isPwhlCanonicalSlug(slug: string): boolean {
   return CANONICAL.has(slug);
 }

@@ -4,6 +4,7 @@ import { TEAM_PUBLIC_COLUMNS } from '@/lib/public-directory-fields';
 import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 import { LEAGUE_LEVELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 import { teamCountryOr } from '@/lib/team-country-filter';
+import { PWHL_ALIAS_NOT_IN } from '@/lib/pwhl-franchises';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -118,6 +119,9 @@ export async function GET(request: NextRequest) {
   } else if (slug) {
     query = query.eq('slug', slug).limit(1);
   } else {
+    // Public directory listing: legacy duplicate PWHL slugs are not listed (they redirect
+    // to the canonical team). Lookups by id or slug above are unaffected.
+    query = query.not('slug', 'in', PWHL_ALIAS_NOT_IN);
     if (rinkId) query = query.eq('home_rink_id', rinkId);
     if (city) query = query.ilike('home_city', `%${city}%`);
     // Same predicate as the server-rendered first page (see team-country-filter.ts).

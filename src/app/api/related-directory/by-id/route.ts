@@ -18,6 +18,7 @@
 
 import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { PWHL_ALIAS_NOT_IN } from '@/lib/pwhl-franchises';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +53,9 @@ export async function GET(request: NextRequest) {
       .select('id, slug, name, home_city, country_code')
       .in('id', teamIds)
       // Public teams only: this endpoint runs with a privileged client.
-      .eq('visibility', 'public');
+      .eq('visibility', 'public')
+      // Legacy duplicate PWHL slugs are not offered as related listings.
+      .not('slug', 'in', PWHL_ALIAS_NOT_IN);
     for (const r of (data || []) as EntityRow[]) {
       results.push({ ...r, type: 'team' as const });
     }

@@ -11,6 +11,7 @@
 
 import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { PWHL_ALIAS_NOT_IN } from '@/lib/pwhl-franchises';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
 
   const [rinkRes, teamRes, leagueRes] = await Promise.all([
     supabaseAdmin.from('rinks').select('id, slug, name, city, country').or(rinkOrClause).eq('is_active', true).limit(limit),
-    supabaseAdmin.from('team_workspaces').select('id, slug, name, home_city, country_code').eq('visibility', 'public').or(teamOrClause).limit(limit),
+    supabaseAdmin.from('team_workspaces').select('id, slug, name, home_city, country_code').eq('visibility', 'public').not('slug', 'in', PWHL_ALIAS_NOT_IN).or(teamOrClause).limit(limit),
     supabaseAdmin.from('leagues').select('id, slug, name, country').or(leagueOrClause).limit(limit),
   ]);
 

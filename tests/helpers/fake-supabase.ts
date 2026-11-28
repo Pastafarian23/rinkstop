@@ -39,6 +39,14 @@ class FakeQuery {
     this.filters.push((r) => alts.some((a) => String(r[a.col] ?? '').toLowerCase().includes(a.n)));
     return this;
   }
+  // .not(col, 'in', '("a","b")'): rows whose column value is NOT in the list.
+  not(col: string, op: string, v: unknown) {
+    if (op !== 'in') throw new Error('unsupported not() operator: ' + op);
+    const list = String(v).replace(/^\(|\)$/g, '').split(',').map((x) => x.trim().replace(/^"|"$/g, ''));
+    const s = new Set(list);
+    this.filters.push((r) => !s.has(String(r[col])));
+    return this;
+  }
   in(col: string, vals: unknown[]) {
     const s = new Set(vals);
     this.filters.push((r) => s.has(r[col]));
