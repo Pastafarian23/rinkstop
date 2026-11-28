@@ -137,6 +137,9 @@ async function fetchInitialTeams(opts: {
     const teams = await cachedPublicRead(
       () => fetchInitialTeamsUncached(opts),
       [
+        // Key version: bump when the cached shape or failure behaviour changes so
+        // entries written before the fix (including stale empty results) are not reused.
+        'v2',
         opts.country ?? '',
         opts.level ?? '',
         opts.league ?? '',
