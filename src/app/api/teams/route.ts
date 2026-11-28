@@ -3,6 +3,7 @@ import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { TEAM_PUBLIC_COLUMNS } from '@/lib/public-directory-fields';
 import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 import { LEAGUE_LEVELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
+import { teamCountryOr } from '@/lib/team-country-filter';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -119,7 +120,8 @@ export async function GET(request: NextRequest) {
   } else {
     if (rinkId) query = query.eq('home_rink_id', rinkId);
     if (city) query = query.ilike('home_city', `%${city}%`);
-    if (country) query = query.eq('country_code', country);
+    // Same predicate as the server-rendered first page (see team-country-filter.ts).
+    if (country) query = query.or(teamCountryOr(country, rawCountry));
     // Bug fix 2026-08-12: previous `else if` chain silently dropped the
     // level filter when both ?league and ?level were set. Now we resolve
     // each independently and intersect when both are set.

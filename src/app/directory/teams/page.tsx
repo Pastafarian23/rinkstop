@@ -8,6 +8,7 @@ import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/leag
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { knownCount, teamsTrackedPhrase } from '@/lib/directory-heading';
 import { TEAMS_PAGE_SIZE } from '@/lib/teams-paging';
+import { teamCountryOr } from '@/lib/team-country-filter';
 import { cachedPublicRead, PUBLIC_READ_TAGS } from '@/lib/cached-read';
 import {
   getDirectoryCountsCached,
@@ -195,7 +196,8 @@ async function fetchInitialTeamsUncached(opts: {
     .order('id')
     // One extra row, so the page knows whether another page exists. It is not shown.
     .range(offset, offset + limit);
-  if (countryIso) nhlQuery = nhlQuery.eq('country_code', countryIso);
+  // Same country predicate as /api/teams, so the first page and the count agree.
+  if (countryIso) nhlQuery = nhlQuery.or(teamCountryOr(countryIso, country));
 
   // Filter by league and/or level. Both can be set at once — intersect them.
   // Bug fix 2026-08-12: the previous `if (league) ... else if (level)` chain
@@ -262,9 +264,7 @@ async function fetchInitialTeamsUncached(opts: {
     // Try the ISO code on country_code first; fall back to home_country text
     // matching by the full English name (handles legacy rows where
     // country_code is null but home_country was populated).
-    userQuery = userQuery.or(
-      `country_code.ilike.%${countryIso}%,home_country.ilike.%${country}%`
-    );
+    userQuery = userQuery.or(teamCountryOr(countryIso, country));
   }
   // Apply the same league + level filter to user teams so the result list
   // matches what the dropdown promises. Without this, picking any league
