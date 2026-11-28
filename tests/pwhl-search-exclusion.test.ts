@@ -28,6 +28,10 @@ beforeEach(() => {
       team('5', 'Seattle Storm', 'seattle-storm'),
       team('6', 'Minnesota Whitecaps', 'minnesota-whitecaps'),
       team('7', 'Minnesota Frost', 'minnesota-frost'),
+      team('8', 'Montréal Victoire', 'montréal-victoire'),
+      team('9', 'Montreal Victo', 'montreal-victo'),
+      team('10', 'Montreal PWHL', 'pwhl-montreal-victoire'),
+      team('11', 'PWHL Montreal', 'pwhl-montreal-women'),
     ],
   };
 });
@@ -45,6 +49,13 @@ describe('site search lists one entry per PWHL franchise and keeps historical cl
     expect(slugs).not.toContain('pwhl-boston-fleet');
     expect(slugs).not.toContain('pwhl-boston-women');
     expect(slugs).not.toContain('boston-fleet-pwhl');
+  });
+  it('Montréal Victoire stays discoverable through its public stand-in; the other Montreal duplicates are hidden', async () => {
+    const slugs = await search('Montr');
+    expect(slugs).toContain('montréal-victoire');
+    expect(slugs).not.toContain('montreal-victo');
+    expect(slugs).not.toContain('pwhl-montreal-victoire');
+    expect(slugs).not.toContain('pwhl-montreal-women');
   });
   it('Seattle Storm is still found (not an alias, not merged by name)', async () => {
     expect(await search('Seattle')).toContain('seattle-storm');

@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { isHighQualityTeam, teamSitemapUrl } from '@/lib/sitemap-shared';
-import { isPwhlAliasSlug } from '@/lib/pwhl-franchises';
+import { isPwhlListingExcludedAlias } from '@/lib/pwhl-franchises';
 
 // Sub-sitemap for team detail pages. Same URLs as the main /sitemap.xml,
 // just split out so Google can crawl team pages through a dedicated
@@ -41,7 +41,7 @@ export async function GET() {
 
   // Legacy PWHL duplicate slugs redirect to the canonical team page, so they are not
   // listed (duplicate indexable pages are avoided).
-  const filtered = workspaces.filter(isHighQualityTeam).filter((t: { slug: string }) => !isPwhlAliasSlug(t.slug));
+  const filtered = workspaces.filter(isHighQualityTeam).filter((t: { slug: string }) => !isPwhlListingExcludedAlias(t.slug));
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

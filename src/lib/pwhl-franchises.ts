@@ -40,6 +40,17 @@ export const PWHL_FRANCHISES: readonly PwhlFranchise[] = [
   { slug: 'vegas-vanguards', name: 'Vegas Vanguards', city: 'Las Vegas', country: 'US', conference: 'Western', aliases: ['pwhl-las-vegas'] },
 ];
 
+/**
+ * TEMPORARY stand-ins (delete after the Montreal data decision, PWHL_CONSOLIDATED_PLAN.md
+ * Phase 2): while a franchise's canonical row is not publicly viewable, one public alias
+ * row keeps the franchise discoverable. The canonical URL redirects (307) to it, and it is
+ * NOT excluded from search, suggestions, listings or the sitemap, so an exclusion never
+ * hides a whole franchise. Montreal: the canonical row (slug montreal-victoire) is not
+ * public; montréal-victoire is the public row in the current league.
+ */
+export const PWHL_TEMPORARY_FALLBACK: Readonly<Record<string, string>> = { 'montreal-victoire': 'montréal-victoire' };
+const STAND_INS = new Set<string>(Object.values(PWHL_TEMPORARY_FALLBACK));
+
 const CANONICAL = new Set(PWHL_FRANCHISES.map((f) => f.slug));
 const ALIAS_TO_CANONICAL = new Map<string, string>();
 for (const f of PWHL_FRANCHISES) for (const a of f.aliases) ALIAS_TO_CANONICAL.set(a, f.slug);
@@ -50,7 +61,7 @@ for (const f of PWHL_FRANCHISES) for (const a of f.aliases) ALIAS_TO_CANONICAL.s
  * canonical franchise pages. Built from the registry, never from display names, so
  * unrelated clubs (e.g. seattle-storm, minnesota-whitecaps) are untouched.
  */
-export const PWHL_ALIAS_SLUGS: readonly string[] = PWHL_FRANCHISES.flatMap((f) => f.aliases);
+export const PWHL_ALIAS_SLUGS: readonly string[] = PWHL_FRANCHISES.flatMap((f) => f.aliases).filter((a) => !STAND_INS.has(a));
 export const PWHL_ALIAS_NOT_IN: string = '(' + PWHL_ALIAS_SLUGS.map((a) => '"' + a + '"').join(',') + ')';
 
 export function isPwhlCanonicalSlug(slug: string): boolean {
@@ -64,6 +75,11 @@ export function pwhlCanonicalForAlias(slug: string): string | null {
 
 export function isPwhlAliasSlug(slug: string | null | undefined): boolean {
   return !!slug && ALIAS_TO_CANONICAL.has(slug);
+}
+
+/** An alias that listings (search, sitemap, lists) must leave out: every alias except a stand-in. */
+export function isPwhlListingExcludedAlias(slug: string | null | undefined): boolean {
+  return isPwhlAliasSlug(slug) && !STAND_INS.has(slug as string);
 }
 
 /**
@@ -98,10 +114,9 @@ export async function pwhlAliasRedirectTarget(slug: string): Promise<string | nu
  * would 404 although a working page exists. The site previously redirected
  * /directory/teams/montreal-victoire to montreal-victo (a static rule in next.config.js).
  * That static rule is removed because a canonical slug must never redirect once its
- * page is public (it would loop with the alias redirect). This keeps the same behaviour
- * with a TEMPORARY (307) redirect that applies only while the canonical page is not public.
+ * page is public (it would loop with the alias redirect). A TEMPORARY (307) redirect to the
+ * public stand-in applies only while the canonical page is not public.
  */
-export const PWHL_TEMPORARY_FALLBACK: Readonly<Record<string, string>> = { 'montreal-victoire': 'montreal-victo' };
 
 export async function pwhlTemporaryFallbackTarget(slug: string): Promise<string | null> {
   const fallback = PWHL_TEMPORARY_FALLBACK[slug];

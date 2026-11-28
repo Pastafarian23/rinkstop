@@ -133,6 +133,6 @@ describe('wiring', () => {
     expect(read('src/app/directory/pwhl/page.tsx')).toContain('normalizePwhlTeams(rawTeams as any[])');
   });
   it('the team sitemap leaves out alias slugs', () => {
-    expect(read('src/app/sitemap-teams.xml/route.ts')).toContain('!isPwhlAliasSlug(t.slug)');
+    expect(read('src/app/sitemap-teams.xml/route.ts')).toContain('!isPwhlListingExcludedAlias(t.slug)');
   });
 });

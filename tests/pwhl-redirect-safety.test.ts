@@ -69,7 +69,7 @@ describe('static redirects in next.config.js never fight the canonical registry'
 describe('temporary Montreal fallback applies only while the canonical page is not public', () => {
   beforeEach(() => { canonicalRow = null; });
   it('redirects the canonical Montreal slug to the working page while no public canonical row exists', async () => {
-    expect(await pwhlTemporaryFallbackTarget('montreal-victoire')).toBe('montreal-victo');
+    expect(await pwhlTemporaryFallbackTarget('montreal-victoire')).toBe('montréal-victoire');
   });
   it('does nothing once the canonical Montreal row is public (no loop)', async () => {
     canonicalRow = { id: 'x' };

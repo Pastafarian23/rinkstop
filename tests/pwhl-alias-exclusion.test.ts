@@ -9,12 +9,14 @@ import { PWHL_ALIAS_NOT_IN, PWHL_ALIAS_SLUGS, PWHL_FRANCHISES } from '@/lib/pwhl
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
 describe('alias exclusion filter is built from the registry', () => {
-  it('has the 25 legacy aliases and quotes every slug (accented slugs are safe)', () => {
-    expect(PWHL_ALIAS_SLUGS.length).toBe(25);
+  it('excludes 24 of the 25 legacy aliases (the Montréal stand-in stays listed) and quotes every slug', () => {
+    expect(PWHL_ALIAS_SLUGS.length).toBe(24);
     expect(PWHL_ALIAS_NOT_IN.startsWith('("')).toBe(true);
     expect(PWHL_ALIAS_NOT_IN.endsWith('")')).toBe(true);
-    expect(PWHL_ALIAS_NOT_IN).toContain('"montréal-victoire"');
-    expect(PWHL_ALIAS_NOT_IN.split('","').length).toBe(25);
+    // The only public Montréal row stays discoverable until the Montréal decision (Phase 2).
+    expect(PWHL_ALIAS_NOT_IN).not.toContain('montréal-victoire');
+    expect(PWHL_ALIAS_NOT_IN).toContain('"montreal-victo"');
+    expect(PWHL_ALIAS_NOT_IN.split('","').length).toBe(24);
   });
   it('never excludes a canonical slug', () => {
     for (const f of PWHL_FRANCHISES) expect(PWHL_ALIAS_NOT_IN).not.toContain('"' + f.slug + '"');
@@ -48,6 +50,6 @@ describe('public discovery surfaces exclude legacy PWHL duplicates', () => {
     expect(j).toBeGreaterThan(i);
   });
   it('the sitemap also leaves out aliases', () => {
-    expect(read('src/app/sitemap-teams.xml/route.ts')).toContain('!isPwhlAliasSlug(t.slug)');
+    expect(read('src/app/sitemap-teams.xml/route.ts')).toContain('!isPwhlListingExcludedAlias(t.slug)');
   });
 });
